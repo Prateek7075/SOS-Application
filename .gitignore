@@ -1,2 +1,129 @@
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# IDE / Editor
+# =========================
 .idea/
+.vscode/
+*.iml
+
+# =========================
+# Local tools
+# =========================
 tools/
+*.exe
+
+# =========================
+# Environment files
+# =========================
+.env
+.env.*
+!.env.example
+
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+mobile/.env
+mobile/.env.*
+!mobile/.env.example
+
+# =========================
+# Firebase secrets
+# =========================
+backend/storage/app/firebase/service-account.json
+backend/storage/app/firebase/*.json
+
+# =========================
+# Firebase client config
+# =========================
+mobile/lib/firebase_options.dart
+mobile/android/app/google-services.json
+mobile/ios/Runner/GoogleService-Info.plist
+mobile/macos/Runner/GoogleService-Info.plist
+
+# =========================
+# Laravel backend
+# =========================
+backend/vendor/
+backend/node_modules/
+
+backend/storage/logs/*.log
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/storage/app/private/*
+backend/storage/app/public/*
+
+backend/bootstrap/cache/*.php
+
+backend/public/storage
+backend/public/hot
+backend/public/build/
+
+backend/.phpunit.result.cache
+backend/npm-debug.log
+backend/yarn-error.log
+backend/pnpm-debug.log
+
+# Laravel generated keys
+backend/storage/*.key
+
+# Composer auth file
+backend/auth.json
+
+# =========================
+# Flutter / Dart
+# =========================
+mobile/.dart_tool/
+mobile/.packages
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/build/
+mobile/coverage/
+
+# Dart analysis
+mobile/.metadata
+
+# Flutter generated plugin files
+mobile/generated_plugin_registrant.dart
+
+# =========================
+# Android build files
+# =========================
+mobile/android/.gradle/
+mobile/android/app/build/
+mobile/android/build/
+mobile/android/local.properties
+
+# Android release signing secrets
+mobile/android/key.properties
+mobile/android/app/*.jks
+mobile/android/app/*.keystore
+mobile/android/*.jks
+mobile/android/*.keystore
+
+# =========================
+# Gradle
+# =========================
+.gradle/
+**/.gradle/
+**/build/
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.temp
+*.swp
+*.swo
