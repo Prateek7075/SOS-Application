@@ -48,32 +48,49 @@ class VerifyFirebaseToken
                 ->first();
 
             if (!$user) {
-                $user = new User();
+                            $user = new User();
+
+                            $user->firebase_uid = $firebaseUid;
+                            $user->email = $email;
+
+                            if ($firebaseName !== '') {
+                                $user->name = $firebaseName;
+                            } else {
+                                $user->name = '';
+                            }
+
+                            $user->save();
+                        } else {
+                            $user->firebase_uid = $firebaseUid;
+                            $user->email = $email;
+
+                            /*
+                             * Important:
+                             * Do not overwrite existing Laravel name on every request.
+                             * ProfileScreen/UserProfileController is responsible for updating name.
+                             */
+                            if (
+                                (!$user->name || trim($user->name) === '')
+                                && $firebaseName !== ''
+                            ) {
+                                $user->name = $firebaseName;
+                            }
+
+                            $user->save();
+                        }
+
+                        $request->setUserResolver(
+                            static fn () => $user
+                        );
+
+                        return $next($request);
+                    } catch (Throwable $error) {
+                        report($error);
+
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Invalid or expired Firebase ID token',
+                        ], 401);
+                    }
+                }
             }
-
-            $user->fill([
-                'firebase_uid' => $firebaseUid,
-                'name' => $claims->get(
-                    'name',
-                    Str::before($email, '@')
-                ),
-                'email' => $email,
-            ]);
-
-            $user->save();
-
-            $request->setUserResolver(
-                static fn () => $user
-            );
-
-            return $next($request);
-        } catch (Throwable $error) {
-            report($error);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid or expired Firebase ID token',
-            ], 401);
-        }
-    }
-}
