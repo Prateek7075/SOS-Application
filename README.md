@@ -8,6 +8,21 @@ This project is built as a working **V1 MVP** and has been tested on a real Andr
 
 ---
 
+## Platform Support
+
+This V1 version is built and tested for Android only.
+
+The app uses Android-specific features such as:
+
+- Native SMS sending
+- Android foreground location service
+- Android runtime permissions
+- APK installation and testing
+
+iOS support is not included.
+
+---
+
 ## Repository Description
 
 A Flutter + Laravel emergency SOS mobile app that sends SMS alerts with live location tracking, trusted contacts, emergency profile details, Firebase authentication, and a public live tracking page with a moving map marker.
