@@ -127,3 +127,10 @@ mobile/android/*.keystore
 *.temp
 *.swp
 *.swo
+
+
+# =========================
+# CloudFare Url
+# =========================
+
+mobile/lib/config/app_config.dart
