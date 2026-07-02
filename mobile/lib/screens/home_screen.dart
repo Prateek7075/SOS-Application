@@ -259,126 +259,145 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Emergency SOS'),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Emergency Profile',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text('Name: $name'),
-                    Text('Blood Group: $bloodGroup'),
-                    Text('My Phone: $phone'),
-                    Text('Relative: $relativeName ($relativePhone)'),
-                    Text('Address: $address'),
-                  ],
-                ),
-              ),
-            ),
-            const Spacer(),
-            GestureDetector(
-              onTap: isSosActive ? openActiveSos : null,
-              onLongPress: handleSosLongPress,
-              child: Container(
-                width: 220,
-                height: 220,
-                decoration: BoxDecoration(
-                  color: isSosActive ? Colors.black : Colors.red,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    _isCancellingSos
-                        ? 'CANCELLING...'
-                        : isSosActive
-                        ? 'SOS ACTIVE\nHOLD TO CANCEL'
-                        : 'HOLD\nSOS',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isSosActive ? 24 : 36,
-                      fontWeight: FontWeight.bold,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Emergency Profile',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text('Name: $name'),
+                        Text('Blood Group: $bloodGroup'),
+                        Text('My Phone: $phone'),
+                        Text('Relative: $relativeName ($relativePhone)'),
+                        Text('Address: $address'),
+                      ],
                     ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              sosStatus,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              isSosActive
-                  ? 'Tap to view the active SOS. Long press to cancel it.'
-                  : 'Long press the SOS button to start emergency alert.',
-              textAlign: TextAlign.center,
-            ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const TrustedContactsScreen(),
-                    ),
-                  );
-                },
-                child: const Text('Trusted Contacts'),
-              ),
-            ),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProfileScreen(),
-                    ),
-                  );
 
-                  if (result != null && result is UserProfile) {
-                    updateProfileOnHome(result);
-                  } else {
-                    await loadSavedProfile();
-                  }
-                },
-                child: const Text('Profile'),
-              ),
-            ),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SosHistoryScreen(),
+                const SizedBox(height: 24),
+
+                GestureDetector(
+                  onTap: isSosActive ? openActiveSos : null,
+                  onLongPress: handleSosLongPress,
+                  child: Container(
+                    width: 210,
+                    height: 210,
+                    decoration: BoxDecoration(
+                      color: isSosActive ? Colors.black : Colors.red,
+                      shape: BoxShape.circle,
                     ),
-                  );
-                },
-                child: const Text('SOS History'),
-              ),
+                    child: Center(
+                      child: Text(
+                        _isCancellingSos
+                            ? 'CANCELLING...'
+                            : isSosActive
+                            ? 'SOS ACTIVE\nHOLD TO CANCEL'
+                            : 'HOLD\nSOS',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: isSosActive ? 22 : 34,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                Text(
+                  sosStatus,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                Text(
+                  isSosActive
+                      ? 'Tap to view the active SOS. Long press to cancel it.'
+                      : 'Long press the SOS button to start emergency alert.',
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 24),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TrustedContactsScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Trusted Contacts'),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProfileScreen(),
+                        ),
+                      );
+
+                      if (result != null && result is UserProfile) {
+                        updateProfileOnHome(result);
+                      } else {
+                        await loadSavedProfile();
+                      }
+                    },
+                    child: const Text('Profile'),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SosHistoryScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('SOS History'),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Kreait\Firebase\Contract\Auth;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
@@ -35,6 +34,18 @@ class VerifyFirebaseToken
             $firebaseUid = $claims->get('sub');
             $email = $claims->get('email');
 
+            $firebaseNameClaim = $claims->get('name');
+            $firebaseName = is_string($firebaseNameClaim)
+                ? trim($firebaseNameClaim)
+                : '';
+
+            if (!$firebaseUid) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Firebase UID missing from token',
+                ], 422);
+            }
+
             if (!$email) {
                 return response()->json([
                     'success' => false,
@@ -48,49 +59,46 @@ class VerifyFirebaseToken
                 ->first();
 
             if (!$user) {
-                            $user = new User();
+                $user = new User();
 
-                            $user->firebase_uid = $firebaseUid;
-                            $user->email = $email;
+                $user->firebase_uid = $firebaseUid;
+                $user->email = $email;
+                $user->name = $firebaseName;
 
-                            if ($firebaseName !== '') {
-                                $user->name = $firebaseName;
-                            } else {
-                                $user->name = '';
-                            }
+                $user->save();
+            } else {
+                $user->firebase_uid = $firebaseUid;
+                $user->email = $email;
 
-                            $user->save();
-                        } else {
-                            $user->firebase_uid = $firebaseUid;
-                            $user->email = $email;
-
-                            /*
-                             * Important:
-                             * Do not overwrite existing Laravel name on every request.
-                             * ProfileScreen/UserProfileController is responsible for updating name.
-                             */
-                            if (
-                                (!$user->name || trim($user->name) === '')
-                                && $firebaseName !== ''
-                            ) {
-                                $user->name = $firebaseName;
-                            }
-
-                            $user->save();
-                        }
-
-                        $request->setUserResolver(
-                            static fn () => $user
-                        );
-
-                        return $next($request);
-                    } catch (Throwable $error) {
-                        report($error);
-
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Invalid or expired Firebase ID token',
-                        ], 401);
-                    }
+                /*
+                 * Do not overwrite existing Laravel name on every request.
+                 * ProfileScreen/UserProfileController should update name.
+                 */
+                if (
+                    (!$user->name || trim($user->name) === '')
+                    && $firebaseName !== ''
+                ) {
+                    $user->name = $firebaseName;
                 }
+
+                $user->save();
             }
+
+            $request->setUserResolver(
+                static fn () => $user
+            );
+
+            return $next($request);
+        } catch (Throwable $error) {
+            logger()->error('Firebase token verification failed', [
+                'class' => $error::class,
+                'message' => $error->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired Firebase ID token',
+            ], 401);
+        }
+    }
+}

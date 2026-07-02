@@ -16,7 +16,7 @@ class AuthApiService {
       throw Exception('No Firebase user is signed in');
     }
 
-    final idToken = await firebaseUser.getIdToken();
+    final idToken = await firebaseUser.getIdToken(true);
 
     if (idToken == null || idToken.isEmpty) {
       throw Exception('Firebase ID token is unavailable');
