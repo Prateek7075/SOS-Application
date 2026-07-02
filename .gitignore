@@ -134,3 +134,5 @@ mobile/android/*.keystore
 # =========================
 
 mobile/lib/config/app_config.dart
+
+backend/storage/app/aiven/ca.pem
