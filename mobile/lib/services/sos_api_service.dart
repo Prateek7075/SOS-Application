@@ -7,6 +7,8 @@ import '../config/app_config.dart';
 import '../models/sos_event.dart';
 import '../models/sos_history_item.dart';
 
+import '../services/offline_sos_local_service.dart';
+
 class SosApiService {
   static const String baseUrl = AppConfig.apiBaseUrl;
 
@@ -112,6 +114,22 @@ class SosApiService {
     if (response.statusCode != 200) {
       throw Exception(
         'Failed to cancel SOS: ${response.statusCode} ${response.body}',
+      );
+    }
+  }
+
+  Future<void> syncOfflineSos({
+    required OfflineSosEvent event,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/sos/offline-sync'),
+      headers: await getAuthHeaders(),
+      body: jsonEncode(event.toJson()),
+    );
+
+    if (response.statusCode != 201) {
+      throw Exception(
+        'Failed to sync offline SOS: ${response.statusCode} ${response.body}',
       );
     }
   }

@@ -34,6 +34,9 @@ Route::prefix('v1')->group(function () {
         //Profile Routes
         Route::get('/user-profile', [UserProfileController::class, 'show']);
         Route::put('/user-profile', [UserProfileController::class, 'update']);
+
+        //Offline Sync Route
+        Route::post('/sos/offline-sync', [SosController::class, 'offlineSync']);
     });
 
     // SOS Location Route (public because foreground services provide it, making it private will break that)

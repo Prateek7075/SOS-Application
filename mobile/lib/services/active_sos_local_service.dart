@@ -8,26 +8,46 @@ class ActiveSosSession {
     required this.sosEventId,
     required this.trackingToken,
     required this.trackingUrl,
+    this.batteryPercentage,
   });
 
   final int sosEventId;
   final String trackingToken;
   final String trackingUrl;
+  final int? batteryPercentage;
 
   Map<String, dynamic> toJson() {
     return {
       'sos_event_id': sosEventId,
       'tracking_token': trackingToken,
       'tracking_url': trackingUrl,
+      'battery_percentage': batteryPercentage,
     };
   }
 
   factory ActiveSosSession.fromJson(Map<String, dynamic> json) {
     return ActiveSosSession(
-      sosEventId: json['sos_event_id'] as int,
-      trackingToken: json['tracking_token'] as String,
-      trackingUrl: json['tracking_url'] as String,
+      sosEventId: _parseInt(json['sos_event_id']) ?? 0,
+      trackingToken: json['tracking_token']?.toString() ?? '',
+      trackingUrl: json['tracking_url']?.toString() ?? '',
+      batteryPercentage: _parseInt(json['battery_percentage']),
     );
+  }
+
+  static int? _parseInt(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+
+    if (value is int) {
+      return value;
+    }
+
+    if (value is num) {
+      return value.toInt();
+    }
+
+    return int.tryParse(value.toString());
   }
 }
 
@@ -52,6 +72,7 @@ class ActiveSosLocalService {
     required int sosEventId,
     required String trackingToken,
     required String trackingUrl,
+    int? batteryPercentage,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final activeSosKey = _currentUserActiveSosKey;
@@ -64,6 +85,7 @@ class ActiveSosLocalService {
       sosEventId: sosEventId,
       trackingToken: trackingToken,
       trackingUrl: trackingUrl,
+      batteryPercentage: batteryPercentage,
     );
 
     await prefs.setString(
@@ -89,7 +111,16 @@ class ActiveSosLocalService {
     if (sessionJson != null && sessionJson.isNotEmpty) {
       try {
         final decoded = jsonDecode(sessionJson) as Map<String, dynamic>;
-        return ActiveSosSession.fromJson(decoded);
+        final session = ActiveSosSession.fromJson(decoded);
+
+        if (session.sosEventId <= 0 ||
+            session.trackingToken.isEmpty ||
+            session.trackingUrl.isEmpty) {
+          await clear();
+          return null;
+        }
+
+        return session;
       } catch (_) {
         await clear();
         return null;
@@ -104,11 +135,19 @@ class ActiveSosLocalService {
 
     try {
       final decoded = jsonDecode(legacySessionJson) as Map<String, dynamic>;
+      final session = ActiveSosSession.fromJson(decoded);
+
+      if (session.sosEventId <= 0 ||
+          session.trackingToken.isEmpty ||
+          session.trackingUrl.isEmpty) {
+        await prefs.remove(_legacyActiveSosKey);
+        return null;
+      }
 
       await prefs.setString(activeSosKey, legacySessionJson);
       await prefs.remove(_legacyActiveSosKey);
 
-      return ActiveSosSession.fromJson(decoded);
+      return session;
     } catch (_) {
       await prefs.remove(_legacyActiveSosKey);
       return null;

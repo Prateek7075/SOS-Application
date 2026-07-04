@@ -7,9 +7,13 @@ import '../models/user_profile.dart';
 class DirectSmsService {
   static const MethodChannel _channel = MethodChannel('sos_sms_channel');
 
-  String createEmergencyMessage({required double latitude, required double longitude, UserProfile? profile, String? trackingUrl,})
-  {
-
+  String createEmergencyMessage({
+    required double latitude,
+    required double longitude,
+    UserProfile? profile,
+    String? trackingUrl,
+    int? batteryPercentage,
+  }) {
     final hasProfile = profile != null && profile.hasUsefulData;
 
     final profileText = hasProfile
@@ -19,26 +23,34 @@ Phone: ${profile.phone.isEmpty ? '-' : profile.phone}
 Blood Group: ${profile.bloodGroup.isEmpty ? '-' : profile.bloodGroup}
 Emergency Relative: ${profile.relativeName.isEmpty ? '-' : profile.relativeName} - ${profile.relativePhone.isEmpty ? '-' : profile.relativePhone}
 Address: ${profile.address.isEmpty ? '-' : profile.address}
-''': '';
+'''
+        : '';
 
     final trackingText = trackingUrl != null && trackingUrl.trim().isNotEmpty
         ? '''
 Live tracking link:
 $trackingUrl
-''': '';
+'''
+        : '';
 
+    final batteryText = batteryPercentage != null
+        ? '''
+Battery: $batteryPercentage%
+'''
+        : '''
+Battery: Not available
+''';
 
     return '''
 EMERGENCY SOS!
 I need help.
-            
-$profileText $trackingText My current location:
+
+$profileText$trackingText$batteryText
+My current location:
 https://maps.google.com/?q=$latitude,$longitude
-            
+
 Please contact me immediately.
 ''';
-
-
   }
 
   Future<bool> requestSmsPermission() async {
@@ -72,8 +84,14 @@ Please contact me immediately.
     }
   }
 
-Future<int> sendEmergencySmsToContacts({required List<EmergencyContact> contacts, required double latitude, required double longitude, UserProfile? profile, String? trackingUrl,})
-async {
+  Future<int> sendEmergencySmsToContacts({
+    required List<EmergencyContact> contacts,
+    required double latitude,
+    required double longitude,
+    UserProfile? profile,
+    String? trackingUrl,
+    int? batteryPercentage,
+  }) async {
     final hasPermission = await requestSmsPermission();
 
     if (!hasPermission) {
@@ -85,6 +103,7 @@ async {
       longitude: longitude,
       profile: profile,
       trackingUrl: trackingUrl,
+      batteryPercentage: batteryPercentage,
     );
 
     int successCount = 0;

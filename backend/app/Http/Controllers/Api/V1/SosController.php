@@ -209,4 +209,51 @@ class SosController extends Controller
             ],
         ]);
     }
+
+    public function offlineSync(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'local_id' => ['required', 'string', 'max:255'],
+            'latitude' => ['required', 'numeric'],
+            'longitude' => ['required', 'numeric'],
+            'battery_percentage' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'network_mode' => ['nullable', 'string', 'max:255'],
+            'sms_sent_count' => ['nullable', 'integer', 'min:0'],
+            'sms_message' => ['nullable', 'string'],
+            'created_at' => ['nullable', 'date'],
+        ]);
+
+        $trackingToken = Str::random(64);
+
+        $sosEvent = SosEvent::create([
+            'user_id' => $user->id,
+            'status' => 'offline_sms',
+            'initial_latitude' => $validated['latitude'],
+            'initial_longitude' => $validated['longitude'],
+            'tracking_token' => $trackingToken,
+            'network_mode' => $validated['network_mode'] ?? 'offline_sms',
+            'expires_at' => now()->addHours(12),
+            'created_at' => $validated['created_at'] ?? now(),
+            'updated_at' => now(),
+        ]);
+
+        SosLocationUpdate::create([
+            'sos_event_id' => $sosEvent->id,
+            'latitude' => $validated['latitude'],
+            'longitude' => $validated['longitude'],
+            'accuracy' => null,
+            'battery_percentage' => $validated['battery_percentage'] ?? null,
+            'created_at' => $validated['created_at'] ?? now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Offline SOS synced successfully',
+            'data' => [
+                'sos_event' => $sosEvent,
+            ],
+        ], 201);
+    }
 }

@@ -1,6 +1,7 @@
 package com.example.mobile
 
 import android.Manifest
+import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -13,15 +14,16 @@ import android.content.pm.ServiceInfo
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.os.SystemClock
 import android.util.Log
+import org.json.JSONObject
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
-import android.app.AlarmManager
-import android.os.SystemClock
 
 class SosLocationForegroundService : Service() {
     companion object {
@@ -56,6 +58,25 @@ class SosLocationForegroundService : Service() {
 
         @Deprecated("Deprecated in Java")
         override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+    }
+
+    private fun getBatteryPercentage(): Int? {
+        return try {
+            val batteryManager = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+
+            val batteryLevel = batteryManager.getIntProperty(
+                BatteryManager.BATTERY_PROPERTY_CAPACITY
+            )
+
+            if (batteryLevel in 0..100) {
+                batteryLevel
+            } else {
+                null
+            }
+        } catch (error: Exception) {
+            Log.e(TAG, "Failed to read battery percentage: ${error.message}")
+            null
+        }
     }
 
     override fun onCreate() {
@@ -111,7 +132,6 @@ class SosLocationForegroundService : Service() {
         }
 
         try {
-
             locationManager.removeUpdates(locationListener)
 
             val lastGpsLocation =
@@ -170,26 +190,34 @@ class SosLocationForegroundService : Service() {
         lastLocationSentAt = currentTime
 
         Thread {
+            var connection: HttpURLConnection? = null
+
             try {
                 val endpoint = "$apiBaseUrl/sos/$sosEventId/location"
                 val url = URL(endpoint)
 
-                val connection = url.openConnection() as HttpURLConnection
+                connection = url.openConnection() as HttpURLConnection
                 connection.requestMethod = "POST"
+                connection.setRequestProperty("Accept", "application/json")
                 connection.setRequestProperty("Content-Type", "application/json")
                 connection.setRequestProperty("X-SOS-Tracking-Token", trackingToken)
                 connection.doOutput = true
                 connection.connectTimeout = 10000
                 connection.readTimeout = 10000
 
-                val jsonBody = """
-                    {
-                      "latitude": ${location.latitude},
-                      "longitude": ${location.longitude},
-                      "accuracy": ${location.accuracy},
-                      "battery_percentage": null
+                val batteryPercentage = getBatteryPercentage()
+
+                val jsonBody = JSONObject().apply {
+                    put("latitude", location.latitude)
+                    put("longitude", location.longitude)
+                    put("accuracy", location.accuracy)
+
+                    if (batteryPercentage != null) {
+                        put("battery_percentage", batteryPercentage)
+                    } else {
+                        put("battery_percentage", JSONObject.NULL)
                     }
-                """.trimIndent()
+                }.toString()
 
                 val writer = OutputStreamWriter(connection.outputStream)
                 writer.write(jsonBody)
@@ -200,12 +228,12 @@ class SosLocationForegroundService : Service() {
 
                 Log.d(
                     TAG,
-                    "Location sent. SOS=$sosEventId Response=$responseCode Lat=${location.latitude} Lng=${location.longitude}"
+                    "Location sent. SOS=$sosEventId Response=$responseCode Lat=${location.latitude} Lng=${location.longitude} Battery=${batteryPercentage ?: "N/A"}"
                 )
-
-                connection.disconnect()
             } catch (error: Exception) {
                 Log.e(TAG, "Failed to send location: ${error.message}")
+            } finally {
+                connection?.disconnect()
             }
         }.start()
     }

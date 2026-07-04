@@ -25,8 +25,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final UserProfileLocalService _profileLocalService =
   UserProfileLocalService();
 
-  final UserProfileApiService _profileApiService =
-  UserProfileApiService();
+  final UserProfileApiService _profileApiService = UserProfileApiService();
 
   final ActiveSosLocalService _activeSosLocalService =
   ActiveSosLocalService();
@@ -52,6 +51,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isSaving = false;
   bool _isLoggingOut = false;
   bool _isLoadingServerProfile = false;
+
+  static const Color _dangerRed = Color(0xFFE53935);
+  static const Color _dangerDark = Color(0xFFB91C1C);
+  static const Color _darkText = Color(0xFF111827);
+  static const Color _mutedText = Color(0xFF6B7280);
+  static const Color _softBg = Color(0xFFF8FAFC);
+  static const Color _borderColor = Color(0xFFE5E7EB);
 
   @override
   void initState() {
@@ -103,8 +109,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         } catch (error) {
           debugPrint('Pending profile sync failed from ProfileScreen: $error');
 
-          // Keep local profile visible.
-          // Do not fetch Laravel profile because it may overwrite unsynced local data.
           return;
         }
       }
@@ -194,11 +198,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _isLoggingOut = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cancel active SOS before logging out'),
-          ),
-        );
+        showInfo('Cancel active SOS before logging out');
 
         return;
       }
@@ -207,8 +207,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         context: context,
         builder: (dialogContext) {
           return AlertDialog(
-            title: const Text('Logout'),
-            content: const Text('Are you sure you want to logout?'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
+            title: const Text(
+              'Logout',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            content: const Text(
+              'Are you sure you want to logout from your SOS account?',
+            ),
             actions: [
               TextButton(
                 onPressed: () {
@@ -216,12 +226,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
                 child: const Text('Cancel'),
               ),
-              ElevatedButton.icon(
+              FilledButton.icon(
                 onPressed: () {
                   Navigator.pop(dialogContext, true);
                 },
-                icon: const Icon(Icons.logout),
+                icon: const Icon(Icons.logout_rounded),
                 label: const Text('Logout'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: _dangerRed,
+                  foregroundColor: Colors.white,
+                ),
               ),
             ],
           );
@@ -256,11 +270,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLoggingOut = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Logout failed: $error'),
-        ),
-      );
+      showError('Logout failed: $error');
     }
   }
 
@@ -286,10 +296,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     bool syncedWithLaravel = false;
 
     try {
-      // 1. Save locally first
       await _profileLocalService.saveProfile(localProfile);
 
-      // 2. Update Firebase display name
       final firebaseUser = FirebaseAuth.instance.currentUser;
 
       if (firebaseUser != null && localProfile.name.isNotEmpty) {
@@ -301,7 +309,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       }
 
-      // 3. Try syncing with Laravel
       try {
         final serverProfile = await _profileApiService.updateProfile(
           localProfile,
@@ -309,13 +316,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         await _profileLocalService.saveProfile(serverProfile);
 
-        // Laravel sync worked, so pending flag can be removed.
         await _profileLocalService.clearProfilePendingSync();
 
         profileToReturn = serverProfile;
         syncedWithLaravel = true;
       } catch (error) {
-        // Laravel sync failed, so mark this profile for future sync.
         await _profileLocalService.markProfilePendingSync();
 
         debugPrint('Laravel profile sync failed: $error');
@@ -329,14 +334,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isSaving = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            syncedWithLaravel
-                ? 'Profile saved and synced'
-                : 'Profile saved locally. Sync will happen when internet is available.',
-          ),
-        ),
+      showInfo(
+        syncedWithLaravel
+            ? 'Profile saved and synced'
+            : 'Profile saved locally. Sync will happen when internet is available.',
       );
 
       Navigator.pop(context, profileToReturn);
@@ -349,11 +350,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isSaving = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Profile save failed: $error'),
-        ),
-      );
+      showError('Profile save failed: $error');
     }
   }
 
@@ -365,23 +362,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return null;
   }
 
+  void showError(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: _dangerRed,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void showInfo(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(''),
+      ),
+    );
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Widget buildTextField({
     required TextEditingController controller,
     required String label,
     required IconData icon,
     String? Function(String?)? validator,
-    TextInputType keyboardType = TextInputType.text,
+    TextInputType? keyboardType,
     int maxLines = 1,
+    TextInputAction textInputAction = TextInputAction.next,
   }) {
+    final bool isMultiline = maxLines > 1;
+
     return TextFormField(
       controller: controller,
       validator: validator,
-      keyboardType: keyboardType,
+      keyboardType: isMultiline
+          ? TextInputType.multiline
+          : keyboardType ?? TextInputType.text,
       maxLines: maxLines,
+      textInputAction: isMultiline
+          ? TextInputAction.newline
+          : textInputAction,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon),
-        border: const OutlineInputBorder(),
       ),
     );
   }
@@ -389,9 +429,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _softBg,
       appBar: AppBar(
         title: const Text('Emergency Profile'),
-        centerTitle: true,
+        backgroundColor: _softBg,
+        foregroundColor: _darkText,
+        elevation: 0,
+        centerTitle: false,
+        leading: IconButton(
+          tooltip: 'Back',
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () {
+            Navigator.of(context).maybePop();
+          },
+        ),
         actions: [
           IconButton(
             onPressed: _isLoggingOut ? null : logout,
@@ -402,90 +453,309 @@ class _ProfileScreenState extends State<ProfileScreen> {
               height: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-                : const Icon(Icons.logout),
+                : const Icon(Icons.logout_rounded),
           ),
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            if (_isLoadingServerProfile) ...[
-              const LinearProgressIndicator(),
-              const SizedBox(height: 12),
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+            children: [
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildProfileHeader(),
+                      const SizedBox(height: 18),
+                      if (_isLoadingServerProfile) ...[
+                        _buildSyncingBox(),
+                        const SizedBox(height: 16),
+                      ],
+                      _buildFormCard(),
+                      const SizedBox(height: 20),
+                      FilledButton.icon(
+                        onPressed: _isSaving ? null : saveProfile,
+                        icon: _isSaving
+                            ? const SizedBox(
+                          width: 17,
+                          height: 17,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                            : const Icon(Icons.save_rounded),
+                        label: Text(
+                          _isSaving ? 'Saving...' : 'Save Profile',
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _dangerRed,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 54),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: _isLoggingOut ? null : logout,
+                        icon: _isLoggingOut
+                            ? const SizedBox(
+                          width: 17,
+                          height: 17,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                            : const Icon(Icons.logout_rounded),
+                        label: Text(
+                          _isLoggingOut ? 'Logging out...' : 'Logout',
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 54),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildLogoutCard(),
+                    ],
+                  ),
+                ),
+              ),
             ],
-
-            buildTextField(
-              controller: _nameController,
-              label: 'Full Name',
-              icon: Icons.person,
-              validator: requiredValidator,
-            ),
-            const SizedBox(height: 12),
-
-            buildTextField(
-              controller: _bloodGroupController,
-              label: 'Blood Group',
-              icon: Icons.bloodtype,
-            ),
-            const SizedBox(height: 12),
-
-            buildTextField(
-              controller: _phoneController,
-              label: 'Your Phone Number',
-              icon: Icons.phone,
-              keyboardType: TextInputType.phone,
-              validator: requiredValidator,
-            ),
-            const SizedBox(height: 12),
-
-            buildTextField(
-              controller: _relativeNameController,
-              label: 'Emergency Relative Name',
-              icon: Icons.family_restroom,
-              validator: requiredValidator,
-            ),
-            const SizedBox(height: 12),
-
-            buildTextField(
-              controller: _relativePhoneController,
-              label: 'Emergency Relative Phone',
-              icon: Icons.contact_phone,
-              keyboardType: TextInputType.phone,
-              validator: requiredValidator,
-            ),
-            const SizedBox(height: 12),
-
-            buildTextField(
-              controller: _addressController,
-              label: 'Address',
-              icon: Icons.home,
-              maxLines: 3,
-            ),
-            const SizedBox(height: 24),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isSaving ? null : saveProfile,
-                icon: const Icon(Icons.save),
-                label: Text(_isSaving ? 'Saving...' : 'Save Profile'),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _isLoggingOut ? null : logout,
-                icon: const Icon(Icons.logout),
-                label: Text(_isLoggingOut ? 'Logging out...' : 'Logout'),
-              ),
-            ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            _dangerRed,
+            _dangerDark,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+            color: _dangerRed.withOpacity(0.24),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 62,
+            height: 62,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.18),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.health_and_safety_rounded,
+              color: Colors.white,
+              size: 34,
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your Safety Profile',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'Keep these details updated for emergency alerts.',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    height: 1.35,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSyncingBox() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: _borderColor,
+        ),
+      ),
+      child: const Row(
+        children: [
+          SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.4,
+              color: _dangerRed,
+            ),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Loading latest profile details...',
+              style: TextStyle(
+                color: _mutedText,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(
+          color: _borderColor,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Personal Details',
+            style: TextStyle(
+              color: _darkText,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 5),
+          const Text(
+            'These details may help your trusted contacts during an emergency.',
+            style: TextStyle(
+              color: _mutedText,
+              fontSize: 13.5,
+              height: 1.4,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 20),
+          buildTextField(
+            controller: _nameController,
+            label: 'Full Name',
+            icon: Icons.person_outline_rounded,
+            validator: requiredValidator,
+          ),
+          const SizedBox(height: 14),
+          buildTextField(
+            controller: _bloodGroupController,
+            label: 'Blood Group',
+            icon: Icons.bloodtype_outlined,
+          ),
+          const SizedBox(height: 14),
+          buildTextField(
+            controller: _phoneController,
+            label: 'Your Phone Number',
+            icon: Icons.phone_outlined,
+            keyboardType: TextInputType.phone,
+            validator: requiredValidator,
+          ),
+          const SizedBox(height: 14),
+          buildTextField(
+            controller: _relativeNameController,
+            label: 'Emergency Relative Name',
+            icon: Icons.family_restroom_outlined,
+            validator: requiredValidator,
+          ),
+          const SizedBox(height: 14),
+          buildTextField(
+            controller: _relativePhoneController,
+            label: 'Emergency Relative Phone',
+            icon: Icons.contact_phone_outlined,
+            keyboardType: TextInputType.phone,
+            validator: requiredValidator,
+          ),
+          const SizedBox(height: 14),
+          buildTextField(
+            controller: _addressController,
+            label: 'Address',
+            icon: Icons.home_outlined,
+            maxLines: 3,
+            textInputAction: TextInputAction.done,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogoutCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _dangerRed.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: _dangerRed.withOpacity(0.15),
+        ),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.info_outline_rounded,
+            color: _dangerRed,
+            size: 22,
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'For safety, logout is blocked while an SOS alert is active.',
+              style: TextStyle(
+                color: _mutedText,
+                fontSize: 13.5,
+                height: 1.4,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
