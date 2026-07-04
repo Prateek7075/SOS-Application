@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'active_sos_screen.dart';
+import 'custom_sos_message_screen.dart';
 import 'trusted_contacts_screen.dart';
 import 'profile_screen.dart';
 import 'sos_history_screen.dart';
@@ -789,6 +790,20 @@ class _HomeScreenState extends State<HomeScreen> {
               context,
               MaterialPageRoute(
                 builder: (context) => const PermissionHealthCheckScreen(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 12),
+        _buildActionTile(
+          icon: Icons.edit_note_rounded,
+          title: 'SOS Message',
+          subtitle: 'Customize emergency SMS text',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const CustomSosMessageScreen(),
               ),
             );
           },

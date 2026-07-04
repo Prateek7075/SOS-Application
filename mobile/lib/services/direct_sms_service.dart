@@ -13,6 +13,7 @@ class DirectSmsService {
     UserProfile? profile,
     String? trackingUrl,
     int? batteryPercentage,
+    String? customMessage,
   }) {
     final hasProfile = profile != null && profile.hasUsefulData;
 
@@ -43,7 +44,7 @@ Battery: Not available
 
     return '''
 EMERGENCY SOS!
-I need help.
+${customMessage != null && customMessage.trim().isNotEmpty ? customMessage.trim() : 'I need help.'}
 
 $profileText$trackingText$batteryText
 My current location:
@@ -91,6 +92,7 @@ Please contact me immediately.
     UserProfile? profile,
     String? trackingUrl,
     int? batteryPercentage,
+    String? customMessage,
   }) async {
     final hasPermission = await requestSmsPermission();
 

@@ -16,6 +16,7 @@ import '../services/background_location_service.dart';
 import '../services/active_sos_local_service.dart';
 import '../services/battery_service.dart';
 import '../services/offline_sos_local_service.dart';
+import '../services/custom_sos_message_local_service.dart';
 
 class ActiveSosScreen extends StatefulWidget {
   const ActiveSosScreen({
@@ -40,6 +41,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   final ActiveSosLocalService _activeSosLocalService = ActiveSosLocalService();
   final BatteryService _batteryService = BatteryService();
   final OfflineSosLocalService _offlineSosLocalService = OfflineSosLocalService();
+  final CustomSosMessageLocalService _customSosMessageLocalService = CustomSosMessageLocalService();
 
   String _gpsStatus = 'Finding location...';
   String _networkStatus = 'Checking network...';
@@ -372,12 +374,15 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       return 0;
     }
 
+    final customMessage = await _customSosMessageLocalService.getMessage();
+
     final smsMessage = _directSmsService.createEmergencyMessage(
       latitude: latitude,
       longitude: longitude,
       profile: profile,
       trackingUrl: trackingUrl,
       batteryPercentage: batteryPercentage ?? _batteryPercentage,
+      customMessage: customMessage,
     );
 
     setState(() {
@@ -416,6 +421,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       profile: profile,
       trackingUrl: trackingUrl,
       batteryPercentage: batteryPercentage ?? _batteryPercentage,
+      customMessage:customMessage,
     );
 
     if (!mounted) {
