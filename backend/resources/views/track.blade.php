@@ -618,6 +618,14 @@
         return date.toLocaleString();
     }
 
+    function formatBattery(value) {
+        if (value === null || value === undefined || String(value).trim() === '') {
+            return 'Not available';
+        }
+
+        return `${escapeHtml(value)}%`;
+    }
+
     function buildGoogleMapsUrl(latitude, longitude) {
         return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
     }
@@ -818,6 +826,13 @@
                     <div class="info-row">
                         <span class="label">Longitude</span>
                         <span class="value">${escapeHtml(longitude)}</span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="label">Battery</span>
+                        <span class="value">
+                            ${latestLocation ? formatBattery(latestLocation.battery_percentage) : 'Not available'}
+                        </span>
                     </div>
 
                     <div class="info-row full-width">
