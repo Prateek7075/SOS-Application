@@ -809,7 +809,6 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
         const SizedBox(height: 12),
-        const SizedBox(height: 12),
         _buildActionTile(
           icon: Icons.contacts_rounded,
           title: 'Trusted Contacts',
