@@ -12,180 +12,405 @@
     />
 
     <style>
+        :root {
+            --danger: #e53935;
+            --danger-dark: #b91c1c;
+            --dark: #111827;
+            --muted: #6b7280;
+            --soft-bg: #f8fafc;
+            --card: #ffffff;
+            --border: #e5e7eb;
+            --success: #16a34a;
+            --warning: #f97316;
+            --shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+            --radius-lg: 28px;
+            --radius-md: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f3f4f6;
-            color: #222;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(229, 57, 53, 0.10), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(17, 24, 39, 0.08), transparent 32%),
+                var(--soft-bg);
+            color: var(--dark);
+            min-height: 100vh;
+        }
+
+        .page {
+            width: 100%;
+            min-height: 100vh;
+            padding: 18px;
         }
 
         .container {
-            max-width: 760px;
+            width: 100%;
+            max-width: 900px;
             margin: 0 auto;
-            padding: 16px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 18px;
-            padding: 18px;
-            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
-            margin-bottom: 16px;
         }
 
         .hero-card {
-            background: linear-gradient(135deg, #b71c1c, #d32f2f);
+            background: linear-gradient(135deg, var(--danger), var(--danger-dark));
             color: white;
+            border-radius: 32px;
+            padding: 24px;
+            box-shadow: 0 22px 44px rgba(185, 28, 28, 0.22);
+            margin-bottom: 18px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .hero-card::after {
+            content: "";
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.10);
+            right: -90px;
+            top: -90px;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-top {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .hero-icon {
+            width: 68px;
+            height: 68px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+            flex-shrink: 0;
         }
 
         .title {
-            font-size: 26px;
-            font-weight: bold;
-            margin-bottom: 8px;
+            font-size: 30px;
+            font-weight: 900;
+            letter-spacing: -0.6px;
+            margin: 0;
+            line-height: 1.08;
         }
 
         .subtitle {
-            opacity: 0.9;
-            margin-bottom: 12px;
-            line-height: 1.5;
+            margin: 8px 0 0;
+            color: rgba(255, 255, 255, 0.88);
+            line-height: 1.55;
+            font-size: 15px;
+            max-width: 640px;
+            font-weight: 500;
+        }
+
+        .status-area {
+            margin-top: 18px;
+            padding: 16px;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.13);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(10px);
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 18px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .section-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 16px;
+            background: rgba(229, 57, 53, 0.10);
+            color: var(--danger);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 23px;
+            flex-shrink: 0;
         }
 
         .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 12px;
+            font-size: 19px;
+            font-weight: 900;
+            margin: 0;
+            letter-spacing: -0.2px;
+        }
+
+        .section-subtitle {
+            color: var(--muted);
+            font-size: 13.5px;
+            margin: 4px 0 0;
+            line-height: 1.4;
+            font-weight: 500;
         }
 
         #map {
             width: 100%;
-            height: 380px;
-            border-radius: 16px;
+            height: 420px;
+            border-radius: 24px;
             overflow: hidden;
-            background: #e0e0e0;
+            background: #eef2f7;
+            border: 1px solid var(--border);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
         }
 
         .status {
-            display: inline-block;
-            padding: 8px 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 14px;
             border-radius: 999px;
-            font-weight: bold;
+            font-weight: 900;
             margin-bottom: 12px;
-            font-size: 14px;
+            font-size: 13px;
+            letter-spacing: 0.4px;
+        }
+
+        .status::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
         }
 
         .active {
-            background: #ffebee;
-            color: #c62828;
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--danger-dark);
         }
 
         .cancelled {
-            background: #eeeeee;
-            color: #555;
+            background: rgba(255, 255, 255, 0.88);
+            color: #374151;
         }
 
         .expired {
-            background: #fff3e0;
-            color: #ef6c00;
+            background: rgba(255, 255, 255, 0.90);
+            color: var(--warning);
+        }
+
+        .status-meta {
+            font-size: 14px;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.92);
+            font-weight: 600;
+        }
+
+        .status-meta strong {
+            color: white;
         }
 
         .profile-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 10px;
+            gap: 12px;
         }
 
         .info-row {
-            padding: 10px 12px;
-            background: #f8f8f8;
-            border-radius: 12px;
+            padding: 14px;
+            background: #f9fafb;
+            border: 1px solid #eef0f3;
+            border-radius: 18px;
             line-height: 1.4;
         }
 
         .label {
-            font-weight: bold;
+            font-weight: 800;
             display: block;
-            color: #555;
-            font-size: 13px;
-            margin-bottom: 4px;
+            color: var(--muted);
+            font-size: 12.5px;
+            margin-bottom: 5px;
         }
 
         .value {
             font-size: 15px;
-            color: #222;
+            color: var(--dark);
+            font-weight: 700;
+            word-break: break-word;
+        }
+
+        .button-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .button,
+        .secondary-button,
+        .outline-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-align: center;
+            text-decoration: none;
+            padding: 15px 16px;
+            border-radius: 16px;
+            font-weight: 900;
+            font-size: 15px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
         }
 
         .button {
-            display: block;
-            text-align: center;
-            background: #c62828;
+            background: var(--danger);
             color: white;
-            text-decoration: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-weight: bold;
-            margin-top: 14px;
+            box-shadow: 0 12px 22px rgba(229, 57, 53, 0.22);
         }
 
         .secondary-button {
-            display: block;
-            text-align: center;
-            background: #222;
+            background: var(--dark);
             color: white;
-            text-decoration: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-weight: bold;
-            margin-top: 10px;
+            box-shadow: 0 12px 22px rgba(17, 24, 39, 0.18);
         }
 
         .outline-button {
-            display: block;
-            text-align: center;
             background: white;
-            color: #c62828;
-            border: 1px solid #c62828;
-            text-decoration: none;
-            padding: 13px;
-            border-radius: 12px;
-            font-weight: bold;
-            margin-top: 10px;
+            color: var(--danger);
+            border: 1px solid rgba(229, 57, 53, 0.35);
+        }
+
+        .button:hover,
+        .secondary-button:hover,
+        .outline-button:hover {
+            transform: translateY(-1px);
         }
 
         .small {
-            font-size: 13px;
-            color: #777;
+            font-size: 13.5px;
+            color: var(--muted);
             margin-top: 12px;
-            line-height: 1.5;
+            line-height: 1.55;
+            font-weight: 500;
         }
 
         .error {
-            color: #c62828;
-            font-weight: bold;
+            color: var(--danger-dark);
+            font-weight: 800;
+            line-height: 1.5;
+        }
+
+        .map-actions {
+            margin-top: 14px;
+        }
+
+        .tracking-card {
+            display: grid;
+            gap: 12px;
+        }
+
+        .tracking-info {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px;
+            border-radius: 18px;
+            background: #f9fafb;
+            border: 1px solid #eef0f3;
+        }
+
+        .tracking-info-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 14px;
+            background: rgba(22, 163, 74, 0.10);
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 21px;
+        }
+
+        .tracking-info-title {
+            font-weight: 900;
+            color: var(--dark);
+            font-size: 14.5px;
+            margin-bottom: 3px;
+        }
+
+        .tracking-info-text {
+            color: var(--muted);
+            line-height: 1.45;
+            font-size: 13.5px;
+            font-weight: 500;
         }
 
         .pulse {
-            width: 18px;
-            height: 18px;
-            background: #c62828;
+            width: 20px;
+            height: 20px;
+            background: var(--danger);
             border-radius: 50%;
-            border: 3px solid white;
-            box-shadow: 0 0 0 rgba(198, 40, 40, 0.4);
+            border: 4px solid white;
+            box-shadow: 0 0 0 rgba(229, 57, 53, 0.4);
             animation: pulse 1.5s infinite;
         }
 
         @keyframes pulse {
             0% {
-                box-shadow: 0 0 0 0 rgba(198, 40, 40, 0.6);
+                box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.65);
             }
             70% {
-                box-shadow: 0 0 0 16px rgba(198, 40, 40, 0);
+                box-shadow: 0 0 0 18px rgba(229, 57, 53, 0);
             }
             100% {
-                box-shadow: 0 0 0 0 rgba(198, 40, 40, 0);
+                box-shadow: 0 0 0 0 rgba(229, 57, 53, 0);
+            }
+        }
+
+        .loading-line {
+            width: 100%;
+            height: 14px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #eef2f7, #f8fafc, #eef2f7);
+            background-size: 200% 100%;
+            animation: loading 1.2s infinite;
+        }
+
+        @keyframes loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
             }
         }
 
         @media (min-width: 640px) {
+            .page {
+                padding: 28px;
+            }
+
+            .hero-card {
+                padding: 30px;
+            }
+
             .profile-grid {
                 grid-template-columns: 1fr 1fr;
             }
@@ -193,48 +418,144 @@
             .full-width {
                 grid-column: 1 / -1;
             }
+
+            .button-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .button-row.three {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page {
+                padding: 14px;
+            }
+
+            .hero-card,
+            .card {
+                border-radius: 24px;
+            }
+
+            .hero-top {
+                align-items: flex-start;
+            }
+
+            .hero-icon {
+                width: 58px;
+                height: 58px;
+                border-radius: 20px;
+                font-size: 30px;
+            }
+
+            .title {
+                font-size: 25px;
+            }
+
+            #map {
+                height: 340px;
+                border-radius: 20px;
+            }
         }
     </style>
 </head>
 <body>
-<div class="container">
+<div class="page">
+    <div class="container">
 
-    <div class="card hero-card">
-        <div class="title">Emergency SOS Tracking</div>
-        <div class="subtitle">
-            This page shows the latest shared emergency location and important emergency profile details.
-        </div>
+        <section class="hero-card">
+            <div class="hero-content">
+                <div class="hero-top">
+                    <div class="hero-icon">🚨</div>
+                    <div>
+                        <h1 class="title">Emergency SOS Tracking</h1>
+                        <p class="subtitle">
+                            This page shows the latest shared emergency location and important emergency profile details.
+                        </p>
+                    </div>
+                </div>
 
-        <div id="statusBox">
-            Loading SOS status...
-        </div>
-    </div>
+                <div class="status-area" id="statusBox">
+                    <div class="loading-line"></div>
+                    <div class="status-meta" style="margin-top: 10px;">
+                        Loading SOS status...
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <div class="card">
-        <div class="section-title">Emergency Profile</div>
-        <div id="profileDetails">
-            Loading profile details...
-        </div>
-    </div>
+        <section class="card">
+            <div class="section-header">
+                <div class="section-icon">👤</div>
+                <div>
+                    <h2 class="section-title">Emergency Profile</h2>
+                    <p class="section-subtitle">Important details shared by the person in emergency.</p>
+                </div>
+            </div>
 
-    <div class="card">
-        <div class="section-title">Live Location</div>
-        <div id="map"></div>
+            <div id="profileDetails">
+                <div class="loading-line"></div>
+                <div class="small">Loading profile details...</div>
+            </div>
+        </section>
 
-        <div id="locationDetails">
-            Loading location...
-        </div>
-    </div>
+        <section class="card">
+            <div class="section-header">
+                <div class="section-icon">📍</div>
+                <div>
+                    <h2 class="section-title">Live Location</h2>
+                    <p class="section-subtitle">Latest available emergency location on map.</p>
+                </div>
+            </div>
 
-    <div class="card">
-        <div class="section-title">Tracking Information</div>
-        <div class="info-row">
-            <span class="label">Auto refresh</span>
-            <span class="value">Every 15 seconds</span>
-        </div>
-        <div class="small">
-            Keep this page open to see updated emergency location. The marker will move when a new location update is received.
-        </div>
+            <div id="map"></div>
+
+            <div id="locationDetails" class="map-actions">
+                <div class="small">Loading location...</div>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="section-header">
+                <div class="section-icon">🔄</div>
+                <div>
+                    <h2 class="section-title">Tracking Information</h2>
+                    <p class="section-subtitle">This page updates automatically.</p>
+                </div>
+            </div>
+
+            <div class="tracking-card">
+                <div class="tracking-info">
+                    <div class="tracking-info-icon">⏱</div>
+                    <div>
+                        <div class="tracking-info-title">Auto refresh</div>
+                        <div class="tracking-info-text">Every 15 seconds</div>
+                    </div>
+                </div>
+
+                <div class="tracking-info">
+                    <div class="tracking-info-icon">🗺</div>
+                    <div>
+                        <div class="tracking-info-title">Map movement</div>
+                        <div class="tracking-info-text">
+                            The marker will move when a new location update is received.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tracking-info">
+                    <div class="tracking-info-icon">📱</div>
+                    <div>
+                        <div class="tracking-info-title">Keep page open</div>
+                        <div class="tracking-info-text">
+                            Keep this page open to continuously view updated emergency location.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </div>
 </div>
 
@@ -250,8 +571,8 @@
     const emergencyIcon = L.divIcon({
         className: '',
         html: '<div class="pulse"></div>',
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
     });
 
     function escapeHtml(value) {
@@ -310,7 +631,10 @@
         }
 
         if (!map) {
-            map = L.map('map').setView([lat, lng], 16);
+            map = L.map('map', {
+                zoomControl: true,
+                scrollWheelZoom: true,
+            }).setView([lat, lng], 16);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
@@ -350,7 +674,7 @@
         if (phone) {
             callButtons += `
                 <a class="button" href="tel:${phone}">
-                    Call User
+                    📞 Call User
                 </a>
             `;
         }
@@ -358,10 +682,16 @@
         if (relativePhone) {
             callButtons += `
                 <a class="outline-button" href="tel:${relativePhone}">
-                    Call Emergency Relative
+                    📞 Call Emergency Relative
                 </a>
             `;
         }
+
+        callButtons += `
+            <a class="secondary-button" href="tel:112">
+                🚑 Call Emergency Number 112
+            </a>
+        `;
 
         profileDetails.innerHTML = `
             <div class="profile-grid">
@@ -396,11 +726,9 @@
                 </div>
             </div>
 
-            ${callButtons}
-
-            <a class="secondary-button" href="tel:112">
-                Call Emergency Number 112
-            </a>
+            <div class="button-row three">
+                ${callButtons}
+            </div>
         `;
     }
 
@@ -422,7 +750,9 @@
 
                 statusBox.innerHTML = `
                     <div class="status expired">Unavailable</div>
-                    <div class="error">${escapeHtml(message)}</div>
+                    <div class="status-meta">
+                        <span class="error">${escapeHtml(message)}</span>
+                    </div>
                 `;
 
                 locationDetails.innerHTML = `
@@ -457,7 +787,7 @@
                     ${escapeHtml(status.toUpperCase())}
                 </div>
 
-                <div>
+                <div class="status-meta">
                     <strong>Link expires at:</strong>
                     ${formatDateTime(data.expires_at)}
                 </div>
@@ -498,21 +828,35 @@
                     </div>
                 </div>
 
-                <a class="button" href="${buildGoogleMapsUrl(latitude, longitude)}" target="_blank">
-                    Open Latest Location in Google Maps
-                </a>
+                <div class="button-row">
+                    <a class="button" href="${buildGoogleMapsUrl(latitude, longitude)}" target="_blank">
+                        🗺 Open Latest Location in Google Maps
+                    </a>
+
+                    <a class="outline-button" href="javascript:void(0)" onclick="loadTrackingDetails()">
+                        🔄 Refresh Now
+                    </a>
+                </div>
             `;
         } catch (error) {
             statusBox.innerHTML = `
                 <div class="status expired">Connection Error</div>
-                <div class="error">
-                    Could not load tracking details.
+                <div class="status-meta">
+                    <span class="error">
+                        Could not load tracking details.
+                    </span>
                 </div>
             `;
 
             locationDetails.innerHTML = `
                 <div class="error">
                     Please check your internet connection and refresh the page.
+                </div>
+
+                <div class="button-row">
+                    <a class="outline-button" href="javascript:void(0)" onclick="loadTrackingDetails()">
+                        🔄 Try Again
+                    </a>
                 </div>
             `;
         }
