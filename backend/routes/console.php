@@ -2,6 +2,9 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
+
+Schedule::command('sos:cleanup-location-updates --hours=24')->hourly();
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
