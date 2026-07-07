@@ -16,6 +16,10 @@ use Illuminate\Support\Str;
 
 class SosController extends Controller
 {
+
+    private const TRACKING_LINK_EXPIRY_HOURS = 24;
+
+
     public function start(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -35,7 +39,7 @@ class SosController extends Controller
             'initial_longitude' => $validated['longitude'],
             'tracking_token' => $trackingToken,
             'network_mode' => $validated['network_mode'],
-            'expires_at' => now()->addHours(12),
+            'expires_at' => now()->addHours(self::TRACKING_LINK_EXPIRY_HOURS),
         ]);
 
         return response()->json([
@@ -234,7 +238,7 @@ class SosController extends Controller
             'initial_longitude' => $validated['longitude'],
             'tracking_token' => $trackingToken,
             'network_mode' => $validated['network_mode'] ?? 'offline_sms',
-            'expires_at' => now()->addHours(12),
+            'expires_at' => now()->addHours(self::TRACKING_LINK_EXPIRY_HOURS),
             'created_at' => $validated['created_at'] ?? now(),
             'updated_at' => now(),
         ]);
