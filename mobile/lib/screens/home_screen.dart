@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'dart:async';
+
+import '../route_observer.dart';
+
 import 'active_sos_screen.dart';
 import 'custom_sos_message_screen.dart';
 import 'trusted_contacts_screen.dart';
@@ -22,7 +26,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBindingObserver {
+
   String sosStatus = 'SOS not started';
 
   String name = 'Not added';
@@ -46,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _isCheckingSos = true;
   bool _isCancellingSos = false;
+  bool _isRouteObserverSubscribed = false;
 
   static const Color _dangerRed = Color(0xFFE53935);
   static const Color _dangerDark = Color(0xFFB91C1C);
@@ -58,9 +64,42 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    loadSavedProfile();
-    loadActiveSos();
+
+    WidgetsBinding.instance.addObserver(this);
+
+    unawaited(loadSavedProfile());
+    unawaited(loadActiveSos());
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_isRouteObserverSubscribed) {
+      return;
+    }
+
+    final route = ModalRoute.of(context);
+
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+      _isRouteObserverSubscribed = true;
+    }
+  }
+
+  @override
+  void didPopNext() {
+    // Called when user comes back to Home from Active SOS / Quick SOS.
+    unawaited(loadActiveSos());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(loadActiveSos());
+    }
+  }
+
 
   Future<void> loadSavedProfile() async {
     final savedProfile = await _profileLocalService.getProfile();
@@ -229,29 +268,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> loadActiveSos() async {
-    ActiveSosSession? session =
-    await _activeSosLocalService.getActiveSos();
-
-    if (session != null) {
-      try {
-        final backendStatus = await _sosApiService.getTrackingStatus(
-          trackingToken: session.trackingToken,
-        );
-
-        if (backendStatus != 'active') {
-          await _backgroundLocationService.stop();
-          await _activeSosLocalService.clear();
-          session = null;
-        }
-      } catch (error) {
-        debugPrint('Could not verify active SOS: $error');
-      }
-    }
+    final session = await _activeSosLocalService.getActiveSos();
 
     if (!mounted) {
       return;
     }
 
+    // Instant UI update from local storage.
     setState(() {
       _activeSosSession = session;
       _isCheckingSos = false;
@@ -259,6 +282,57 @@ class _HomeScreenState extends State<HomeScreen> {
           ? 'SOS not started'
           : 'SOS is currently active';
     });
+
+    // Backend verification happens in background.
+    if (session != null) {
+      unawaited(verifyActiveSosWithBackend(session));
+    }
+  }
+
+  Future<void> verifyActiveSosWithBackend(ActiveSosSession session) async {
+    try {
+      final backendStatus = await _sosApiService.getTrackingStatus(
+        trackingToken: session.trackingToken,
+      );
+
+      final latestLocalSession = await _activeSosLocalService.getActiveSos();
+
+      if (!mounted) {
+        return;
+      }
+
+      // If local session changed while backend was checking, ignore old result.
+      if (latestLocalSession == null ||
+          latestLocalSession.trackingToken != session.trackingToken) {
+        return;
+      }
+
+      if (backendStatus != 'active') {
+        await _backgroundLocationService.stop();
+        await _activeSosLocalService.clear();
+
+        if (!mounted) {
+          return;
+        }
+
+        setState(() {
+          _activeSosSession = null;
+          sosStatus = 'SOS not started';
+        });
+      }
+    } catch (error) {
+      debugPrint('Could not verify active SOS with backend: $error');
+
+      // Do not clear local SOS if backend check fails.
+      // Internet may be slow/offline, but SOS may still be active.
+    }
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override

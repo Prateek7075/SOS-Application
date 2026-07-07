@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <shortcut
+        android:shortcutId="quick_sos"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_quick_sos_short"
+        android:shortcutLongLabel="@string/shortcut_quick_sos_long">
+
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example.mobile"
+            android:targetClass="com.example.mobile.MainActivity">
+
+            <extra
+                android:name="route"
+                android:value="/quick-sos" />
+
+        </intent>
+
+    </shortcut>
+
+</shortcuts>

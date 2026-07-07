@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 
 import 'firebase_options.dart';
 import 'screens/auth_gate.dart';
+import 'screens/quick_sos_screen.dart';
+import 'route_observer.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +29,10 @@ class SosApp extends StatelessWidget {
     return MaterialApp(
       title: 'Emergency SOS',
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [routeObserver],
+      routes: {
+        '/quick-sos': (context) => const QuickSosScreen(),
+      },
       theme: ThemeData(
         useMaterial3: true,
 

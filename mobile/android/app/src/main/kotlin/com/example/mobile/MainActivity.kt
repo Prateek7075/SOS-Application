@@ -11,9 +11,13 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private val channelName = "sos_sms_channel"
+    private val routeExtraName = "route"
 
+    private var currentFlutterEngine: FlutterEngine? = null
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        currentFlutterEngine = flutterEngine
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -176,5 +180,27 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
+    }
+
+    override fun getInitialRoute(): String {
+        return intent?.getStringExtra("route") ?: "/"
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+
+        setIntent(intent)
+
+        openFlutterRouteFromIntent(intent)
+    }
+
+    private fun openFlutterRouteFromIntent(intent: Intent?) {
+        val route = intent?.getStringExtra("route")
+
+        if (route.isNullOrBlank() || route == "/") {
+            return
+        }
+
+        currentFlutterEngine?.navigationChannel?.pushRoute(route)
     }
 }

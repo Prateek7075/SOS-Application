@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Emergency SOS</string>
+    <string name="shortcut_quick_sos_short">Start SOS</string>
+    <string name="shortcut_quick_sos_long">Start Emergency SOS</string>
+
+    <string name="widget_sos_small_name">SOS Small</string>
+    <string name="widget_sos_small_description">Quick SOS small widget</string>
+</resources>
