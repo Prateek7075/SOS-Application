@@ -148,14 +148,14 @@ class SosLocationForegroundService : Service() {
 
             locationManager.requestLocationUpdates(
                 LocationManager.GPS_PROVIDER,
-                15000L,
+                30000L,
                 0f,
                 locationListener
             )
 
             locationManager.requestLocationUpdates(
                 LocationManager.NETWORK_PROVIDER,
-                15000L,
+                30000L,
                 0f,
                 locationListener
             )
@@ -182,7 +182,7 @@ class SosLocationForegroundService : Service() {
 
         val currentTime = System.currentTimeMillis()
 
-        if (currentTime - lastLocationSentAt < 15000L) {
+        if (currentTime - lastLocationSentAt < 30000L) {
             Log.d(TAG, "Duplicate location skipped")
             return
         }

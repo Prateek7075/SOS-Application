@@ -63,7 +63,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   Timer? _locationTimer;
   Timer? _countdownTimer;
 
-  int _nextUpdateSeconds = 15;
+  int _nextUpdateSeconds = 30;
   bool _isUpdatingLocation = false;
   bool _isCancelling = false;
   bool _smsSendStarted = false;
@@ -447,7 +447,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
   void startLocationCountdown() {
     _countdownTimer?.cancel();
-    _nextUpdateSeconds = 15;
+    _nextUpdateSeconds = 30;
 
     _countdownTimer = Timer.periodic(
       const Duration(seconds: 1),
@@ -461,7 +461,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
           if (_nextUpdateSeconds > 1) {
             _nextUpdateSeconds--;
           } else {
-            _nextUpdateSeconds = 15;
+            _nextUpdateSeconds = 30;
           }
         });
       },
@@ -475,7 +475,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     debugPrint('Flutter fallback location timer started');
 
     _locationTimer = Timer.periodic(
-      const Duration(seconds: 15),
+      const Duration(seconds: 30),
           (timer) {
         if (!mounted) {
           timer.cancel();
@@ -544,7 +544,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         _longitude = position.longitude;
         _gpsStatus = 'Location updated';
         _liveTracking = 'Live location updated';
-        _nextUpdateSeconds = 15;
+        _nextUpdateSeconds = 30;
       });
     } catch (error) {
       debugPrint('Live location update failed: $error');

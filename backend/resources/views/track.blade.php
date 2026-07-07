@@ -530,7 +530,7 @@
                     <div class="tracking-info-icon">⏱</div>
                     <div>
                         <div class="tracking-info-title">Auto refresh</div>
-                        <div class="tracking-info-text">Every 15 seconds</div>
+                        <div class="tracking-info-text">Every 30 seconds</div>
                     </div>
                 </div>
 
@@ -879,7 +879,7 @@
 
     loadTrackingDetails();
 
-    setInterval(loadTrackingDetails, 15000);
+    setInterval(loadTrackingDetails, 30000);
 </script>
 </body>
 </html>
