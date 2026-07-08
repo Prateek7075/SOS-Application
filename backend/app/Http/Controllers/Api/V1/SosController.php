@@ -13,6 +13,8 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class SosController extends Controller
 {
@@ -74,7 +76,19 @@ class SosController extends Controller
     {
         $trackingToken = $request->header('X-SOS-Tracking-Token');
 
+        $logContext = [
+            'sos_event_id' => $id,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'tracking_token_present' => !empty($trackingToken),
+            'tracking_token_last_6' => $trackingToken ? substr($trackingToken, -6) : null,
+        ];
+
         if (!$trackingToken) {
+            Log::warning('SOS_LOCATION_REJECTED', array_merge($logContext, [
+                'reason' => 'missing_tracking_token',
+            ]));
+
             return response()->json([
                 'success' => false,
                 'message' => 'SOS tracking token is required',
@@ -83,22 +97,85 @@ class SosController extends Controller
 
         $sosEvent = SosEvent::query()
             ->where('id', $id)
-            ->where('tracking_token', $trackingToken)
-            ->firstOrFail();
+            ->first();
+
+        if (!$sosEvent) {
+            Log::warning('SOS_LOCATION_REJECTED', array_merge($logContext, [
+                'reason' => 'sos_event_not_found',
+            ]));
+
+            return response()->json([
+                'success' => false,
+                'message' => 'SOS event not found',
+            ], 404);
+        }
+
+        if (!hash_equals($sosEvent->tracking_token, $trackingToken)) {
+            Log::warning('SOS_LOCATION_REJECTED', array_merge($logContext, [
+                'reason' => 'invalid_tracking_token',
+                'actual_sos_status' => $sosEvent->status,
+            ]));
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid SOS tracking token',
+            ], 403);
+        }
+
+        if ($sosEvent->expires_at && now()->greaterThan($sosEvent->expires_at)) {
+            Log::warning('SOS_LOCATION_REJECTED', array_merge($logContext, [
+                'reason' => 'tracking_link_expired',
+                'actual_sos_status' => $sosEvent->status,
+                'expires_at' => $sosEvent->expires_at,
+            ]));
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Tracking link has expired',
+            ], 410);
+        }
 
         if ($sosEvent->status !== 'active') {
+            Log::warning('SOS_LOCATION_REJECTED', array_merge($logContext, [
+                'reason' => 'sos_not_active',
+                'actual_sos_status' => $sosEvent->status,
+                'cancelled_at' => $sosEvent->cancelled_at,
+            ]));
+
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot add location update because SOS is not active',
             ], 422);
         }
 
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'latitude' => ['required', 'numeric'],
             'longitude' => ['required', 'numeric'],
             'accuracy' => ['nullable', 'numeric'],
             'battery_percentage' => ['nullable', 'integer', 'min:0', 'max:100'],
         ]);
+
+        if ($validator->fails()) {
+            Log::warning('SOS_LOCATION_REJECTED', array_merge($logContext, [
+                'reason' => 'validation_failed',
+                'actual_sos_status' => $sosEvent->status,
+                'errors' => $validator->errors()->toArray(),
+                'payload' => $request->only([
+                    'latitude',
+                    'longitude',
+                    'accuracy',
+                    'battery_percentage',
+                ]),
+            ]));
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid location update data',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $validated = $validator->validated();
 
         $locationUpdate = SosLocationUpdate::create([
             'sos_event_id' => $sosEvent->id,
@@ -108,6 +185,15 @@ class SosController extends Controller
             'battery_percentage' => $validated['battery_percentage'] ?? null,
             'created_at' => now(),
         ]);
+
+        Log::info('SOS_LOCATION_SAVED', array_merge($logContext, [
+            'location_update_id' => $locationUpdate->id,
+            'latitude' => $locationUpdate->latitude,
+            'longitude' => $locationUpdate->longitude,
+            'accuracy' => $locationUpdate->accuracy,
+            'battery_percentage' => $locationUpdate->battery_percentage,
+            'created_at' => $locationUpdate->created_at,
+        ]));
 
         return response()->json([
             'success' => true,
