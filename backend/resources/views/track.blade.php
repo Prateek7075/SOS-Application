@@ -1102,10 +1102,6 @@
                     <a class="button" href="${buildGoogleMapsUrl(latitude, longitude)}" target="_blank">
                         🗺 Open in Google Maps
                     </a>
-
-                    <a class="secondary-button" href="javascript:void(0)" onclick="centerLocationDot()">
-                        🎯 Center Location Dot
-                    </a>
                 </div>
             `;
         } catch (error) {
