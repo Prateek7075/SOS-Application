@@ -189,18 +189,76 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
-            padding: 6px;
+            padding: 4px;
             font-family: inherit;
-            width: 130px;
+            width: 44px;
+            overflow: hidden;
             pointer-events: auto;
             user-select: none;
+            transition: width 0.18s ease;
         }
 
-        .map-layer-control-title {
-            font-size: 11px;
+        .map-layer-control.open {
+            width: 132px;
+            padding: 6px;
+        }
+
+        .map-layer-toggle {
+            width: 100%;
+            height: 34px;
+            border: none;
+            border-radius: 9px;
+            background: white;
+            color: var(--danger);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            cursor: pointer;
             font-weight: 900;
+            font-size: 13px;
+        }
+
+        .map-layer-toggle:hover {
+            background: #fff5f5;
+        }
+
+        .map-layer-toggle-icon {
+            font-size: 17px;
+            line-height: 1;
+        }
+
+        .map-layer-toggle-label,
+        .map-layer-toggle-arrow {
+            display: none;
+            white-space: nowrap;
+        }
+
+        .map-layer-control.open .map-layer-toggle {
+            justify-content: flex-start;
+            padding: 0 8px;
+            background: rgba(229, 57, 53, 0.08);
+        }
+
+        .map-layer-control.open .map-layer-toggle-label,
+        .map-layer-control.open .map-layer-toggle-arrow {
+            display: inline;
+        }
+
+        .map-layer-toggle-label {
+            flex: 1;
             color: var(--dark);
-            margin: 2px 4px 5px;
+            text-align: left;
+        }
+
+        .map-layer-options {
+            display: none;
+            margin-top: 5px;
+        }
+
+        .map-layer-control.open .map-layer-options {
+            display: grid;
+            gap: 3px;
         }
 
         .map-layer-option {
@@ -681,21 +739,16 @@
 
 <script>
     const trackingToken = @json($trackingToken);
-    const maxVisibleAccuracyRadiusMeters = 300;
 
     let map = null;
     let marker = null;
     let latestMapLatitude = null;
     let latestMapLongitude = null;
+    let latestLocationHistory = [];
+    let latestAccuracyValue = null;
     let currentMapLayer = 'street';
 
-    const mapLayerIds = [
-        'street-layer',
-        'satellite-layer',
-        'hybrid-satellite-layer',
-        'hybrid-labels-layer',
-        'terrain-layer',
-    ];
+    const maxVisibleAccuracyRadiusMeters = 300;
 
     function escapeHtml(value) {
         if (value === null || value === undefined) {
@@ -852,131 +905,163 @@
         return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
     }
 
-    function createMapStyle() {
+    function emptyFeatureCollection() {
+        return {
+            type: 'FeatureCollection',
+            features: [],
+        };
+    }
+
+    function createRasterMapStyle(layerName) {
+        const satelliteSource = {
+            type: 'raster',
+            tiles: [
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            ],
+            tileSize: 256,
+            attribution: 'Tiles &copy; Esri',
+        };
+
+        const hybridLabelsSource = {
+            type: 'raster',
+            tiles: [
+                'https://a.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
+                'https://b.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
+                'https://c.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
+            ],
+            tileSize: 256,
+            attribution: '&copy; CARTO &copy; OpenStreetMap contributors',
+        };
+
+        const terrainSource = {
+            type: 'raster',
+            tiles: [
+                'https://a.tile.opentopomap.org/{z}/{x}/{y}.png',
+                'https://b.tile.opentopomap.org/{z}/{x}/{y}.png',
+                'https://c.tile.opentopomap.org/{z}/{x}/{y}.png',
+            ],
+            tileSize: 256,
+            attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap',
+        };
+
+        if (layerName === 'satellite') {
+            return {
+                version: 8,
+                sources: {
+                    satellite: satelliteSource,
+                },
+                layers: [
+                    {
+                        id: 'satellite-layer',
+                        type: 'raster',
+                        source: 'satellite',
+                    },
+                ],
+            };
+        }
+
+        if (layerName === 'hybrid') {
+            return {
+                version: 8,
+                sources: {
+                    satellite: satelliteSource,
+                    hybridLabels: hybridLabelsSource,
+                },
+                layers: [
+                    {
+                        id: 'hybrid-satellite-layer',
+                        type: 'raster',
+                        source: 'satellite',
+                    },
+                    {
+                        id: 'hybrid-labels-layer',
+                        type: 'raster',
+                        source: 'hybridLabels',
+                    },
+                ],
+            };
+        }
+
         return {
             version: 8,
             sources: {
-                street: {
-                    type: 'raster',
-                    tiles: [
-                        'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    ],
-                    tileSize: 256,
-                    attribution: '&copy; OpenStreetMap contributors',
-                },
-                satellite: {
-                    type: 'raster',
-                    tiles: [
-                        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                    ],
-                    tileSize: 256,
-                    attribution: 'Tiles &copy; Esri',
-                },
-                hybridLabels: {
-                    type: 'raster',
-                    tiles: [
-                        'https://a.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
-                        'https://b.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
-                        'https://c.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
-                    ],
-                    tileSize: 256,
-                    attribution: '&copy; CARTO &copy; OpenStreetMap contributors',
-                },
-                terrain: {
-                    type: 'raster',
-                    tiles: [
-                        'https://a.tile.opentopomap.org/{z}/{x}/{y}.png',
-                        'https://b.tile.opentopomap.org/{z}/{x}/{y}.png',
-                        'https://c.tile.opentopomap.org/{z}/{x}/{y}.png',
-                    ],
-                    tileSize: 256,
-                    attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap',
-                },
+                terrain: terrainSource,
             },
             layers: [
-                {
-                    id: 'street-layer',
-                    type: 'raster',
-                    source: 'street',
-                    layout: {
-                        visibility: 'visible',
-                    },
-                },
-                {
-                    id: 'satellite-layer',
-                    type: 'raster',
-                    source: 'satellite',
-                    layout: {
-                        visibility: 'none',
-                    },
-                },
-                {
-                    id: 'hybrid-satellite-layer',
-                    type: 'raster',
-                    source: 'satellite',
-                    layout: {
-                        visibility: 'none',
-                    },
-                },
-                {
-                    id: 'hybrid-labels-layer',
-                    type: 'raster',
-                    source: 'hybridLabels',
-                    layout: {
-                        visibility: 'none',
-                    },
-                },
                 {
                     id: 'terrain-layer',
                     type: 'raster',
                     source: 'terrain',
-                    layout: {
-                        visibility: 'none',
-                    },
                 },
             ],
         };
     }
 
-    function setMapLayer(layerName) {
-        if (!map) {
-            return;
-        }
-
-        currentMapLayer = layerName;
-
-        mapLayerIds.forEach((layerId) => {
-            if (!map.getLayer(layerId)) {
-                return;
-            }
-
-            map.setLayoutProperty(layerId, 'visibility', 'none');
-        });
-
+    function createMapStyle(layerName = 'street') {
         if (layerName === 'street') {
-            map.setLayoutProperty('street-layer', 'visibility', 'visible');
+            return 'https://tiles.openfreemap.org/styles/liberty';
         }
 
-        if (layerName === 'satellite') {
-            map.setLayoutProperty('satellite-layer', 'visibility', 'visible');
-        }
+        return createRasterMapStyle(layerName);
+    }
 
-        if (layerName === 'hybrid') {
-            map.setLayoutProperty('hybrid-satellite-layer', 'visibility', 'visible');
-            map.setLayoutProperty('hybrid-labels-layer', 'visibility', 'visible');
+    function getMapLayerLabel(layerName) {
+        switch (layerName) {
+            case 'satellite':
+                return 'Satellite';
+            case 'hybrid':
+                return 'Hybrid';
+            case 'terrain':
+                return 'Terrain';
+            case 'street':
+            default:
+                return 'Street';
         }
+    }
 
-        if (layerName === 'terrain') {
-            map.setLayoutProperty('terrain-layer', 'visibility', 'visible');
-        }
-
+    function updateMapLayerControlState(layerName) {
         document.querySelectorAll('.map-layer-option').forEach((button) => {
             button.classList.toggle(
                 'active',
                 button.dataset.layer === layerName
             );
+        });
+
+        document.querySelectorAll('.map-layer-toggle-label').forEach((label) => {
+            label.textContent = getMapLayerLabel(layerName);
+        });
+    }
+
+    function restoreDynamicMapLayers() {
+        initializeRouteSourceAndLayers();
+        initializeAccuracySourceAndLayers();
+
+        if (latestLocationHistory.length > 0) {
+            updateRouteLine(latestLocationHistory);
+        }
+
+        if (latestMapLatitude !== null && latestMapLongitude !== null) {
+            updateAccuracyCircle(
+                latestMapLatitude,
+                latestMapLongitude,
+                latestAccuracyValue
+            );
+        }
+    }
+
+    function setMapLayer(layerName) {
+        if (!map || layerName === currentMapLayer) {
+            updateMapLayerControlState(layerName);
+            return;
+        }
+
+        currentMapLayer = layerName;
+        updateMapLayerControlState(layerName);
+
+        map.setStyle(createMapStyle(layerName));
+
+        map.once('style.load', () => {
+            restoreDynamicMapLayers();
         });
     }
 
@@ -986,23 +1071,29 @@
             container.className = 'maplibregl-ctrl map-layer-control';
 
             container.innerHTML = `
-                <div class="map-layer-control-title">Map</div>
-
-                <button type="button" class="map-layer-option active" data-layer="street">
-                    Street
+                <button type="button" class="map-layer-toggle" title="Change map type">
+                    <span class="map-layer-toggle-icon">🗺</span>
+                    <span class="map-layer-toggle-label">Street</span>
+                    <span class="map-layer-toggle-arrow">▾</span>
                 </button>
 
-                <button type="button" class="map-layer-option" data-layer="satellite">
-                    Satellite
-                </button>
+                <div class="map-layer-options">
+                    <button type="button" class="map-layer-option active" data-layer="street">
+                        Street
+                    </button>
 
-                <button type="button" class="map-layer-option" data-layer="hybrid">
-                    Hybrid
-                </button>
+                    <button type="button" class="map-layer-option" data-layer="satellite">
+                        Satellite
+                    </button>
 
-                <button type="button" class="map-layer-option" data-layer="terrain">
-                    Terrain
-                </button>
+                    <button type="button" class="map-layer-option" data-layer="hybrid">
+                        Hybrid
+                    </button>
+
+                    <button type="button" class="map-layer-option" data-layer="terrain">
+                        Terrain
+                    </button>
+                </div>
             `;
 
             const stopMapEvent = (event) => {
@@ -1014,12 +1105,22 @@
             container.addEventListener('touchstart', stopMapEvent);
             container.addEventListener('wheel', stopMapEvent);
 
+            const toggleButton = container.querySelector('.map-layer-toggle');
+
+            toggleButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                container.classList.toggle('open');
+            });
+
             container.querySelectorAll('.map-layer-option').forEach((button) => {
                 button.addEventListener('click', (event) => {
                     event.preventDefault();
                     event.stopPropagation();
 
                     setMapLayer(button.dataset.layer);
+                    container.classList.remove('open');
                 });
             });
 
@@ -1077,7 +1178,7 @@
         if (!map) {
             map = new maplibregl.Map({
                 container: 'map',
-                style: createMapStyle(),
+                style: createMapStyle(currentMapLayer),
                 center: [lng, lat],
                 zoom: 16,
             });
@@ -1088,8 +1189,7 @@
 
             map.on('load', () => {
                 createOrUpdateMarker(lat, lng);
-                initializeRouteSourceAndLayers();
-                initializeAccuracySourceAndLayers();
+                restoreDynamicMapLayers();
             });
 
             return;
@@ -1146,14 +1246,7 @@
 
         map.addSource('sos-route', {
             type: 'geojson',
-            data: {
-                type: 'Feature',
-                geometry: {
-                    type: 'LineString',
-                    coordinates: [],
-                },
-                properties: {},
-            },
+            data: emptyFeatureCollection(),
         });
 
         map.addLayer({
@@ -1173,14 +1266,7 @@
 
         map.addSource('sos-start-point', {
             type: 'geojson',
-            data: {
-                type: 'Feature',
-                geometry: {
-                    type: 'Point',
-                    coordinates: [],
-                },
-                properties: {},
-            },
+            data: emptyFeatureCollection(),
         });
 
         map.addLayer({
@@ -1197,18 +1283,20 @@
     }
 
     function updateRouteLine(locationHistory) {
-        if (!map || !Array.isArray(locationHistory) || locationHistory.length === 0) {
+        latestLocationHistory = Array.isArray(locationHistory) ? locationHistory : [];
+
+        if (!map || latestLocationHistory.length === 0) {
             return;
         }
 
-        if (!map.getSource('sos-route')) {
-            map.once('load', () => {
-                updateRouteLine(locationHistory);
+        if (!map.getSource('sos-route') || !map.getSource('sos-start-point')) {
+            map.once('style.load', () => {
+                updateRouteLine(latestLocationHistory);
             });
             return;
         }
 
-        const routePoints = locationHistory
+        const routePoints = latestLocationHistory
             .map((location) => {
                 const lat = parseFloat(location.latitude);
                 const lng = parseFloat(location.longitude);
@@ -1225,20 +1313,25 @@
             return;
         }
 
-        map.getSource('sos-route').setData({
-            type: 'Feature',
-            geometry: {
-                type: 'LineString',
-                coordinates: routePoints,
-            },
-            properties: {},
-        });
-
         map.getSource('sos-start-point').setData({
             type: 'Feature',
             geometry: {
                 type: 'Point',
                 coordinates: routePoints[0],
+            },
+            properties: {},
+        });
+
+        if (routePoints.length < 2) {
+            map.getSource('sos-route').setData(emptyFeatureCollection());
+            return;
+        }
+
+        map.getSource('sos-route').setData({
+            type: 'Feature',
+            geometry: {
+                type: 'LineString',
+                coordinates: routePoints,
             },
             properties: {},
         });
@@ -1251,14 +1344,7 @@
 
         map.addSource('sos-accuracy', {
             type: 'geojson',
-            data: {
-                type: 'Feature',
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: [],
-                },
-                properties: {},
-            },
+            data: emptyFeatureCollection(),
         });
 
         map.addLayer({
@@ -1295,14 +1381,7 @@
             radius <= 0 ||
             radius > maxVisibleAccuracyRadiusMeters
         ) {
-            return {
-                type: 'Feature',
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: [],
-                },
-                properties: {},
-            };
+            return emptyFeatureCollection();
         }
 
         const points = [];
@@ -1341,12 +1420,14 @@
     }
 
     function updateAccuracyCircle(latitude, longitude, accuracy) {
+        latestAccuracyValue = accuracy;
+
         if (!map) {
             return;
         }
 
         if (!map.getSource('sos-accuracy')) {
-            map.once('load', () => {
+            map.once('style.load', () => {
                 updateAccuracyCircle(latitude, longitude, accuracy);
             });
             return;
@@ -1356,6 +1437,7 @@
             buildAccuracyCircleGeoJson(latitude, longitude, accuracy)
         );
     }
+
 
     function renderEmergencyProfile(profile) {
         const profileDetails = document.getElementById('profileDetails');
@@ -1544,12 +1626,15 @@
             const latitude = locationToShow.latitude;
             const longitude = locationToShow.longitude;
 
+            const locationHistory = data.location_history || [];
+            const latestAccuracy = latestLocation ? latestLocation.accuracy : null;
+
             initializeOrUpdateMap(latitude, longitude);
-            updateRouteLine(data.location_history || []);
+            updateRouteLine(locationHistory);
             updateAccuracyCircle(
                 latitude,
                 longitude,
-                latestLocation ? latestLocation.accuracy : null
+                latestAccuracy
             );
 
             locationDetails.innerHTML = `
