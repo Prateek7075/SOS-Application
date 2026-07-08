@@ -191,7 +191,9 @@
             box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
             padding: 6px;
             font-family: inherit;
-            width: 142px;
+            width: 130px;
+            pointer-events: auto;
+            user-select: none;
         }
 
         .map-layer-control-title {
@@ -233,6 +235,9 @@
             font-size: 17px;
             font-weight: 900;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .map-center-control:hover {
@@ -676,6 +681,7 @@
 
 <script>
     const trackingToken = @json($trackingToken);
+    const maxVisibleAccuracyRadiusMeters = 300;
 
     let map = null;
     let marker = null;
@@ -977,7 +983,7 @@
     class MapLayerControl {
         onAdd(mapInstance) {
             const container = document.createElement('div');
-            container.className = 'map-layer-control';
+            container.className = 'maplibregl-ctrl map-layer-control';
 
             container.innerHTML = `
                 <div class="map-layer-control-title">Map</div>
@@ -999,8 +1005,20 @@
                 </button>
             `;
 
+            const stopMapEvent = (event) => {
+                event.stopPropagation();
+            };
+
+            container.addEventListener('mousedown', stopMapEvent);
+            container.addEventListener('dblclick', stopMapEvent);
+            container.addEventListener('touchstart', stopMapEvent);
+            container.addEventListener('wheel', stopMapEvent);
+
             container.querySelectorAll('.map-layer-option').forEach((button) => {
-                button.addEventListener('click', () => {
+                button.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+
                     setMapLayer(button.dataset.layer);
                 });
             });
@@ -1022,7 +1040,10 @@
             button.title = 'Center location';
             button.innerHTML = '🎯';
 
-            button.addEventListener('click', () => {
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
                 centerLocationDot();
             });
 
@@ -1145,8 +1166,8 @@
             },
             paint: {
                 'line-color': '#e53935',
-                'line-width': 4,
-                'line-opacity': 0.85,
+                'line-width': 3,
+                'line-opacity': 0.65,
             },
         });
 
@@ -1246,7 +1267,7 @@
             source: 'sos-accuracy',
             paint: {
                 'fill-color': '#e53935',
-                'fill-opacity': 0.06,
+                'fill-opacity': 0.04,
             },
         });
 
@@ -1257,7 +1278,7 @@
             paint: {
                 'line-color': '#e53935',
                 'line-width': 1.5,
-                'line-opacity': 0.85,
+                'line-opacity': 0.5,
             },
         });
     }
@@ -1271,7 +1292,8 @@
             Number.isNaN(lat) ||
             Number.isNaN(lng) ||
             Number.isNaN(radius) ||
-            radius <= 0
+            radius <= 0 ||
+            radius > maxVisibleAccuracyRadiusMeters
         ) {
             return {
                 type: 'Feature',
