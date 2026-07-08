@@ -62,11 +62,14 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
   Timer? _locationTimer;
   Timer? _countdownTimer;
+  Timer? _statusCheckTimer;
 
   int _nextUpdateSeconds = 30;
+
   bool _isUpdatingLocation = false;
   bool _isCancelling = false;
   bool _smsSendStarted = false;
+  bool _isStoppingBecauseInactive = false;
 
 
   static const Color _dangerRed = Color(0xFFE53935);
@@ -96,6 +99,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   void dispose() {
     _locationTimer?.cancel();
     _countdownTimer?.cancel();
+    _statusCheckTimer?.cancel();
     super.dispose();
   }
 
@@ -132,6 +136,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     });
 
     startLocationCountdown();
+    startSosStatusCheckTimer();
   }
 
   Future<void> startSosFlow() async {
@@ -329,8 +334,10 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
       if (backgroundStarted) {
         startLocationCountdown();
+        startSosStatusCheckTimer();
       } else {
         startLiveLocationUpdates();
+        startSosStatusCheckTimer();
 
         unawaited(
           sendLiveLocationUpdate(),
@@ -514,6 +521,75 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     }
 
     return sentCount;
+  }
+
+  void startSosStatusCheckTimer() {
+    _statusCheckTimer?.cancel();
+
+    _statusCheckTimer = Timer.periodic(
+      const Duration(seconds: 30),
+          (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+
+        unawaited(checkIfSosStillActive());
+      },
+    );
+  }
+
+  Future<void> checkIfSosStillActive() async {
+    if (_isStoppingBecauseInactive) {
+      return;
+    }
+
+    if (_trackingToken == null || _sosEventId == null) {
+      return;
+    }
+
+    try {
+      final backendStatus = await _sosApiService.getTrackingStatus(
+        trackingToken: _trackingToken!,
+      );
+
+      if (backendStatus == 'active') {
+        return;
+      }
+
+      _isStoppingBecauseInactive = true;
+
+      debugPrint(
+        'SOS $_sosEventId is no longer active. Backend status: $backendStatus',
+      );
+
+      _locationTimer?.cancel();
+      _countdownTimer?.cancel();
+      _statusCheckTimer?.cancel();
+
+      await _backgroundLocationService.stop();
+      await _activeSosLocalService.clear();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _sosDecision = 'SOS stopped';
+        _internetAlert = 'SOS is no longer active';
+        _liveTracking = 'Live tracking stopped';
+        _smsFallback = 'No further SMS action';
+      });
+
+      showInfo('SOS was cancelled or expired. Tracking has stopped.');
+
+      Navigator.pop(context, true);
+    } catch (error) {
+      debugPrint('SOS status check failed: $error');
+
+      // Do not stop SOS if status check fails.
+      // Internet may be slow/offline.
+    }
   }
 
   void startLocationCountdown() {
@@ -720,6 +796,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
       _locationTimer?.cancel();
       _countdownTimer?.cancel();
+      _statusCheckTimer?.cancel();
 
       await _backgroundLocationService.stop();
       await _activeSosLocalService.clear();
@@ -1256,41 +1333,6 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
           value: _liveTracking,
           icon: Icons.location_searching_rounded,
         ),
-        if (_sosEventId != null)
-          Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: _successGreen.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: _successGreen.withOpacity(0.15),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  _isUpdatingLocation
-                      ? Icons.sync_rounded
-                      : Icons.timer_outlined,
-                  color: _successGreen,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    _isUpdatingLocation
-                        ? 'Updating location...'
-                        : 'Next update in ${_nextUpdateSeconds}s',
-                    style: const TextStyle(
-                      color: _darkText,
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         if (hasTrackingLink)
           SizedBox(
             height: 54,

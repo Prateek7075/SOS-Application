@@ -24,6 +24,10 @@ import org.json.JSONObject
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import android.os.Handler
+import android.os.Looper
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class SosLocationForegroundService : Service() {
     companion object {
@@ -175,6 +179,68 @@ class SosLocationForegroundService : Service() {
         }
     }
 
+    private fun shouldStopServiceForResponseCode(responseCode: Int): Boolean {
+        return responseCode == 401 ||
+                responseCode == 403 ||
+                responseCode == 404 ||
+                responseCode == 409 ||
+                responseCode == 410 ||
+                responseCode == 422
+    }
+
+    private fun readResponseBody(connection: HttpURLConnection): String {
+        return try {
+            val stream = if (connection.responseCode in 200..299) {
+                connection.inputStream
+            } else {
+                connection.errorStream
+            }
+
+            if (stream == null) {
+                return ""
+            }
+
+            BufferedReader(InputStreamReader(stream)).use { reader ->
+                reader.readText()
+            }
+        } catch (error: Exception) {
+            "Could not read response body: ${error.message}"
+        }
+    }
+
+    private fun stopServiceBecauseBackendRejected(
+        responseCode: Int,
+        responseBody: String,
+    ) {
+        val shortResponseBody = if (responseBody.length > 500) {
+            responseBody.take(500)
+        } else {
+            responseBody
+        }
+
+        Log.e(
+            TAG,
+            "Stopping SOS foreground service. Backend rejected SOS=$sosEventId Response=$responseCode Body=$shortResponseBody"
+        )
+
+        Handler(Looper.getMainLooper()).post {
+            stopTracking()
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                @Suppress("DEPRECATION")
+                stopForeground(true)
+            }
+
+            sosEventId = -1
+            trackingToken = ""
+            apiBaseUrl = ""
+
+            stopSelf()
+        }
+    }
+
     private fun sendLocationToBackend(location: Location) {
         if (sosEventId == -1 || apiBaseUrl.isBlank()) {
             return
@@ -226,10 +292,26 @@ class SosLocationForegroundService : Service() {
 
                 val responseCode = connection.responseCode
 
-                Log.d(
-                    TAG,
-                    "Location sent. SOS=$sosEventId Response=$responseCode Lat=${location.latitude} Lng=${location.longitude} Battery=${batteryPercentage ?: "N/A"}"
-                )
+                if (responseCode == 200 || responseCode == 201) {
+                    Log.d(
+                        TAG,
+                        "Location sent successfully. SOS=$sosEventId Response=$responseCode Lat=${location.latitude} Lng=${location.longitude} Battery=${batteryPercentage ?: "N/A"}"
+                    )
+                } else {
+                    val responseBody = readResponseBody(connection)
+
+                    Log.e(
+                        TAG,
+                        "Location update rejected. SOS=$sosEventId Response=$responseCode Body=$responseBody"
+                    )
+
+                    if (shouldStopServiceForResponseCode(responseCode)) {
+                        stopServiceBecauseBackendRejected(
+                            responseCode = responseCode,
+                            responseBody = responseBody,
+                        )
+                    }
+                }
             } catch (error: Exception) {
                 Log.e(TAG, "Failed to send location: ${error.message}")
             } finally {
