@@ -30,6 +30,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/sos/start', [SosController::class, 'start']);
         Route::post('/sos/{id}/cancel', [SosController::class, 'cancel']);
         Route::get('/sos/history', [SosController::class, 'history']);
+        Route::get('/sos/active', [SosController::class, 'active']);
 
         //Profile Routes
         Route::get('/user-profile', [UserProfileController::class, 'show']);

@@ -278,4 +278,36 @@ class SosController extends Controller
             ],
         ], 201);
     }
+
+    public function active(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $activeSos = SosEvent::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->latest()
+            ->first();
+
+        if (!$activeSos) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No active SOS found.',
+                'data' => [
+                    'has_active_sos' => false,
+                    'sos_event' => null,
+                    'tracking_url' => null,
+                ],
+            ], 200);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Active SOS found.',
+            'data' => [
+                'has_active_sos' => true,
+                'sos_event' => $activeSos,
+                'tracking_url' => url('/track/' . $activeSos->tracking_token),
+            ],
+        ], 200);
+    }
 }
