@@ -818,10 +818,35 @@
                 scrollWheelZoom: true,
             }).setView([lat, lng], 16);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
+            const streetMapLayer = L.tileLayer(
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap contributors'
+                }
+            );
+
+            const satelliteMapLayer = L.tileLayer(
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                {
+                    maxZoom: 19,
+                    attribution: 'Tiles &copy; Esri'
+                }
+            );
+
+            satelliteMapLayer.addTo(map);
+
+            L.control.layers(
+                {
+                    'Street Map': streetMapLayer,
+                    'Satellite Map': satelliteMapLayer,
+                },
+                {},
+                {
+                    position: 'topleft',
+                    collapsed: false,
+                }
+            ).addTo(map);
 
             marker = L.marker([lat, lng], {
                 icon: emergencyIcon,
