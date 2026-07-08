@@ -66,18 +66,13 @@ class _QuickSosScreenState extends State<QuickSosScreen> {
     _hasStarted = true;
     _timer?.cancel();
 
-    final result = await Navigator.push(
+    await Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
         builder: (context) => const ActiveSosScreen(),
       ),
+          (route) => route.isFirst,
     );
-
-    if (!mounted) {
-      return;
-    }
-
-    Navigator.pop(context, result ?? true);
   }
 
   void cancelQuickSos() {

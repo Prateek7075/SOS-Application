@@ -104,7 +104,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       _sosEventId = session.sosEventId;
       _trackingToken = session.trackingToken;
       _trackingUrl = session.trackingUrl;
-      _sosDecision = 'Existing SOS is active';
+      _sosDecision = 'SOS active with internet';
       _internetAlert = 'Already sent';
       _smsFallback = 'Already handled';
       _liveTracking = 'Background live tracking active';
@@ -294,10 +294,17 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         _sosEventId = sosEvent.id;
         _trackingToken = sosEvent.trackingToken;
         _trackingUrl = sosEvent.trackingUrl;
+
+        _sosDecision = sosEvent.wasExistingActiveSos
+            ? 'Previous SOS is still active'
+            : 'SOS active with internet';
+
         _internetAlert = sosEvent.wasExistingActiveSos
             ? 'Existing internet alert active'
             : 'Internet alert created';
+
         _liveTracking = 'Starting background live tracking...';
+
         _smsFallback = sosEvent.wasExistingActiveSos
             ? 'Already handled for previous SOS'
             : _smsFallback;
