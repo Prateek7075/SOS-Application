@@ -218,11 +218,66 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         _liveTracking = 'Creating tracking link...';
       });
 
-      final sosEvent = await _sosApiService.startSos(
+      var sosEvent = await _sosApiService.startSos(
         latitude: position.latitude,
         longitude: position.longitude,
         networkMode: networkStatus,
       );
+
+      if (sosEvent.wasExistingActiveSos) {
+        if (!mounted) {
+          return;
+        }
+
+        setState(() {
+          _sosDecision = 'Previous SOS is already active';
+          _internetAlert = 'Existing active SOS found';
+          _liveTracking = 'Waiting for your choice...';
+          _smsFallback = 'Already handled for previous SOS';
+        });
+
+        final shouldCancelAndStartNew = await showExistingActiveSosChoiceDialog(existingSosId: sosEvent.id,);
+
+        if (!mounted) {
+          return;
+        }
+
+        if (shouldCancelAndStartNew == true) {
+          setState(() {
+            _sosDecision = 'Cancelling previous SOS...';
+            _internetAlert = 'Cancelling existing alert';
+            _liveTracking = 'Stopping previous tracking...';
+            _smsFallback = 'Waiting...';
+          });
+
+          await _sosApiService.cancelSos(
+            sosEventId: sosEvent.id,
+          );
+
+          await _backgroundLocationService.stop();
+          await _activeSosLocalService.clear();
+
+          _smsSendStarted = false;
+
+          if (!mounted) {
+            return;
+          }
+
+          setState(() {
+            _sosDecision = 'Starting new SOS...';
+            _internetAlert = 'Creating new internet alert...';
+            _liveTracking = 'Creating new tracking link...';
+          });
+
+          sosEvent = await _sosApiService.startSos(
+            latitude: position.latitude,
+            longitude: position.longitude,
+            networkMode: networkStatus,
+          );
+        } else {
+          showInfo('Continuing previous active SOS');
+        }
+      }
 
       await _activeSosLocalService.save(
         sosEventId: sosEvent.id,
@@ -239,9 +294,16 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         _sosEventId = sosEvent.id;
         _trackingToken = sosEvent.trackingToken;
         _trackingUrl = sosEvent.trackingUrl;
-        _internetAlert = 'Internet alert created';
+        _internetAlert = sosEvent.wasExistingActiveSos
+            ? 'Existing internet alert active'
+            : 'Internet alert created';
         _liveTracking = 'Starting background live tracking...';
+        _smsFallback = sosEvent.wasExistingActiveSos
+            ? 'Already handled for previous SOS'
+            : _smsFallback;
       });
+
+      await _backgroundLocationService.stop();
 
       final backgroundStarted = await _backgroundLocationService.start(
         sosEventId: sosEvent.id,
@@ -268,14 +330,16 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         );
       }
 
-      unawaited(
-        sendAutomaticSmsFallback(
-          latitude: position.latitude,
-          longitude: position.longitude,
-          trackingUrl: sosEvent.trackingUrl,
-          batteryPercentage: batteryPercentage,
-        ),
-      );
+      if (!sosEvent.wasExistingActiveSos) {
+        unawaited(
+          sendAutomaticSmsFallback(
+            latitude: position.latitude,
+            longitude: position.longitude,
+            trackingUrl: sosEvent.trackingUrl,
+            batteryPercentage: batteryPercentage,
+          ),
+        );
+      }
     } catch (error) {
       debugPrint('Internet SOS failed: $error');
 
@@ -703,6 +767,51 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
               },
               icon: const Icon(Icons.close_rounded),
               label: const Text('Cancel SOS'),
+              style: FilledButton.styleFrom(
+                backgroundColor: _dangerRed,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<bool?> showExistingActiveSosChoiceDialog({
+    required int existingSosId,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          title: const Text(
+            'Previous SOS is active',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          content: Text(
+            'SOS #$existingSosId is still active.\n\n'
+                'Do you want to keep tracking the previous SOS, or cancel it and start a new SOS?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Keep Active SOS'),
+            ),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              icon: const Icon(Icons.restart_alt_rounded),
+              label: const Text('Cancel & Start New'),
               style: FilledButton.styleFrom(
                 backgroundColor: _dangerRed,
                 foregroundColor: Colors.white,

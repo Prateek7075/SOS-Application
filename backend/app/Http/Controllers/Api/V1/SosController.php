@@ -20,53 +20,55 @@ class SosController extends Controller
     private const TRACKING_LINK_EXPIRY_HOURS = 24;
 
 
-public function start(Request $request): JsonResponse
-{
-    $user = $request->user();
+    public function start(Request $request): JsonResponse
+    {
+        $user = $request->user();
 
-    $validated = $request->validate([
-        'latitude' => ['required', 'numeric'],
-        'longitude' => ['required', 'numeric'],
-        'network_mode' => ['required', 'string'],
-    ]);
+        $validated = $request->validate([
+            'latitude' => ['required', 'numeric'],
+            'longitude' => ['required', 'numeric'],
+            'network_mode' => ['required', 'string'],
+        ]);
 
-    $existingActiveSos = SosEvent::where('user_id', $user->id)
-        ->where('status', 'active')
-        ->latest()
-        ->first();
+        $existingActiveSos = SosEvent::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->latest()
+            ->first();
 
-    if ($existingActiveSos) {
+        if ($existingActiveSos) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Existing active SOS found. Continuing active SOS.',
+                'data' => [
+                    'was_existing_active_sos' => true,
+                    'sos_event' => $existingActiveSos,
+                    'tracking_url' => url('/track/' . $existingActiveSos->tracking_token),
+                ],
+            ], 200);
+        }
+
+        $trackingToken = Str::random(64);
+
+        $sosEvent = SosEvent::create([
+            'user_id' => $user->id,
+            'status' => 'active',
+            'initial_latitude' => $validated['latitude'],
+            'initial_longitude' => $validated['longitude'],
+            'tracking_token' => $trackingToken,
+            'network_mode' => $validated['network_mode'],
+            'expires_at' => now()->addHours(self::TRACKING_LINK_EXPIRY_HOURS),
+        ]);
+
         return response()->json([
             'success' => true,
-            'message' => 'Existing active SOS found. Continuing active SOS.',
+            'message' => 'SOS started successfully',
             'data' => [
-                'sos_event' => $existingActiveSos,
-                'tracking_url' => url('/track/' . $existingActiveSos->tracking_token),
+                'was_existing_active_sos' => false,
+                'sos_event' => $sosEvent,
+                'tracking_url' => url('/track/' . $trackingToken),
             ],
-        ], 200);
+        ], 201);
     }
-
-    $trackingToken = Str::random(64);
-
-    $sosEvent = SosEvent::create([
-        'user_id' => $user->id,
-        'status' => 'active',
-        'initial_latitude' => $validated['latitude'],
-        'initial_longitude' => $validated['longitude'],
-        'tracking_token' => $trackingToken,
-        'network_mode' => $validated['network_mode'],
-        'expires_at' => now()->addHours(self::TRACKING_LINK_EXPIRY_HOURS),
-    ]);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'SOS started successfully',
-        'data' => [
-            'sos_event' => $sosEvent,
-            'tracking_url' => url('/track/' . $trackingToken),
-        ],
-    ], 201);
-}
 
     public function location(Request $request, int $id): JsonResponse
     {
