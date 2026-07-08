@@ -332,17 +332,12 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
             : 'Background failed, foreground tracking active';
       });
 
-      if (backgroundStarted) {
-        startLocationCountdown();
-        startSosStatusCheckTimer();
-      } else {
-        startLiveLocationUpdates();
-        startSosStatusCheckTimer();
+      startLiveLocationUpdates();
+      startSosStatusCheckTimer();
 
-        unawaited(
-          sendLiveLocationUpdate(),
-        );
-      }
+      unawaited(
+        sendLiveLocationUpdate(),
+      );
 
       if (!sosEvent.wasExistingActiveSos) {
         unawaited(
