@@ -25,6 +25,15 @@ class SosApiService {
       throw Exception('Firebase ID token is unavailable');
     }
 
+    print('================ FIREBASE BEARER TOKEN START ================');
+
+    for (var i = 0; i < idToken.length; i += 900) {
+      final end = (i + 900 < idToken.length) ? i + 900 : idToken.length;
+      print(idToken.substring(i, end));
+    }
+
+    print('================ FIREBASE BEARER TOKEN END ==================');
+
     return {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
@@ -54,23 +63,42 @@ class SosApiService {
       }),
     );
 
-    if (response.statusCode != 201) {
-      throw Exception(
-        'Failed to start SOS: ${response.statusCode} ${response.body}',
-      );
-    }
-
     final decodedBody = jsonDecode(response.body) as Map<String, dynamic>;
 
-    final sosEventJson =
-    decodedBody['data']['sos_event'] as Map<String, dynamic>;
+    if (response.statusCode == 201) {
+      final sosEventJson =
+      decodedBody['data']['sos_event'] as Map<String, dynamic>;
 
-    final trackingToken = sosEventJson['tracking_token'].toString();
+      final trackingToken = sosEventJson['tracking_token'].toString();
 
-    decodedBody['data']['tracking_url'] =
-    '${AppConfig.backendBaseUrl}/track/${Uri.encodeComponent(trackingToken)}';
+      decodedBody['data']['tracking_url'] =
+      '${AppConfig.backendBaseUrl}/track/${Uri.encodeComponent(trackingToken)}';
 
-    return SosEvent.fromJson(decodedBody);
+      return SosEvent.fromJson(decodedBody);
+    }
+
+    if (response.statusCode == 409) {
+      final activeSosJson =
+      decodedBody['data']['active_sos'] as Map<String, dynamic>;
+
+      final trackingToken = activeSosJson['tracking_token'].toString();
+
+      final normalizedBody = {
+        'success': true,
+        'message': decodedBody['message'] ?? 'Continuing existing active SOS',
+        'data': {
+          'sos_event': activeSosJson,
+          'tracking_url':
+          '${AppConfig.backendBaseUrl}/track/${Uri.encodeComponent(trackingToken)}',
+        },
+      };
+
+      return SosEvent.fromJson(normalizedBody);
+    }
+
+    throw Exception(
+      'Failed to start SOS: ${response.statusCode} ${response.body}',
+    );
   }
 
   Future<void> sendLocationUpdate({
