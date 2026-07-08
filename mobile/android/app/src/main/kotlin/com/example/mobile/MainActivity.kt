@@ -8,6 +8,10 @@ import android.telephony.SmsManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import android.content.Context
+import android.net.Uri
+import android.os.PowerManager
+import android.provider.Settings
 
 class MainActivity : FlutterActivity() {
     private val channelName = "sos_sms_channel"
@@ -169,6 +173,49 @@ class MainActivity : FlutterActivity() {
                     } catch (error: Exception) {
                         result.error(
                             "SERVICE_STOP_FAILED",
+                            error.message,
+                            null
+                        )
+                    }
+                }
+
+                "isIgnoringBatteryOptimizations" -> {
+                    try {
+                        val isIgnoringBatteryOptimizations =
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                val powerManager =
+                                    getSystemService(Context.POWER_SERVICE) as PowerManager
+
+                                powerManager.isIgnoringBatteryOptimizations(packageName)
+                            } else {
+                                true
+                            }
+
+                        result.success(isIgnoringBatteryOptimizations)
+                    } catch (error: Exception) {
+                        result.error(
+                            "BATTERY_OPTIMIZATION_CHECK_FAILED",
+                            error.message,
+                            null
+                        )
+                    }
+                }
+
+                "openBatteryOptimizationSettings" -> {
+                    try {
+                        val intent = Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:$packageName")
+                        ).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+
+                        startActivity(intent)
+
+                        result.success(true)
+                    } catch (error: Exception) {
+                        result.error(
+                            "BATTERY_OPTIMIZATION_SETTINGS_FAILED",
                             error.message,
                             null
                         )

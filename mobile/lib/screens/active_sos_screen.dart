@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -17,6 +17,7 @@ import '../services/active_sos_local_service.dart';
 import '../services/battery_service.dart';
 import '../services/offline_sos_local_service.dart';
 import '../services/custom_sos_message_local_service.dart';
+import '../services/battery_optimization_service.dart';
 
 class ActiveSosScreen extends StatefulWidget {
   const ActiveSosScreen({
@@ -42,6 +43,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   final BatteryService _batteryService = BatteryService();
   final OfflineSosLocalService _offlineSosLocalService = OfflineSosLocalService();
   final CustomSosMessageLocalService _customSosMessageLocalService = CustomSosMessageLocalService();
+  final BatteryOptimizationService _batteryOptimizationService = BatteryOptimizationService();
 
   String _gpsStatus = 'Finding location...';
   String _networkStatus = 'Checking network...';
@@ -71,6 +73,10 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   bool _smsSendStarted = false;
   bool _isStoppingBecauseInactive = false;
 
+  String _batteryOptimizationStatus = 'Checking battery optimization...';
+  bool _isBatteryOptimizationAllowed = true;
+  bool _batteryOptimizationDialogShown = false;
+
 
   static const Color _dangerRed = Color(0xFFE53935);
   static const Color _dangerDark = Color(0xFFB91C1C);
@@ -85,6 +91,12 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     super.initState();
 
     unawaited(syncPendingOfflineSosEvents());
+
+    unawaited(
+      checkBatteryOptimizationStatus(
+        showWarningIfRestricted: true,
+      ),
+    );
 
     final existingSession = widget.existingSession;
 
@@ -902,6 +914,107 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     );
   }
 
+  Future<void> checkBatteryOptimizationStatus({
+    bool showWarningIfRestricted = false,
+  }) async {
+    try {
+      final isAllowed =
+      await _batteryOptimizationService.isIgnoringBatteryOptimizations();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isBatteryOptimizationAllowed = isAllowed;
+        _batteryOptimizationStatus = isAllowed
+            ? 'Unrestricted / allowed'
+            : 'Restricted - background tracking may stop';
+      });
+
+      if (showWarningIfRestricted &&
+          !isAllowed &&
+          !_batteryOptimizationDialogShown) {
+        _batteryOptimizationDialogShown = true;
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) {
+            return;
+          }
+
+          unawaited(showBatteryOptimizationWarningDialog());
+        });
+      }
+    } catch (error) {
+      debugPrint('Battery optimization check failed: $error');
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _batteryOptimizationStatus = 'Could not check battery optimization';
+      });
+    }
+  }
+
+  Future<void> showBatteryOptimizationWarningDialog() async {
+    final shouldOpenSettings = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          title: const Text(
+            'Allow background tracking?',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          content: const Text(
+            'Your phone may restrict this app in the background.\n\n'
+                'For emergency live tracking, set battery usage to Unrestricted or Allow background activity.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Later'),
+            ),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              icon: const Icon(Icons.battery_alert_rounded),
+              label: const Text('Open Settings'),
+              style: FilledButton.styleFrom(
+                backgroundColor: _dangerRed,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldOpenSettings == true) {
+      await _batteryOptimizationService.openBatteryOptimizationSettings();
+
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (!mounted) {
+        return;
+      }
+
+      unawaited(
+        checkBatteryOptimizationStatus(),
+      );
+    }
+  }
+
   Future<int?> refreshBatteryPercentage() async {
     final batteryPercentage = await _batteryService.getBatteryPercentage();
 
@@ -1292,6 +1405,34 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
               : '${_batteryPercentage!}%',
           icon: Icons.battery_5_bar_rounded,
         ),
+        buildInfoTile(
+          title: 'Battery Optimization',
+          value: _batteryOptimizationStatus,
+          icon: Icons.battery_alert_rounded,
+        ),
+        if (!_isBatteryOptimizationAllowed)
+          SizedBox(
+            height: 54,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                unawaited(
+                  _batteryOptimizationService.openBatteryOptimizationSettings(),
+                );
+              },
+              icon: const Icon(Icons.settings_rounded),
+              label: const Text('Open Battery Settings'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _dangerRed,
+                side: const BorderSide(
+                  color: _dangerRed,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+          ),
+        if (!_isBatteryOptimizationAllowed) const SizedBox(height: 12),
         if (_smsRecipients != '-')
           buildInfoTile(
             title: 'SMS Recipients',
