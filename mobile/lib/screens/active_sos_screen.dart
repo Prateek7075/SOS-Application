@@ -18,6 +18,7 @@ import '../services/battery_service.dart';
 import '../services/offline_sos_local_service.dart';
 import '../services/custom_sos_message_local_service.dart';
 import '../services/battery_optimization_service.dart';
+import '../services/failed_sos_location_local_service.dart';
 
 class ActiveSosScreen extends StatefulWidget {
   const ActiveSosScreen({
@@ -44,6 +45,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   final OfflineSosLocalService _offlineSosLocalService = OfflineSosLocalService();
   final CustomSosMessageLocalService _customSosMessageLocalService = CustomSosMessageLocalService();
   final BatteryOptimizationService _batteryOptimizationService = BatteryOptimizationService();
+  final FailedSosLocationLocalService _failedSosLocationLocalService = FailedSosLocationLocalService();
 
   String _gpsStatus = 'Finding location...';
   String _networkStatus = 'Checking network...';
@@ -65,6 +67,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   Timer? _locationTimer;
   Timer? _countdownTimer;
   Timer? _statusCheckTimer;
+  Timer? _offlineInternetCheckTimer;
 
   int _nextUpdateSeconds = 30;
 
@@ -72,6 +75,8 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   bool _isCancelling = false;
   bool _smsSendStarted = false;
   bool _isStoppingBecauseInactive = false;
+  bool _isConvertingOfflineSosToLive = false;
+  bool _isSyncingFailedLocationUpdates = false;
 
   String _batteryOptimizationStatus = 'Checking battery optimization...';
   bool _isBatteryOptimizationAllowed = true;
@@ -112,6 +117,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     _locationTimer?.cancel();
     _countdownTimer?.cancel();
     _statusCheckTimer?.cancel();
+    _offlineInternetCheckTimer?.cancel();
     super.dispose();
   }
 
@@ -220,6 +226,24 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       batteryPercentage: batteryPercentage,
       smsSentCount: sentCount,
       smsMessage: _smsMessage == '-' ? null : _smsMessage,
+    );
+
+    startOfflineInternetCheckTimer();
+  }
+
+  void startOfflineInternetCheckTimer() {
+    _offlineInternetCheckTimer?.cancel();
+
+    _offlineInternetCheckTimer = Timer.periodic(
+      const Duration(seconds: 30),
+          (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+
+        unawaited(syncPendingOfflineSosEvents());
+      },
     );
   }
 
@@ -383,6 +407,10 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   }
 
   Future<void> syncPendingOfflineSosEvents() async {
+    if (_isConvertingOfflineSosToLive) {
+      return;
+    }
+
     try {
       final networkStatus = await _networkService.getNetworkStatus();
 
@@ -393,19 +421,271 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       final pendingEvents = await _offlineSosLocalService.getOfflineSosEvents();
 
       if (pendingEvents.isEmpty) {
+        _offlineInternetCheckTimer?.cancel();
         return;
       }
 
-      for (final event in pendingEvents) {
+      _isConvertingOfflineSosToLive = true;
+
+      final event = pendingEvents.first;
+
+      final latestPosition = await _locationService.getCurrentLocation();
+      final latestBatteryPercentage = await refreshBatteryPercentage();
+
+      final latitude = latestPosition?.latitude ?? event.latitude;
+      final longitude = latestPosition?.longitude ?? event.longitude;
+      final accuracy = latestPosition?.accuracy;
+      final batteryPercentage =
+          latestBatteryPercentage ?? event.batteryPercentage;
+
+      final sosEvent = await _sosApiService.startSos(
+        latitude: latitude,
+        longitude: longitude,
+        networkMode: networkStatus,
+      );
+
+      await _activeSosLocalService.save(
+        sosEventId: sosEvent.id,
+        trackingToken: sosEvent.trackingToken,
+        trackingUrl: sosEvent.trackingUrl,
+        batteryPercentage: batteryPercentage,
+      );
+
+      await _offlineSosLocalService.removeOfflineSos(event.localId);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _sosEventId = sosEvent.id;
+        _trackingToken = sosEvent.trackingToken;
+        _trackingUrl = sosEvent.trackingUrl;
+        _latitude = latitude;
+        _longitude = longitude;
+        _gpsStatus = 'Location updated';
+        _networkStatus = networkStatus;
+        _sosDecision = 'Offline SOS converted to live tracking';
+        _internetAlert = 'Live tracking link created';
+        _liveTracking = 'Starting live tracking...';
+        _smsFallback = 'Sending live tracking link to contacts...';
+      });
+
+      await _backgroundLocationService.stop();
+
+      final backgroundStarted = await _backgroundLocationService.start(
+        sosEventId: sosEvent.id,
+        trackingToken: sosEvent.trackingToken,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _liveTracking = backgroundStarted
+            ? 'Background live tracking started'
+            : 'Background failed, foreground tracking active';
+      });
+
+      startLiveLocationUpdates();
+      startSosStatusCheckTimer();
+
+      unawaited(
+        sendLiveLocationUpdate(),
+      );
+
+      await sendLiveTrackingSmsToContacts(
+        latitude: latitude,
+        longitude: longitude,
+        trackingUrl: sosEvent.trackingUrl,
+        batteryPercentage: batteryPercentage,
+        isOfflineLiveTrackingRecovery: true,
+      );
+
+      _offlineInternetCheckTimer?.cancel();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _smsFallback = 'Live tracking link sent to contacts';
+      });
+
+      debugPrint('Offline SOS converted to live SOS ${sosEvent.id}');
+    } catch (error) {
+      debugPrint('Offline SOS live conversion failed: $error');
+    } finally {
+      _isConvertingOfflineSosToLive = false;
+    }
+  }
+
+  Future<int> sendLiveTrackingSmsToContacts({
+    required double latitude,
+    required double longitude,
+    required String trackingUrl,
+    int? batteryPercentage,
+    bool isOfflineLiveTrackingRecovery = false,
+  }) async {
+    final profile = await _profileLocalService.getProfile();
+
+    if (!mounted) {
+      return 0;
+    }
+
+    final customMessage = await _customSosMessageLocalService.getMessage();
+
+    final smsMessage = _directSmsService.createEmergencyMessage(
+      latitude: latitude,
+      longitude: longitude,
+      profile: profile,
+      trackingUrl: trackingUrl,
+      batteryPercentage: batteryPercentage ?? _batteryPercentage,
+      customMessage: customMessage,
+      isOfflineLiveTrackingRecovery: isOfflineLiveTrackingRecovery,
+    );
+
+    setState(() {
+      _smsMessage = smsMessage;
+    });
+
+    final contacts = await _localContactService.getContacts();
+
+    if (!mounted) {
+      return 0;
+    }
+
+    if (contacts.isEmpty) {
+      setState(() {
+        _smsFallback = 'No trusted contacts saved locally';
+      });
+      return 0;
+    }
+
+    final sentCount = await _directSmsService.sendEmergencySmsToContacts(
+      contacts: contacts,
+      latitude: latitude,
+      longitude: longitude,
+      profile: profile,
+      trackingUrl: trackingUrl,
+      batteryPercentage: batteryPercentage ?? _batteryPercentage,
+      customMessage: customMessage,
+      isOfflineLiveTrackingRecovery: isOfflineLiveTrackingRecovery,
+    );
+
+    if (!mounted) {
+      return sentCount;
+    }
+
+    setState(() {
+      _smsFallback = sentCount > 0
+          ? 'Live tracking link sent to $sentCount of ${contacts.length} contacts'
+          : 'Live tracking SMS not sent. Check permission, SIM, or SMS balance';
+    });
+
+    return sentCount;
+  }
+
+  bool isRetryableLocationUpdateError(Object error) {
+    final errorText = error.toString();
+
+    if (errorText.contains('401') ||
+        errorText.contains('403') ||
+        errorText.contains('404') ||
+        errorText.contains('409') ||
+        errorText.contains('410') ||
+        errorText.contains('422')) {
+      return false;
+    }
+
+    return true;
+  }
+
+  Future<void> saveFailedLocationUpdateForRetry({
+    required Position position,
+    required int? batteryPercentage,
+  }) async {
+    if (_sosEventId == null || _trackingToken == null) {
+      return;
+    }
+
+    await _failedSosLocationLocalService.save(
+      PendingSosLocationUpdate(
+        localId: 'failed_location_${DateTime.now().millisecondsSinceEpoch}',
+        sosEventId: _sosEventId!,
+        trackingToken: _trackingToken!,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        accuracy: position.accuracy,
+        batteryPercentage: batteryPercentage,
+        createdAt: DateTime.now(),
+      ),
+    );
+  }
+
+  Future<void> syncFailedLocationUpdates() async {
+    if (_isSyncingFailedLocationUpdates) {
+      return;
+    }
+
+    if (_sosEventId == null || _trackingToken == null) {
+      return;
+    }
+
+    try {
+      final networkStatus = await _networkService.getNetworkStatus();
+
+      if (networkStatus == 'No internet') {
+        return;
+      }
+
+      _isSyncingFailedLocationUpdates = true;
+
+      final pendingUpdates =
+      await _failedSosLocationLocalService.getPendingUpdates();
+
+      final updatesForCurrentSos = pendingUpdates.where((item) {
+        return item.sosEventId == _sosEventId &&
+            item.trackingToken == _trackingToken;
+      }).toList();
+
+      if (updatesForCurrentSos.isEmpty) {
+        return;
+      }
+
+      for (final pendingUpdate in updatesForCurrentSos) {
         try {
-          await _sosApiService.syncOfflineSos(event: event);
-          await _offlineSosLocalService.removeOfflineSos(event.localId);
+          await _sosApiService.sendLocationUpdate(
+            sosEventId: pendingUpdate.sosEventId,
+            trackingToken: pendingUpdate.trackingToken,
+            latitude: pendingUpdate.latitude,
+            longitude: pendingUpdate.longitude,
+            accuracy: pendingUpdate.accuracy,
+            batteryPercentage: pendingUpdate.batteryPercentage,
+          );
+
+          await _failedSosLocationLocalService.remove(pendingUpdate.localId);
+
+          debugPrint(
+            'Retried failed location update ${pendingUpdate.localId}',
+          );
         } catch (error) {
-          debugPrint('Offline SOS sync failed for ${event.localId}: $error');
+          debugPrint(
+            'Failed location retry stopped at ${pendingUpdate.localId}: $error',
+          );
+
+          if (!isRetryableLocationUpdateError(error)) {
+            await _failedSosLocationLocalService.remove(pendingUpdate.localId);
+          }
+
+          break;
         }
       }
     } catch (error) {
-      debugPrint('Offline SOS sync check failed: $error');
+      debugPrint('Failed location sync failed: $error');
+    } finally {
+      _isSyncingFailedLocationUpdates = false;
     }
   }
 
@@ -656,6 +936,9 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       'Sending live location update for SOS $_sosEventId at ${DateTime.now()}',
     );
 
+    Position? position;
+    int? batteryPercentage;
+
     if (mounted) {
       setState(() {
         _isUpdatingLocation = true;
@@ -664,8 +947,10 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     }
 
     try {
-      final position = await _locationService.getCurrentLocation();
-      final batteryPercentage = await refreshBatteryPercentage();
+      await syncFailedLocationUpdates();
+
+      position = await _locationService.getCurrentLocation();
+      batteryPercentage = await refreshBatteryPercentage();
 
       if (!mounted) {
         return;
@@ -694,8 +979,8 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       }
 
       setState(() {
-        _latitude = position.latitude;
-        _longitude = position.longitude;
+        _latitude = position!.latitude;
+        _longitude = position!.longitude;
         _gpsStatus = 'Location updated';
         _liveTracking = 'Live location updated';
         _nextUpdateSeconds = 30;
@@ -703,12 +988,21 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     } catch (error) {
       debugPrint('Live location update failed: $error');
 
+      if (position != null && isRetryableLocationUpdateError(error)) {
+        await saveFailedLocationUpdateForRetry(
+          position: position,
+          batteryPercentage: batteryPercentage,
+        );
+      }
+
       if (!mounted) {
         return;
       }
 
       setState(() {
-        _liveTracking = 'Failed to update location';
+        _liveTracking = position == null
+            ? 'Failed to update location'
+            : 'Network issue - location saved for retry';
       });
     } finally {
       if (mounted) {
