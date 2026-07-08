@@ -712,6 +712,161 @@
         'terrain-layer',
     ];
 
+    function escapeHtml(value) {
+        if (value === null || value === undefined) {
+            return '';
+        }
+
+        return String(value)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
+    function valueOrNotAdded(value) {
+        if (value === null || value === undefined || String(value).trim() === '') {
+            return 'Not added';
+        }
+
+        return escapeHtml(value);
+    }
+
+    function cleanPhone(value) {
+        if (!value) {
+            return '';
+        }
+
+        return String(value).replace(/[^\d+]/g, '');
+    }
+
+    function formatDateTime(value) {
+        if (!value) {
+            return 'Not available';
+        }
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+            return escapeHtml(value);
+        }
+
+        return date.toLocaleString();
+    }
+
+    function formatBattery(value) {
+        if (value === null || value === undefined || String(value).trim() === '') {
+            return 'Not available';
+        }
+
+        return `${escapeHtml(value)}%`;
+    }
+
+    function formatAgeSeconds(seconds) {
+        if (seconds === null || seconds === undefined || Number.isNaN(Number(seconds))) {
+            return 'Not available';
+        }
+
+        const value = Math.round(Number(seconds));
+
+        if (value < 60) {
+            return `${value} second${value === 1 ? '' : 's'} ago`;
+        }
+
+        const minutes = Math.round(value / 60);
+
+        if (minutes < 60) {
+            return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+        }
+
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+
+        return `${hours}h ${remainingMinutes}m ago`;
+    }
+
+    function formatAccuracy(value) {
+        if (value === null || value === undefined || String(value).trim() === '') {
+            return 'Not available';
+        }
+
+        const accuracy = Math.round(Number(value));
+
+        if (Number.isNaN(accuracy)) {
+            return 'Not available';
+        }
+
+        return `${accuracy} meter${accuracy === 1 ? '' : 's'}`;
+    }
+
+    function getHealthClass(state) {
+        switch (state) {
+            case 'fresh':
+                return 'health-fresh';
+            case 'delayed':
+                return 'health-delayed';
+            case 'stale':
+                return 'health-stale';
+            case 'critical_stale':
+                return 'health-critical-stale';
+            case 'stopped':
+                return 'health-stopped';
+            case 'expired':
+                return 'health-expired';
+            case 'waiting':
+                return 'health-waiting';
+            default:
+                return 'health-waiting';
+        }
+    }
+
+    function getHealthIcon(state) {
+        switch (state) {
+            case 'fresh':
+                return '🟢';
+            case 'delayed':
+                return '🟠';
+            case 'stale':
+                return '⚠️';
+            case 'critical_stale':
+                return '🚨';
+            case 'stopped':
+                return '⛔';
+            case 'expired':
+                return '⌛';
+            case 'waiting':
+                return '⏳';
+            default:
+                return 'ℹ️';
+        }
+    }
+
+    function getHealthTitle(state) {
+        switch (state) {
+            case 'fresh':
+                return 'Live tracking active';
+            case 'delayed':
+                return 'Location update delayed';
+            case 'stale':
+                return 'No recent location update';
+            case 'critical_stale':
+                return 'Location critically delayed';
+            case 'stopped':
+                return 'SOS is no longer active';
+            case 'expired':
+                return 'Tracking link expired';
+            case 'waiting':
+                return 'Waiting for location';
+            default:
+                return 'Tracking status';
+        }
+    }
+
+    function buildGoogleMapsUrl(latitude, longitude) {
+        return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+    }
+
     function createMapStyle() {
         return {
             version: 8,
