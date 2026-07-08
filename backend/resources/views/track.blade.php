@@ -5,10 +5,10 @@
     <title>Emergency SOS Tracking</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Leaflet Map CSS -->
+    <!-- MapLibre GL JS CSS -->
     <link
         rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css"
     />
 
     <style>
@@ -178,6 +178,74 @@
             background: #eef2f7;
             border: 1px solid var(--border);
             box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+        }
+
+        .maplibregl-ctrl-group button {
+            width: 38px;
+            height: 38px;
+        }
+
+        .map-layer-control {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
+            padding: 8px;
+            font-family: inherit;
+            min-width: 165px;
+        }
+
+        .map-layer-control-title {
+            font-size: 12px;
+            font-weight: 900;
+            color: var(--dark);
+            margin-bottom: 6px;
+        }
+
+        .map-layer-option {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 8px 9px;
+            border-radius: 10px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--dark);
+            cursor: pointer;
+        }
+
+        .map-layer-option:hover {
+            background: #f3f4f6;
+        }
+
+        .map-layer-option.active {
+            background: rgba(229, 57, 53, 0.10);
+            color: var(--danger);
+        }
+
+        .map-center-control {
+            width: 42px;
+            height: 42px;
+            border: none;
+            border-radius: 12px;
+            background: white;
+            color: var(--danger);
+            font-size: 20px;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+        }
+
+        .map-center-control:hover {
+            background: #fff5f5;
+        }
+
+        .sos-map-marker {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .leaflet-center-location-control {
@@ -624,181 +692,216 @@
     </div>
 </div>
 
-<!-- Leaflet Map JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- MapLibre GL JS -->
+<script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 
 <script>
     const trackingToken = @json($trackingToken);
 
     let map = null;
     let marker = null;
-    let routeLine = null;
-    let startMarker = null;
-    let accuracyCircle = null;
     let latestMapLatitude = null;
     let latestMapLongitude = null;
-    let centerLocationControlAdded = false;
+    let currentMapLayer = 'street';
 
-    const emergencyIcon = L.divIcon({
-        className: '',
-        html: '<div class="pulse"></div>',
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-    });
+    const mapLayerIds = [
+        'street-layer',
+        'satellite-layer',
+        'hybrid-satellite-layer',
+        'hybrid-labels-layer',
+        'terrain-layer',
+    ];
 
-    function escapeHtml(value) {
-        if (value === null || value === undefined) {
-            return '';
-        }
-
-        return String(value)
-            .replaceAll('&', '&amp;')
-            .replaceAll('<', '&lt;')
-            .replaceAll('>', '&gt;')
-            .replaceAll('"', '&quot;')
-            .replaceAll("'", '&#039;');
+    function createMapStyle() {
+        return {
+            version: 8,
+            sources: {
+                street: {
+                    type: 'raster',
+                    tiles: [
+                        'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    ],
+                    tileSize: 256,
+                    attribution: '&copy; OpenStreetMap contributors',
+                },
+                satellite: {
+                    type: 'raster',
+                    tiles: [
+                        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                    ],
+                    tileSize: 256,
+                    attribution: 'Tiles &copy; Esri',
+                },
+                hybridLabels: {
+                    type: 'raster',
+                    tiles: [
+                        'https://a.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
+                        'https://b.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
+                        'https://c.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}.png',
+                    ],
+                    tileSize: 256,
+                    attribution: '&copy; CARTO &copy; OpenStreetMap contributors',
+                },
+                terrain: {
+                    type: 'raster',
+                    tiles: [
+                        'https://a.tile.opentopomap.org/{z}/{x}/{y}.png',
+                        'https://b.tile.opentopomap.org/{z}/{x}/{y}.png',
+                        'https://c.tile.opentopomap.org/{z}/{x}/{y}.png',
+                    ],
+                    tileSize: 256,
+                    attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap',
+                },
+            },
+            layers: [
+                {
+                    id: 'street-layer',
+                    type: 'raster',
+                    source: 'street',
+                    layout: {
+                        visibility: 'visible',
+                    },
+                },
+                {
+                    id: 'satellite-layer',
+                    type: 'raster',
+                    source: 'satellite',
+                    layout: {
+                        visibility: 'none',
+                    },
+                },
+                {
+                    id: 'hybrid-satellite-layer',
+                    type: 'raster',
+                    source: 'satellite',
+                    layout: {
+                        visibility: 'none',
+                    },
+                },
+                {
+                    id: 'hybrid-labels-layer',
+                    type: 'raster',
+                    source: 'hybridLabels',
+                    layout: {
+                        visibility: 'none',
+                    },
+                },
+                {
+                    id: 'terrain-layer',
+                    type: 'raster',
+                    source: 'terrain',
+                    layout: {
+                        visibility: 'none',
+                    },
+                },
+            ],
+        };
     }
 
-    function valueOrNotAdded(value) {
-        if (value === null || value === undefined || String(value).trim() === '') {
-            return 'Not added';
+    function setMapLayer(layerName) {
+        if (!map) {
+            return;
         }
 
-        return escapeHtml(value);
+        currentMapLayer = layerName;
+
+        mapLayerIds.forEach((layerId) => {
+            if (!map.getLayer(layerId)) {
+                return;
+            }
+
+            map.setLayoutProperty(layerId, 'visibility', 'none');
+        });
+
+        if (layerName === 'street') {
+            map.setLayoutProperty('street-layer', 'visibility', 'visible');
+        }
+
+        if (layerName === 'satellite') {
+            map.setLayoutProperty('satellite-layer', 'visibility', 'visible');
+        }
+
+        if (layerName === 'hybrid') {
+            map.setLayoutProperty('hybrid-satellite-layer', 'visibility', 'visible');
+            map.setLayoutProperty('hybrid-labels-layer', 'visibility', 'visible');
+        }
+
+        if (layerName === 'terrain') {
+            map.setLayoutProperty('terrain-layer', 'visibility', 'visible');
+        }
+
+        document.querySelectorAll('.map-layer-option').forEach((button) => {
+            button.classList.toggle(
+                'active',
+                button.dataset.layer === layerName
+            );
+        });
     }
 
-    function cleanPhone(value) {
-        if (!value) {
-            return '';
+    class MapLayerControl {
+        onAdd(mapInstance) {
+            const container = document.createElement('div');
+            container.className = 'map-layer-control';
+
+            container.innerHTML = `
+                <div class="map-layer-control-title">Map Type</div>
+
+                <button type="button" class="map-layer-option active" data-layer="street">
+                    🛣 Street Map
+                </button>
+
+                <button type="button" class="map-layer-option" data-layer="satellite">
+                    🛰 Satellite Map
+                </button>
+
+                <button type="button" class="map-layer-option" data-layer="hybrid">
+                    🛰 Hybrid Map
+                </button>
+
+                <button type="button" class="map-layer-option" data-layer="terrain">
+                    ⛰ Terrain / Topographic
+                </button>
+            `;
+
+            container.querySelectorAll('.map-layer-option').forEach((button) => {
+                button.addEventListener('click', () => {
+                    setMapLayer(button.dataset.layer);
+                });
+            });
+
+            return container;
         }
 
-        return String(value).replace(/[^\d+]/g, '');
+        onRemove() {}
     }
 
-    function formatDateTime(value) {
-        if (!value) {
-            return 'Not available';
+    class CenterLocationControl {
+        onAdd(mapInstance) {
+            const button = document.createElement('button');
+
+            button.type = 'button';
+            button.className = 'map-center-control';
+            button.title = 'Center location dot';
+            button.innerHTML = '🎯';
+
+            button.addEventListener('click', () => {
+                centerLocationDot();
+            });
+
+            return button;
         }
 
-        const date = new Date(value);
-
-        if (Number.isNaN(date.getTime())) {
-            return escapeHtml(value);
-        }
-
-        return date.toLocaleString();
+        onRemove() {}
     }
 
-    function formatBattery(value) {
-        if (value === null || value === undefined || String(value).trim() === '') {
-            return 'Not available';
-        }
+    function createSosMarkerElement() {
+        const markerWrapper = document.createElement('div');
+        markerWrapper.className = 'sos-map-marker';
+        markerWrapper.innerHTML = '<div class="pulse"></div>';
 
-        return `${escapeHtml(value)}%`;
-    }
-
-    function formatAccuracy(value) {
-        if (value === null || value === undefined || String(value).trim() === '') {
-            return 'Not available';
-        }
-
-        const accuracy = Math.round(Number(value));
-
-        if (Number.isNaN(accuracy)) {
-            return 'Not available';
-        }
-
-        return `${accuracy} meter${accuracy === 1 ? '' : 's'}`;
-    }
-
-    function formatAgeSeconds(seconds) {
-        if (seconds === null || seconds === undefined || Number.isNaN(Number(seconds))) {
-            return 'Not available';
-        }
-
-        const value = Math.round(Number(seconds));
-
-        if (value < 60) {
-            return `${value} second${value === 1 ? '' : 's'} ago`;
-        }
-
-        const minutes = Math.round(value / 60);
-
-        if (minutes < 60) {
-            return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
-        }
-
-        const hours = Math.floor(minutes / 60);
-        const remainingMinutes = minutes % 60;
-
-        return `${hours}h ${remainingMinutes}m ago`;
-    }
-
-    function getHealthClass(state) {
-        switch (state) {
-            case 'fresh':
-                return 'health-fresh';
-            case 'delayed':
-                return 'health-delayed';
-            case 'stale':
-                return 'health-stale';
-            case 'critical_stale':
-                return 'health-critical-stale';
-            case 'stopped':
-                return 'health-stopped';
-            case 'expired':
-                return 'health-expired';
-            case 'waiting':
-                return 'health-waiting';
-            default:
-                return 'health-waiting';
-        }
-    }
-
-    function getHealthIcon(state) {
-        switch (state) {
-            case 'fresh':
-                return '🟢';
-            case 'delayed':
-                return '🟠';
-            case 'stale':
-                return '⚠️';
-            case 'critical_stale':
-                return '🚨';
-            case 'stopped':
-                return '⛔';
-            case 'expired':
-                return '⌛';
-            case 'waiting':
-                return '⏳';
-            default:
-                return 'ℹ️';
-        }
-    }
-
-    function getHealthTitle(state) {
-        switch (state) {
-            case 'fresh':
-                return 'Live tracking active';
-            case 'delayed':
-                return 'Location update delayed';
-            case 'stale':
-                return 'No recent location update';
-            case 'critical_stale':
-                return 'Location critically delayed';
-            case 'stopped':
-                return 'SOS is no longer active';
-            case 'expired':
-                return 'Tracking link expired';
-            case 'waiting':
-                return 'Waiting for location';
-            default:
-                return 'Tracking status';
-        }
-    }
-
-    function buildGoogleMapsUrl(latitude, longitude) {
-        return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+        return markerWrapper;
     }
 
     function initializeOrUpdateMap(latitude, longitude) {
@@ -813,53 +916,51 @@
         latestMapLongitude = lng;
 
         if (!map) {
-            map = L.map('map', {
-                zoomControl: true,
-                scrollWheelZoom: true,
-            }).setView([lat, lng], 16);
+            map = new maplibregl.Map({
+                container: 'map',
+                style: createMapStyle(),
+                center: [lng, lat],
+                zoom: 16,
+            });
 
-            const streetMapLayer = L.tileLayer(
-                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                {
-                    maxZoom: 19,
-                    attribution: '&copy; OpenStreetMap contributors'
-                }
-            );
+            map.addControl(new maplibregl.NavigationControl(), 'top-right');
+            map.addControl(new CenterLocationControl(), 'top-right');
+            map.addControl(new MapLayerControl(), 'top-left');
 
-            const satelliteMapLayer = L.tileLayer(
-                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                {
-                    maxZoom: 19,
-                    attribution: 'Tiles &copy; Esri'
-                }
-            );
-
-            satelliteMapLayer.addTo(map);
-
-            L.control.layers(
-                {
-                    'Street Map': streetMapLayer,
-                    'Satellite Map': satelliteMapLayer,
-                },
-                {},
-                {
-                    position: 'topleft',
-                    collapsed: false,
-                }
-            ).addTo(map);
-
-            marker = L.marker([lat, lng], {
-                icon: emergencyIcon,
-            }).addTo(map);
-
-            marker.bindPopup('Latest SOS location').openPopup();
-
-            addCenterLocationControl();
+            map.on('load', () => {
+                createOrUpdateMarker(lat, lng);
+                initializeRouteSourceAndLayers();
+                initializeAccuracySourceAndLayers();
+            });
 
             return;
         }
 
-        marker.setLatLng([lat, lng]);
+        createOrUpdateMarker(lat, lng);
+    }
+
+    function createOrUpdateMarker(lat, lng) {
+        if (!map) {
+            return;
+        }
+
+        if (!marker) {
+            marker = new maplibregl.Marker({
+                element: createSosMarkerElement(),
+                anchor: 'center',
+            })
+                .setLngLat([lng, lat])
+                .setPopup(
+                    new maplibregl.Popup({
+                        offset: 18,
+                    }).setHTML('<strong>Latest SOS location</strong>')
+                )
+                .addTo(map);
+
+            return;
+        }
+
+        marker.setLngLat([lng, lat]);
     }
 
     function centerLocationDot() {
@@ -868,17 +969,83 @@
             return;
         }
 
-        map.setView([latestMapLatitude, latestMapLongitude], 32, {
-            animate: true,
+        map.flyTo({
+            center: [latestMapLongitude, latestMapLatitude],
+            zoom: 16,
+            essential: true,
         });
 
         if (marker) {
-            marker.openPopup();
+            marker.togglePopup();
         }
+    }
+
+    function initializeRouteSourceAndLayers() {
+        if (!map || map.getSource('sos-route')) {
+            return;
+        }
+
+        map.addSource('sos-route', {
+            type: 'geojson',
+            data: {
+                type: 'Feature',
+                geometry: {
+                    type: 'LineString',
+                    coordinates: [],
+                },
+                properties: {},
+            },
+        });
+
+        map.addLayer({
+            id: 'sos-route-line',
+            type: 'line',
+            source: 'sos-route',
+            layout: {
+                'line-cap': 'round',
+                'line-join': 'round',
+            },
+            paint: {
+                'line-color': '#e53935',
+                'line-width': 5,
+                'line-opacity': 0.85,
+            },
+        });
+
+        map.addSource('sos-start-point', {
+            type: 'geojson',
+            data: {
+                type: 'Feature',
+                geometry: {
+                    type: 'Point',
+                    coordinates: [],
+                },
+                properties: {},
+            },
+        });
+
+        map.addLayer({
+            id: 'sos-start-point-circle',
+            type: 'circle',
+            source: 'sos-start-point',
+            paint: {
+                'circle-radius': 7,
+                'circle-color': '#ffffff',
+                'circle-stroke-color': '#111827',
+                'circle-stroke-width': 3,
+            },
+        });
     }
 
     function updateRouteLine(locationHistory) {
         if (!map || !Array.isArray(locationHistory) || locationHistory.length === 0) {
+            return;
+        }
+
+        if (!map.getSource('sos-route')) {
+            map.once('load', () => {
+                updateRouteLine(locationHistory);
+            });
             return;
         }
 
@@ -891,7 +1058,7 @@
                     return null;
                 }
 
-                return [lat, lng];
+                return [lng, lat];
             })
             .filter((point) => point !== null);
 
@@ -899,41 +1066,68 @@
             return;
         }
 
-        if (!routeLine) {
-            routeLine = L.polyline(routePoints, {
-                color: '#e53935',
-                weight: 5,
-                opacity: 0.85,
-            }).addTo(map);
-        } else {
-            routeLine.setLatLngs(routePoints);
-        }
+        map.getSource('sos-route').setData({
+            type: 'Feature',
+            geometry: {
+                type: 'LineString',
+                coordinates: routePoints,
+            },
+            properties: {},
+        });
 
-        const firstPoint = routePoints[0];
-
-        if (!startMarker) {
-            startMarker = L.circleMarker(firstPoint, {
-                radius: 7,
-                color: '#111827',
-                fillColor: '#ffffff',
-                fillOpacity: 1,
-                weight: 3,
-            }).addTo(map);
-
-            startMarker.bindPopup('SOS route started here');
-        } else {
-            startMarker.setLatLng(firstPoint);
-        }
+        map.getSource('sos-start-point').setData({
+            type: 'Feature',
+            geometry: {
+                type: 'Point',
+                coordinates: routePoints[0],
+            },
+            properties: {},
+        });
     }
 
-    function updateAccuracyCircle(latitude, longitude, accuracy) {
-        if (!map) {
+    function initializeAccuracySourceAndLayers() {
+        if (!map || map.getSource('sos-accuracy')) {
             return;
         }
 
+        map.addSource('sos-accuracy', {
+            type: 'geojson',
+            data: {
+                type: 'Feature',
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: [],
+                },
+                properties: {},
+            },
+        });
+
+        map.addLayer({
+            id: 'sos-accuracy-fill',
+            type: 'fill',
+            source: 'sos-accuracy',
+            paint: {
+                'fill-color': '#e53935',
+                'fill-opacity': 0.12,
+            },
+        });
+
+        map.addLayer({
+            id: 'sos-accuracy-outline',
+            type: 'line',
+            source: 'sos-accuracy',
+            paint: {
+                'line-color': '#e53935',
+                'line-width': 2,
+                'line-opacity': 0.85,
+            },
+        });
+    }
+
+    function buildAccuracyCircleGeoJson(latitude, longitude, radiusMeters) {
         const lat = parseFloat(latitude);
         const lng = parseFloat(longitude);
-        const radius = Number(accuracy);
+        const radius = Number(radiusMeters);
 
         if (
             Number.isNaN(lat) ||
@@ -941,64 +1135,66 @@
             Number.isNaN(radius) ||
             radius <= 0
         ) {
-            if (accuracyCircle) {
-                map.removeLayer(accuracyCircle);
-                accuracyCircle = null;
-            }
-
-            return;
+            return {
+                type: 'Feature',
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: [],
+                },
+                properties: {},
+            };
         }
 
-        if (!accuracyCircle) {
-            accuracyCircle = L.circle([lat, lng], {
-                radius: radius,
-                color: '#e53935',
-                weight: 2,
-                opacity: 0.85,
-                fillColor: '#e53935',
-                fillOpacity: 0.12,
-            }).addTo(map);
+        const points = [];
+        const earthRadiusMeters = 6378137;
+        const latRadians = lat * Math.PI / 180;
+        const lngRadians = lng * Math.PI / 180;
+        const distanceRadians = radius / earthRadiusMeters;
 
-            accuracyCircle.bindPopup(
-                `GPS accuracy: within about ${Math.round(radius)} meters`
+        for (let index = 0; index <= 64; index++) {
+            const bearing = index * 2 * Math.PI / 64;
+
+            const pointLatRadians = Math.asin(
+                Math.sin(latRadians) * Math.cos(distanceRadians) +
+                Math.cos(latRadians) * Math.sin(distanceRadians) * Math.cos(bearing)
             );
-        } else {
-            accuracyCircle.setLatLng([lat, lng]);
-            accuracyCircle.setRadius(radius);
+
+            const pointLngRadians = lngRadians + Math.atan2(
+                Math.sin(bearing) * Math.sin(distanceRadians) * Math.cos(latRadians),
+                Math.cos(distanceRadians) - Math.sin(latRadians) * Math.sin(pointLatRadians)
+            );
+
+            points.push([
+                pointLngRadians * 180 / Math.PI,
+                pointLatRadians * 180 / Math.PI,
+            ]);
         }
+
+        return {
+            type: 'Feature',
+            geometry: {
+                type: 'Polygon',
+                coordinates: [points],
+            },
+            properties: {},
+        };
     }
 
-    function addCenterLocationControl() {
-        if (!map || centerLocationControlAdded) {
+    function updateAccuracyCircle(latitude, longitude, accuracy) {
+        if (!map) {
             return;
         }
 
-        const CenterLocationControl = L.Control.extend({
-            options: {
-                position: 'topright'
-            },
+        if (!map.getSource('sos-accuracy')) {
+            map.once('load', () => {
+                updateAccuracyCircle(latitude, longitude, accuracy);
+            });
+            return;
+        }
 
-            onAdd: function () {
-                const button = L.DomUtil.create('button', 'leaflet-center-location-control');
-
-                button.type = 'button';
-                button.title = 'Center location dot';
-                button.innerHTML = '🎯';
-
-                L.DomEvent.disableClickPropagation(button);
-                L.DomEvent.disableScrollPropagation(button);
-
-                L.DomEvent.on(button, 'click', function (event) {
-                    L.DomEvent.preventDefault(event);
-                    centerLocationDot();
-                });
-
-                return button;
-            }
-        });
-
-        map.addControl(new CenterLocationControl());
-        centerLocationControlAdded = true;
+        map.getSource('sos-accuracy').setData(
+            buildAccuracyCircleGeoJson(latitude, longitude, accuracy)
+        );
     }
 
     function renderEmergencyProfile(profile) {
