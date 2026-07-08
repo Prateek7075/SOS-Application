@@ -634,6 +634,7 @@
     let marker = null;
     let routeLine = null;
     let startMarker = null;
+    let accuracyCircle = null;
     let latestMapLatitude = null;
     let latestMapLongitude = null;
     let centerLocationControlAdded = false;
@@ -694,6 +695,20 @@
         }
 
         return `${escapeHtml(value)}%`;
+    }
+
+    function formatAccuracy(value) {
+        if (value === null || value === undefined || String(value).trim() === '') {
+            return 'Not available';
+        }
+
+        const accuracy = Math.round(Number(value));
+
+        if (Number.isNaN(accuracy)) {
+            return 'Not available';
+        }
+
+        return `${accuracy} meter${accuracy === 1 ? '' : 's'}`;
     }
 
     function formatAgeSeconds(seconds) {
@@ -883,6 +898,48 @@
             startMarker.bindPopup('SOS route started here');
         } else {
             startMarker.setLatLng(firstPoint);
+        }
+    }
+
+    function updateAccuracyCircle(latitude, longitude, accuracy) {
+        if (!map) {
+            return;
+        }
+
+        const lat = parseFloat(latitude);
+        const lng = parseFloat(longitude);
+        const radius = Number(accuracy);
+
+        if (
+            Number.isNaN(lat) ||
+            Number.isNaN(lng) ||
+            Number.isNaN(radius) ||
+            radius <= 0
+        ) {
+            if (accuracyCircle) {
+                map.removeLayer(accuracyCircle);
+                accuracyCircle = null;
+            }
+
+            return;
+        }
+
+        if (!accuracyCircle) {
+            accuracyCircle = L.circle([lat, lng], {
+                radius: radius,
+                color: '#e53935',
+                weight: 2,
+                opacity: 0.85,
+                fillColor: '#e53935',
+                fillOpacity: 0.12,
+            }).addTo(map);
+
+            accuracyCircle.bindPopup(
+                `GPS accuracy: within about ${Math.round(radius)} meters`
+            );
+        } else {
+            accuracyCircle.setLatLng([lat, lng]);
+            accuracyCircle.setRadius(radius);
         }
     }
 
@@ -1108,6 +1165,11 @@
 
             initializeOrUpdateMap(latitude, longitude);
             updateRouteLine(data.location_history || []);
+            updateAccuracyCircle(
+                latitude,
+                longitude,
+                latestLocation ? latestLocation.accuracy : null
+            );
 
             locationDetails.innerHTML = `
                 <div class="profile-grid" style="margin-top: 14px;">
@@ -1125,6 +1187,13 @@
                         <span class="label">Battery</span>
                         <span class="value">
                             ${latestLocation ? formatBattery(latestLocation.battery_percentage) : 'Not available'}
+                        </span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="label">GPS Accuracy</span>
+                        <span class="value">
+                            ${latestLocation ? formatAccuracy(latestLocation.accuracy) : 'Not available'}
                         </span>
                     </div>
 
