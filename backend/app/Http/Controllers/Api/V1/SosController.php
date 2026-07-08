@@ -9,6 +9,7 @@ use App\Models\SosLocationUpdate;
 use App\Models\UserProfile;
 use App\Models\User;
 
+use Carbon\Carbon;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -268,9 +269,16 @@ class SosController extends Controller
             $trackingState = 'waiting';
             $trackingMessage = 'SOS is active, but no location update has been received yet.';
         } else {
-            $lastUpdateAgeSeconds = $latestLocation->created_at
-                ? $latestLocation->created_at->diffInSeconds(now())
-                : null;
+            $lastUpdateAgeSeconds = null;
+
+            if ($latestLocation->created_at) {
+                try {
+                    $lastUpdateAgeSeconds = Carbon::parse($latestLocation->created_at)
+                        ->diffInSeconds(now());
+                } catch (\Exception $error) {
+                    $lastUpdateAgeSeconds = null;
+                }
+            }
 
             if ($lastUpdateAgeSeconds <= 120) {
                 $trackingState = 'fresh';
