@@ -180,6 +180,26 @@
             box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
         }
 
+        .leaflet-center-location-control {
+            width: 42px;
+            height: 42px;
+            border: none;
+            border-radius: 12px;
+            background: white;
+            color: var(--danger);
+            font-size: 20px;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .leaflet-center-location-control:hover {
+            background: #fff5f5;
+        }
+
         .status {
             display: inline-flex;
             align-items: center;
@@ -213,6 +233,50 @@
         .expired {
             background: rgba(255, 255, 255, 0.90);
             color: var(--warning);
+        }
+
+        .health-alert {
+            margin-top: 12px;
+            padding: 14px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            background: rgba(255, 255, 255, 0.14);
+        }
+
+        .health-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 6px;
+        }
+
+        .health-message {
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 13.5px;
+            line-height: 1.5;
+            font-weight: 600;
+        }
+
+        .health-fresh {
+            background: rgba(22, 163, 74, 0.22);
+        }
+
+        .health-delayed {
+            background: rgba(249, 115, 22, 0.22);
+        }
+
+        .health-stale,
+        .health-critical-stale {
+            background: rgba(185, 28, 28, 0.28);
+        }
+
+        .health-stopped,
+        .health-expired,
+        .health-waiting {
+            background: rgba(55, 65, 81, 0.26);
         }
 
         .status-meta {
@@ -276,6 +340,7 @@
             font-weight: 900;
             font-size: 15px;
             transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+            cursor: pointer;
         }
 
         .button {
@@ -567,6 +632,9 @@
 
     let map = null;
     let marker = null;
+    let latestMapLatitude = null;
+    let latestMapLongitude = null;
+    let centerLocationControlAdded = false;
 
     const emergencyIcon = L.divIcon({
         className: '',
@@ -626,6 +694,92 @@
         return `${escapeHtml(value)}%`;
     }
 
+    function formatAgeSeconds(seconds) {
+        if (seconds === null || seconds === undefined || Number.isNaN(Number(seconds))) {
+            return 'Not available';
+        }
+
+        const value = Number(seconds);
+
+        if (value < 60) {
+            return `${value} seconds ago`;
+        }
+
+        const minutes = Math.floor(value / 60);
+
+        if (minutes < 60) {
+            return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+        }
+
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+
+        return `${hours}h ${remainingMinutes}m ago`;
+    }
+
+    function getHealthClass(state) {
+        switch (state) {
+            case 'fresh':
+                return 'health-fresh';
+            case 'delayed':
+                return 'health-delayed';
+            case 'stale':
+                return 'health-stale';
+            case 'critical_stale':
+                return 'health-critical-stale';
+            case 'stopped':
+                return 'health-stopped';
+            case 'expired':
+                return 'health-expired';
+            case 'waiting':
+                return 'health-waiting';
+            default:
+                return 'health-waiting';
+        }
+    }
+
+    function getHealthIcon(state) {
+        switch (state) {
+            case 'fresh':
+                return '🟢';
+            case 'delayed':
+                return '🟠';
+            case 'stale':
+                return '⚠️';
+            case 'critical_stale':
+                return '🚨';
+            case 'stopped':
+                return '⛔';
+            case 'expired':
+                return '⌛';
+            case 'waiting':
+                return '⏳';
+            default:
+                return 'ℹ️';
+        }
+    }
+
+    function getHealthTitle(state) {
+        switch (state) {
+            case 'fresh':
+                return 'Live tracking active';
+            case 'delayed':
+                return 'Location update delayed';
+            case 'stale':
+                return 'No recent location update';
+            case 'critical_stale':
+                return 'Location critically delayed';
+            case 'stopped':
+                return 'SOS is no longer active';
+            case 'expired':
+                return 'Tracking link expired';
+            case 'waiting':
+                return 'Waiting for location';
+            default:
+                return 'Tracking status';
+        }
+    }
+
     function buildGoogleMapsUrl(latitude, longitude) {
         return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
     }
@@ -637,6 +791,9 @@
         if (Number.isNaN(lat) || Number.isNaN(lng)) {
             return;
         }
+
+        latestMapLatitude = lat;
+        latestMapLongitude = lng;
 
         if (!map) {
             map = L.map('map', {
@@ -655,11 +812,60 @@
 
             marker.bindPopup('Latest SOS location').openPopup();
 
+            addCenterLocationControl();
+
             return;
         }
 
         marker.setLatLng([lat, lng]);
-        map.panTo([lat, lng]);
+    }
+
+    function centerLocationDot() {
+        if (!map || latestMapLatitude === null || latestMapLongitude === null) {
+            alert('Location is not available yet.');
+            return;
+        }
+
+        map.setView([latestMapLatitude, latestMapLongitude], 16, {
+            animate: true,
+        });
+
+        if (marker) {
+            marker.openPopup();
+        }
+    }
+
+    function addCenterLocationControl() {
+        if (!map || centerLocationControlAdded) {
+            return;
+        }
+
+        const CenterLocationControl = L.Control.extend({
+            options: {
+                position: 'topright'
+            },
+
+            onAdd: function () {
+                const button = L.DomUtil.create('button', 'leaflet-center-location-control');
+
+                button.type = 'button';
+                button.title = 'Center location dot';
+                button.innerHTML = '🎯';
+
+                L.DomEvent.disableClickPropagation(button);
+                L.DomEvent.disableScrollPropagation(button);
+
+                L.DomEvent.on(button, 'click', function (event) {
+                    L.DomEvent.preventDefault(event);
+                    centerLocationDot();
+                });
+
+                return button;
+            }
+        });
+
+        map.addControl(new CenterLocationControl());
+        centerLocationControlAdded = true;
     }
 
     function renderEmergencyProfile(profile) {
@@ -755,11 +961,22 @@
 
             if (!response.ok) {
                 const message = body.message || 'Tracking details are unavailable';
+                const health = body.data?.tracking_health || {
+                    state: 'expired',
+                    message: message,
+                    last_update_age_seconds: null,
+                };
 
                 statusBox.innerHTML = `
                     <div class="status expired">Unavailable</div>
-                    <div class="status-meta">
-                        <span class="error">${escapeHtml(message)}</span>
+
+                    <div class="health-alert ${getHealthClass(health.state)}">
+                        <div class="health-title">
+                            ${getHealthIcon(health.state)} ${getHealthTitle(health.state)}
+                        </div>
+                        <div class="health-message">
+                            ${escapeHtml(health.message || message)}
+                        </div>
                     </div>
                 `;
 
@@ -774,12 +991,16 @@
 
             const data = body.data;
             const status = data.status || 'unknown';
+            const health = data.tracking_health || {
+                state: 'waiting',
+                message: 'Tracking health is not available.',
+                last_update_age_seconds: null,
+            };
 
             renderEmergencyProfile(data.emergency_profile);
 
             const latestLocation = data.latest_location;
             const initialLocation = data.initial_location;
-
             const locationToShow = latestLocation || initialLocation;
 
             let statusClass = 'cancelled';
@@ -788,6 +1009,8 @@
                 statusClass = 'active';
             } else if (status === 'cancelled') {
                 statusClass = 'cancelled';
+            } else if (health.state === 'expired') {
+                statusClass = 'expired';
             }
 
             statusBox.innerHTML = `
@@ -795,7 +1018,19 @@
                     ${escapeHtml(status.toUpperCase())}
                 </div>
 
-                <div class="status-meta">
+                <div class="health-alert ${getHealthClass(health.state)}">
+                    <div class="health-title">
+                        ${getHealthIcon(health.state)} ${getHealthTitle(health.state)}
+                    </div>
+                    <div class="health-message">
+                        ${escapeHtml(health.message || 'Tracking status is being checked.')}
+                    </div>
+                </div>
+
+                <div class="status-meta" style="margin-top: 12px;">
+                    <strong>Last update:</strong>
+                    ${formatAgeSeconds(health.last_update_age_seconds)}
+                    <br>
                     <strong>Link expires at:</strong>
                     ${formatDateTime(data.expires_at)}
                 </div>
@@ -805,6 +1040,12 @@
                 locationDetails.innerHTML = `
                     <div class="error">
                         No location is available yet.
+                    </div>
+
+                    <div class="button-row">
+                        <a class="outline-button" href="javascript:void(0)" onclick="loadTrackingDetails()">
+                            🔄 Refresh Now
+                        </a>
                     </div>
                 `;
 
@@ -835,43 +1076,55 @@
                         </span>
                     </div>
 
+                    <div class="info-row">
+                        <span class="label">Tracking Health</span>
+                        <span class="value">
+                            ${escapeHtml(getHealthTitle(health.state))}
+                        </span>
+                    </div>
+
                     <div class="info-row full-width">
                         <span class="label">Last Updated</span>
                         <span class="value">
                             ${latestLocation ? formatDateTime(latestLocation.created_at) : 'Initial location only'}
                         </span>
                     </div>
+
+                    <div class="info-row full-width">
+                        <span class="label">What this means</span>
+                        <span class="value">
+                            ${escapeHtml(health.message || 'Showing latest available location.')}
+                        </span>
+                    </div>
                 </div>
 
-                <div class="button-row">
+                <div class="button-row three">
                     <a class="button" href="${buildGoogleMapsUrl(latitude, longitude)}" target="_blank">
-                        🗺 Open Latest Location in Google Maps
+                        🗺 Open in Google Maps
                     </a>
 
-                    <a class="outline-button" href="javascript:void(0)" onclick="loadTrackingDetails()">
-                        🔄 Refresh Now
+                    <a class="secondary-button" href="javascript:void(0)" onclick="centerLocationDot()">
+                        🎯 Center Location Dot
                     </a>
                 </div>
             `;
         } catch (error) {
             statusBox.innerHTML = `
                 <div class="status expired">Connection Error</div>
-                <div class="status-meta">
-                    <span class="error">
-                        Could not load tracking details.
-                    </span>
+
+                <div class="health-alert health-critical-stale">
+                    <div class="health-title">
+                        🚨 Could not refresh tracking
+                    </div>
+                    <div class="health-message">
+                        This browser could not reach the SOS server. Please check internet connection and try again.
+                    </div>
                 </div>
             `;
 
             locationDetails.innerHTML = `
                 <div class="error">
                     Please check your internet connection and refresh the page.
-                </div>
-
-                <div class="button-row">
-                    <a class="outline-button" href="javascript:void(0)" onclick="loadTrackingDetails()">
-                        🔄 Try Again
-                    </a>
                 </div>
             `;
         }

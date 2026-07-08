@@ -242,12 +242,50 @@ class SosController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Tracking link has expired',
+                'data' => [
+                    'tracking_health' => [
+                        'state' => 'expired',
+                        'message' => 'This tracking link has expired for privacy reasons.',
+                        'last_update_age_seconds' => null,
+                        'server_time' => now(),
+                    ],
+                ],
             ], 410);
         }
 
         $latestLocation = $sosEvent->locationUpdates()
             ->latest('created_at')
             ->first();
+
+        $lastUpdateAgeSeconds = null;
+        $trackingState = 'waiting';
+        $trackingMessage = 'Waiting for the first location update.';
+
+        if ($sosEvent->status !== 'active') {
+            $trackingState = 'stopped';
+            $trackingMessage = 'SOS is no longer active. Showing last known location.';
+        } elseif (!$latestLocation) {
+            $trackingState = 'waiting';
+            $trackingMessage = 'SOS is active, but no location update has been received yet.';
+        } else {
+            $lastUpdateAgeSeconds = $latestLocation->created_at
+                ? $latestLocation->created_at->diffInSeconds(now())
+                : null;
+
+            if ($lastUpdateAgeSeconds <= 120) {
+                $trackingState = 'fresh';
+                $trackingMessage = 'Live tracking is active. Location is recent.';
+            } elseif ($lastUpdateAgeSeconds <= 300) {
+                $trackingState = 'delayed';
+                $trackingMessage = 'Location update is slightly delayed. Showing latest known location.';
+            } elseif ($lastUpdateAgeSeconds <= 600) {
+                $trackingState = 'stale';
+                $trackingMessage = 'No recent location update received. The phone may have weak internet, GPS issues, or background restrictions.';
+            } else {
+                $trackingState = 'critical_stale';
+                $trackingMessage = 'Location has not updated for a long time. The phone may be offline, out of signal, switched off, or background tracking may have stopped.';
+            }
+        }
 
         $user = null;
         $profile = null;
@@ -264,6 +302,13 @@ class SosController extends Controller
             'success' => true,
             'data' => [
                 'status' => $sosEvent->status,
+
+                'tracking_health' => [
+                    'state' => $trackingState,
+                    'message' => $trackingMessage,
+                    'last_update_age_seconds' => $lastUpdateAgeSeconds,
+                    'server_time' => now(),
+                ],
 
                 'emergency_profile' => [
                     'name' => $user?->name,
