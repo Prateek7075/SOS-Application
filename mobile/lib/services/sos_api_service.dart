@@ -112,6 +112,44 @@ class SosApiService {
     }
   }
 
+  Future<SosEvent?> getActiveSos() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/sos/active'),
+      headers: await getAuthHeaders(),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to get active SOS: ${response.statusCode} ${response.body}',
+      );
+    }
+
+    final decodedBody = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = decodedBody['data'] as Map<String, dynamic>;
+
+    final hasActiveSos = data['has_active_sos'] == true;
+
+    if (!hasActiveSos || data['sos_event'] == null) {
+      return null;
+    }
+
+    final sosEventJson = data['sos_event'] as Map<String, dynamic>;
+    final trackingToken = sosEventJson['tracking_token'].toString();
+
+    final normalizedBody = {
+      'success': true,
+      'message': decodedBody['message'] ?? 'Active SOS found.',
+      'data': {
+        'was_existing_active_sos': true,
+        'sos_event': sosEventJson,
+        'tracking_url':
+        '${AppConfig.backendBaseUrl}/track/${Uri.encodeComponent(trackingToken)}',
+      },
+    };
+
+    return SosEvent.fromJson(normalizedBody);
+  }
+
   Future<void> cancelSos({
     required int sosEventId,
   }) async {

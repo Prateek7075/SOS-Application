@@ -268,24 +268,78 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
   }
 
   Future<void> loadActiveSos() async {
-    final session = await _activeSosLocalService.getActiveSos();
+    final localSession = await _activeSosLocalService.getActiveSos();
 
     if (!mounted) {
       return;
     }
 
-    // Instant UI update from local storage.
+    // Fast UI update from local storage first.
     setState(() {
-      _activeSosSession = session;
+      _activeSosSession = localSession;
       _isCheckingSos = false;
-      sosStatus = session == null
-          ? 'SOS not started'
+      sosStatus = localSession == null
+          ? 'Checking active SOS...'
           : 'SOS is currently active';
     });
 
-    // Backend verification happens in background.
-    if (session != null) {
-      unawaited(verifyActiveSosWithBackend(session));
+    try {
+      final backendActiveSos = await _sosApiService.getActiveSos();
+
+      if (!mounted) {
+        return;
+      }
+
+      if (backendActiveSos == null) {
+        await _backgroundLocationService.stop();
+        await _activeSosLocalService.clear();
+
+        if (!mounted) {
+          return;
+        }
+
+        setState(() {
+          _activeSosSession = null;
+          _isCheckingSos = false;
+          sosStatus = 'SOS not started';
+        });
+
+        return;
+      }
+
+      await _activeSosLocalService.save(
+        sosEventId: backendActiveSos.id,
+        trackingToken: backendActiveSos.trackingToken,
+        trackingUrl: backendActiveSos.trackingUrl,
+        batteryPercentage: localSession?.batteryPercentage,
+      );
+
+      final updatedSession = await _activeSosLocalService.getActiveSos();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _activeSosSession = updatedSession;
+        _isCheckingSos = false;
+        sosStatus = 'SOS is currently active';
+      });
+    } catch (error) {
+      debugPrint('Could not load active SOS from backend: $error');
+
+      if (!mounted) {
+        return;
+      }
+
+      // If backend check fails, keep local session if available.
+      // Do not clear it because the user may have slow/no internet.
+      setState(() {
+        _isCheckingSos = false;
+        sosStatus = localSession == null
+            ? 'SOS not started'
+            : 'SOS is currently active';
+      });
     }
   }
 
