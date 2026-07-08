@@ -25,14 +25,14 @@ class SosApiService {
       throw Exception('Firebase ID token is unavailable');
     }
 
-    print('================ FIREBASE BEARER TOKEN START ================');
-
-    for (var i = 0; i < idToken.length; i += 900) {
-      final end = (i + 900 < idToken.length) ? i + 900 : idToken.length;
-      print(idToken.substring(i, end));
-    }
-
-    print('================ FIREBASE BEARER TOKEN END ==================');
+    // print('================ FIREBASE BEARER TOKEN START ================');
+    //
+    // for (var i = 0; i < idToken.length; i += 900) {
+    //   final end = (i + 900 < idToken.length) ? i + 900 : idToken.length;
+    //   print(idToken.substring(i, end));
+    // }
+    //
+    // print('================ FIREBASE BEARER TOKEN END ==================');
 
     return {
       'Accept': 'application/json',
