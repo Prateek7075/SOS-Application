@@ -181,37 +181,38 @@
         }
 
         .maplibregl-ctrl-group button {
-            width: 38px;
-            height: 38px;
+            width: 34px;
+            height: 34px;
         }
 
         .map-layer-control {
             background: white;
-            border-radius: 14px;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
-            padding: 8px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+            padding: 6px;
             font-family: inherit;
-            min-width: 165px;
+            width: 142px;
         }
 
         .map-layer-control-title {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 900;
             color: var(--dark);
-            margin-bottom: 6px;
+            margin: 2px 4px 5px;
         }
 
         .map-layer-option {
             width: 100%;
             border: none;
             background: transparent;
-            padding: 8px 9px;
-            border-radius: 10px;
+            padding: 7px 8px;
+            border-radius: 9px;
             text-align: left;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 800;
             color: var(--dark);
             cursor: pointer;
+            line-height: 1.1;
         }
 
         .map-layer-option:hover {
@@ -224,16 +225,14 @@
         }
 
         .map-center-control {
-            width: 42px;
-            height: 42px;
+            width: 34px;
+            height: 34px;
             border: none;
-            border-radius: 12px;
             background: white;
             color: var(--danger);
-            font-size: 20px;
+            font-size: 17px;
             font-weight: 900;
             cursor: pointer;
-            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
         }
 
         .map-center-control:hover {
@@ -246,26 +245,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        .leaflet-center-location-control {
-            width: 42px;
-            height: 42px;
-            border: none;
-            border-radius: 12px;
-            background: white;
-            color: var(--danger);
-            font-size: 20px;
-            font-weight: 900;
-            cursor: pointer;
-            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .leaflet-center-location-control:hover {
-            background: #fff5f5;
         }
 
         .status {
@@ -1001,22 +980,22 @@
             container.className = 'map-layer-control';
 
             container.innerHTML = `
-                <div class="map-layer-control-title">Map Type</div>
+                <div class="map-layer-control-title">Map</div>
 
                 <button type="button" class="map-layer-option active" data-layer="street">
-                    🛣 Street Map
+                    Street
                 </button>
 
                 <button type="button" class="map-layer-option" data-layer="satellite">
-                    🛰 Satellite Map
+                    Satellite
                 </button>
 
                 <button type="button" class="map-layer-option" data-layer="hybrid">
-                    🛰 Hybrid Map
+                    Hybrid
                 </button>
 
                 <button type="button" class="map-layer-option" data-layer="terrain">
-                    ⛰ Terrain / Topographic
+                    Terrain
                 </button>
             `;
 
@@ -1034,18 +1013,22 @@
 
     class CenterLocationControl {
         onAdd(mapInstance) {
-            const button = document.createElement('button');
+            const container = document.createElement('div');
+            container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
 
+            const button = document.createElement('button');
             button.type = 'button';
             button.className = 'map-center-control';
-            button.title = 'Center location dot';
+            button.title = 'Center location';
             button.innerHTML = '🎯';
 
             button.addEventListener('click', () => {
                 centerLocationDot();
             });
 
-            return button;
+            container.appendChild(button);
+
+            return container;
         }
 
         onRemove() {}
@@ -1080,7 +1063,7 @@
 
             map.addControl(new maplibregl.NavigationControl(), 'top-right');
             map.addControl(new CenterLocationControl(), 'top-right');
-            map.addControl(new MapLayerControl(), 'top-left');
+            map.addControl(new MapLayerControl(), 'bottom-left');
 
             map.on('load', () => {
                 createOrUpdateMarker(lat, lng);
@@ -1162,7 +1145,7 @@
             },
             paint: {
                 'line-color': '#e53935',
-                'line-width': 5,
+                'line-width': 4,
                 'line-opacity': 0.85,
             },
         });
@@ -1263,7 +1246,7 @@
             source: 'sos-accuracy',
             paint: {
                 'fill-color': '#e53935',
-                'fill-opacity': 0.12,
+                'fill-opacity': 0.06,
             },
         });
 
@@ -1273,7 +1256,7 @@
             source: 'sos-accuracy',
             paint: {
                 'line-color': '#e53935',
-                'line-width': 2,
+                'line-width': 1.5,
                 'line-opacity': 0.85,
             },
         });
