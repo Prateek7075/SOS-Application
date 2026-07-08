@@ -19,6 +19,7 @@ import '../services/offline_sos_local_service.dart';
 import '../services/custom_sos_message_local_service.dart';
 import '../services/battery_optimization_service.dart';
 import '../services/failed_sos_location_local_service.dart';
+import '../services/battery_optimization_service.dart';
 
 class ActiveSosScreen extends StatefulWidget {
   const ActiveSosScreen({
@@ -83,13 +84,11 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   bool _batteryOptimizationDialogShown = false;
 
 
-  static const Color _dangerRed = Color(0xFFE53935);
+  static const Color _dangerRed = Color(0xFFEF4444);
   static const Color _dangerDark = Color(0xFFB91C1C);
-  static const Color _darkText = Color(0xFF111827);
-  static const Color _mutedText = Color(0xFF6B7280);
-  static const Color _softBg = Color(0xFFF8FAFC);
-  static const Color _borderColor = Color(0xFFE5E7EB);
-  static const Color _successGreen = Color(0xFF16A34A);
+  static const Color _successGreen = Color(0xFF22C55E);
+  static const Color _warningAmber = Color(0xFFF59E0B);
+  static const Color _mutedText = Color(0xFF94A3B8);
 
   @override
   void initState() {
@@ -1125,36 +1124,95 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   Future<bool?> showCancelConfirmation() {
     return showDialog<bool>(
       context: context,
+      barrierColor: Colors.black.withOpacity(0.72),
       builder: (dialogContext) {
         return AlertDialog(
+          backgroundColor: const Color(0xFF111827),
+          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
-          ),
-          title: const Text(
-            'Cancel SOS?',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
+            borderRadius: BorderRadius.circular(26),
+            side: const BorderSide(
+              color: Color(0xFF243041),
             ),
           ),
+          titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
+          contentPadding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          title: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: _dangerRed.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _dangerRed.withOpacity(0.28),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: _dangerRed,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Cancel SOS?',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
           content: const Text(
-            'Are you sure you want to cancel this active SOS alert?',
+            'Are you sure you want to cancel this active SOS alert? Your live tracking will stop.',
+            style: TextStyle(
+              color: Color(0xFFCBD5E1),
+              fontSize: 14,
+              height: 1.45,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(dialogContext, false);
               },
-              child: const Text('Keep Active'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFCBD5E1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: const Text(
+                'Keep Active',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
             FilledButton.icon(
               onPressed: () {
                 Navigator.pop(dialogContext, true);
               },
               icon: const Icon(Icons.close_rounded),
-              label: const Text('Cancel SOS'),
+              label: const Text(
+                'Cancel SOS',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
               style: FilledButton.styleFrom(
                 backgroundColor: _dangerRed,
                 foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
           ],
@@ -1350,15 +1408,61 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     );
   }
 
+  Color getBatteryColor() {
+    if (_batteryPercentage == null) {
+      return _mutedText;
+    }
+
+    if (_batteryPercentage! <= 15) {
+      return _dangerRed;
+    }
+
+    if (_batteryPercentage! <= 30) {
+      return _warningAmber;
+    }
+
+    return _successGreen;
+  }
+
+
   Color getStatusColor(String value) {
     final cleanValue = value.toLowerCase();
+
+    if (cleanValue.contains('unrestricted') ||
+        cleanValue.contains('allowed')) {
+      return _successGreen;
+    }
+
+
 
     if (cleanValue.contains('failed') ||
         cleanValue.contains('denied') ||
         cleanValue.contains('not sent') ||
         cleanValue.contains('not available') ||
-        cleanValue.contains('unavailable')) {
+        cleanValue.contains('unavailable') ||
+        cleanValue.contains('restricted') ||
+        cleanValue.contains('could not')) {
       return _dangerRed;
+    }
+
+    if (cleanValue.contains('warning') ||
+        cleanValue.contains('waiting') ||
+        cleanValue.contains('checking') ||
+        cleanValue.contains('updating') ||
+        cleanValue.contains('starting')) {
+      return _warningAmber;
+    }
+
+    if (cleanValue.contains('no internet') ||
+        cleanValue.contains('offline')) {
+      return _warningAmber;
+    }
+
+    if (cleanValue.contains('wifi') ||
+        cleanValue.contains('mobile data') ||
+        cleanValue.contains('internet') ||
+        cleanValue.contains('connected')) {
+      return _successGreen;
     }
 
     if (cleanValue.contains('found') ||
@@ -1366,22 +1470,42 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         cleanValue.contains('sent') ||
         cleanValue.contains('started') ||
         cleanValue.contains('active') ||
-        cleanValue.contains('updated')) {
+        cleanValue.contains('updated') ||
+        cleanValue.contains('ready')) {
       return _successGreen;
     }
 
     return _mutedText;
   }
 
+  Color getStatusBackgroundColor(String value) {
+    return getStatusColor(value).withOpacity(0.14);
+  }
+
   IconData getStatusIcon(String value) {
     final cleanValue = value.toLowerCase();
+
+    if (cleanValue.contains('unrestricted') ||
+        cleanValue.contains('allowed')) {
+      return Icons.check_circle_outline_rounded;
+    }
 
     if (cleanValue.contains('failed') ||
         cleanValue.contains('denied') ||
         cleanValue.contains('not sent') ||
         cleanValue.contains('not available') ||
-        cleanValue.contains('unavailable')) {
+        cleanValue.contains('unavailable') ||
+        cleanValue.contains('restricted') ||
+        cleanValue.contains('could not')) {
       return Icons.error_outline_rounded;
+    }
+
+    if (cleanValue.contains('warning') ||
+        cleanValue.contains('waiting') ||
+        cleanValue.contains('checking') ||
+        cleanValue.contains('updating') ||
+        cleanValue.contains('starting')) {
+      return Icons.timelapse_rounded;
     }
 
     if (cleanValue.contains('found') ||
@@ -1389,45 +1513,134 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         cleanValue.contains('sent') ||
         cleanValue.contains('started') ||
         cleanValue.contains('active') ||
-        cleanValue.contains('updated')) {
+        cleanValue.contains('updated') ||
+        cleanValue.contains('ready')) {
       return Icons.check_circle_outline_rounded;
     }
 
     return Icons.info_outline_rounded;
   }
 
+  Widget _buildSectionCard({
+    required String title,
+    required List<Widget> children,
+    String? subtitle,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111827),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: const Color(0xFF243041),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.24),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                color: Color(0xFF94A3B8),
+                fontSize: 13,
+                height: 1.4,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.13),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(0.28),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: color,
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: color,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget buildInfoTile({
     required String title,
     required String value,
     required IconData icon,
+    bool showStatus = true,
+    Color? iconColor,
   }) {
-    final statusColor = getStatusColor(value);
+    final statusColor = showStatus
+        ? getStatusColor(value)
+        : iconColor ?? const Color(0xFF3B82F6);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _borderColor,
+          color: const Color(0xFF243041),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 7),
-          ),
-        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
+              color: statusColor.withOpacity(0.14),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
@@ -1444,24 +1657,33 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: _mutedText,
-                    fontSize: 13,
+                    color: Color(0xFF94A3B8),
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 6),
                 Text(
                   value,
                   style: const TextStyle(
-                    color: _darkText,
-                    fontSize: 14.5,
-                    height: 1.35,
+                    color: Colors.white,
+                    fontSize: 14.2,
+                    height: 1.4,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
             ),
           ),
+
+          if (showStatus) ...[
+            const SizedBox(width: 8),
+            Icon(
+              getStatusIcon(value),
+              color: statusColor,
+              size: 18,
+            ),
+          ],
         ],
       ),
     );
@@ -1476,18 +1698,11 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _borderColor,
+          color: const Color(0xFF243041),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 7),
-          ),
-        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -1501,15 +1716,15 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 42,
-                  height: 42,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: const Color(0xFF3B82F6).withOpacity(0.14),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(
                     icon,
-                    color: Colors.blue,
+                    color: const Color(0xFF3B82F6),
                     size: 22,
                   ),
                 ),
@@ -1521,20 +1736,21 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
                       Text(
                         title,
                         style: const TextStyle(
-                          color: _mutedText,
-                          fontSize: 13,
+                          color: Color(0xFF94A3B8),
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 5),
+                      const SizedBox(height: 6),
                       Text(
                         link,
                         style: const TextStyle(
-                          color: Colors.blue,
+                          color: Color(0xFF60A5FA),
                           fontSize: 14,
-                          height: 1.35,
+                          height: 1.45,
                           fontWeight: FontWeight.w700,
                           decoration: TextDecoration.underline,
+                          decorationColor: Color(0xFF60A5FA),
                         ),
                       ),
                     ],
@@ -1543,7 +1759,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
                 const SizedBox(width: 8),
                 const Icon(
                   Icons.open_in_new_rounded,
-                  color: _mutedText,
+                  color: Color(0xFF94A3B8),
                   size: 18,
                 ),
               ],
@@ -1555,60 +1771,227 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   }
 
   Widget _buildHeaderCard() {
+    final networkLabel = _networkStatus == 'No internet' ? 'Offline mode' : 'Internet ready';
+    final trackingSubtitle = _trackingUrl != '-' ? 'Contacts can follow your live location.' : 'Trying to create tracking access.';
+
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
-            _dangerRed,
-            _dangerDark,
+            Color(0xFF0F172A),
+            Color(0xFF111827),
+            Color(0xFF172033),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: const Color(0xFF243041),
+        ),
         boxShadow: [
           BoxShadow(
-            color: _dangerRed.withOpacity(0.28),
+            color: Colors.black.withOpacity(0.28),
             blurRadius: 28,
             offset: const Offset(0, 14),
           ),
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 86,
-            height: 86,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.warning_amber_rounded,
-              color: Colors.white,
-              size: 52,
-            ),
-          ),
-          const SizedBox(height: 16),
           const Text(
             'Emergency SOS Active',
-            textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.white,
-              fontSize: 25,
+              fontSize: 26,
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 8),
           Text(
             _sosDecision,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.88),
-              fontSize: 14.5,
+            style: const TextStyle(
+              color: Color(0xFFCBD5E1),
+              fontSize: 14,
               height: 1.4,
               fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _buildStatusBadge(
+                icon: Icons.location_on_rounded,
+                label: _gpsStatus,
+                color: getStatusColor(_gpsStatus),
+              ),
+              _buildStatusBadge(
+                icon: _networkStatus == 'No internet'
+                    ? Icons.wifi_off_rounded
+                    : Icons.wifi_rounded,
+                label: networkLabel,
+                color: _networkStatus == 'No internet'
+                    ? const Color(0xFFF59E0B)
+                    : const Color(0xFF22C55E),
+              ),
+              _buildStatusBadge(
+                icon: Icons.battery_5_bar_rounded,
+                label: _batteryPercentage == null
+                    ? 'Battery unknown'
+                    : 'Battery ${_batteryPercentage!}% ',
+                color: _batteryPercentage != null && _batteryPercentage! <= 20
+                    ? const Color(0xFFF59E0B)
+                    : const Color(0xFF3B82F6),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Center(
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFEF4444).withOpacity(0.28),
+                    blurRadius: 36,
+                    spreadRadius: 8,
+                  ),
+                ],
+                gradient: const RadialGradient(
+                  colors: [
+                    Color(0xFFF87171),
+                    Color(0xFFEF4444),
+                    Color(0xFFB91C1C),
+                  ],
+                  stops: [0.0, 0.65, 1.0],
+                ),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.22),
+                  width: 3,
+                ),
+              ),
+              child: Container(
+                margin: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.35),
+                    width: 2,
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'SOS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 56,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _trackingUrl != '-' ? 'LIVE TRACKING ACTIVE' : 'EMERGENCY MODE ACTIVE',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.94),
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'Next update in $_nextUpdateSeconds sec',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0B1220),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFF243041),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: getStatusBackgroundColor(_liveTracking),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    Icons.location_searching_rounded,
+                    color: getStatusColor(_liveTracking),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Tracking status',
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _liveTracking,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14.2,
+                          height: 1.4,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        trackingSubtitle,
+                        style: const TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 12.5,
+                          height: 1.35,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1619,20 +2002,12 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   Widget _buildLocationCard() {
     final currentLocationUrl = getCurrentLocationUrl();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return _buildSectionCard(
+      title: 'Location',
+      subtitle: 'Current coordinates and direct map access for the active SOS.',
       children: [
-        const Text(
-          'Location',
-          style: TextStyle(
-            color: _darkText,
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 12),
         buildInfoTile(
-          title: 'GPS Location',
+          title: 'GPS status',
           value: _gpsStatus,
           icon: Icons.my_location_rounded,
         ),
@@ -1640,15 +2015,19 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
           title: 'Latitude',
           value: _latitude == null ? '-' : _latitude!.toStringAsFixed(7),
           icon: Icons.pin_drop_outlined,
+          showStatus: false,
+          iconColor: const Color(0xFF3B82F6),
         ),
         buildInfoTile(
           title: 'Longitude',
           value: _longitude == null ? '-' : _longitude!.toStringAsFixed(7),
           icon: Icons.location_on_outlined,
+          showStatus: false,
+          iconColor: const Color(0xFF3B82F6),
         ),
         if (currentLocationUrl != null)
           buildClickableLinkTile(
-            title: 'Current Location Link',
+            title: 'Open current location in Google Maps',
             link: currentLocationUrl,
             icon: Icons.map_rounded,
             onTap: () {
@@ -1660,35 +2039,27 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   }
 
   Widget _buildAlertStatusCard() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return _buildSectionCard(
+      title: 'Alert status',
+      subtitle: 'This section shows how the SOS is being delivered and maintained.',
       children: [
-        const Text(
-          'Alert Status',
-          style: TextStyle(
-            color: _darkText,
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 12),
         buildInfoTile(
           title: 'Network',
           value: _networkStatus,
           icon: Icons.wifi_tethering_rounded,
         ),
         buildInfoTile(
-          title: 'SOS Decision',
+          title: 'SOS decision',
           value: _sosDecision,
           icon: Icons.emergency_share_rounded,
         ),
         buildInfoTile(
-          title: 'Internet Alert',
+          title: 'Internet alert',
           value: _internetAlert,
           icon: Icons.cloud_done_outlined,
         ),
         buildInfoTile(
-          title: 'SMS Alert',
+          title: 'SMS alert',
           value: _smsFallback,
           icon: Icons.sms_outlined,
         ),
@@ -1696,17 +2067,20 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
           title: 'Battery',
           value: _batteryPercentage == null
               ? 'Not available'
-              : '${_batteryPercentage!}%',
+              : '$_batteryPercentage%',
           icon: Icons.battery_5_bar_rounded,
+          showStatus: false,
+          iconColor: getBatteryColor(),
         ),
         buildInfoTile(
-          title: 'Battery Optimization',
+          title: 'Battery optimization',
           value: _batteryOptimizationStatus,
           icon: Icons.battery_alert_rounded,
         ),
-        if (!_isBatteryOptimizationAllowed)
+        if (!_isBatteryOptimizationAllowed) ...[
+          const SizedBox(height: 4),
           SizedBox(
-            height: 54,
+            height: 52,
             child: OutlinedButton.icon(
               onPressed: () {
                 unawaited(
@@ -1716,28 +2090,34 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
               icon: const Icon(Icons.settings_rounded),
               label: const Text('Open Battery Settings'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: _dangerRed,
+                foregroundColor: const Color(0xFFFCA5A5),
                 side: const BorderSide(
-                  color: _dangerRed,
+                  color: Color(0xFFEF4444),
                 ),
+                backgroundColor: const Color(0xFF0F172A),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
             ),
           ),
-        if (!_isBatteryOptimizationAllowed) const SizedBox(height: 12),
+          const SizedBox(height: 12),
+        ],
         if (_smsRecipients != '-')
           buildInfoTile(
-            title: 'SMS Recipients',
+            title: 'SMS recipients',
             value: _smsRecipients,
             icon: Icons.groups_outlined,
+            showStatus: false,
+            iconColor: const Color(0xFF3B82F6),
           ),
         if (_smsMessage != '-')
           buildInfoTile(
-            title: 'SMS Message',
+            title: 'SMS message',
             value: _smsMessage,
             icon: Icons.message_outlined,
+            showStatus: false,
+            iconColor: const Color(0xFF3B82F6),
           ),
       ],
     );
@@ -1746,62 +2126,83 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   Widget _buildLiveTrackingCard() {
     final hasTrackingLink = _trackingUrl != '-';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return _buildSectionCard(
+      title: 'Live tracking',
+      subtitle: 'Open or share the live tracking page for this emergency.',
       children: [
-        const Text(
-          'Live Tracking',
-          style: TextStyle(
-            color: _darkText,
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 12),
         buildInfoTile(
-          title: 'Live Tracking',
+          title: 'Tracking',
           value: _liveTracking,
           icon: Icons.location_searching_rounded,
         ),
         if (hasTrackingLink)
-          SizedBox(
-            height: 54,
-            child: FilledButton.icon(
-              onPressed: openTrackingPage,
-              icon: const Icon(Icons.open_in_browser_rounded),
-              label: const Text('Open Tracking Page'),
-              style: FilledButton.styleFrom(
-                backgroundColor: _dangerRed,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ),
+          buildClickableLinkTile(
+            title: 'Tracking link',
+            link: getSafeTrackingUrl(),
+            icon: Icons.link_rounded,
+            onTap: openTrackingPage,
           ),
-        if (hasTrackingLink) const SizedBox(height: 12),
         if (hasTrackingLink)
-          SizedBox(
-            height: 54,
-            child: OutlinedButton.icon(
-              onPressed: copyTrackingLink,
-              icon: const Icon(Icons.copy_rounded),
-              label: const Text('Copy Tracking Link'),
-              style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 54,
+                  child: FilledButton.icon(
+                    onPressed: openTrackingPage,
+                    icon: const Icon(Icons.open_in_browser_rounded),
+                    label: const Text('Open'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFEF4444),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SizedBox(
+                  height: 54,
+                  child: OutlinedButton.icon(
+                    onPressed: copyTrackingLink,
+                    icon: const Icon(Icons.copy_rounded),
+                    label: const Text('Copy link'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(
+                        color: Color(0xFF243041),
+                      ),
+                      backgroundColor: const Color(0xFF0F172A),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
       ],
     );
   }
 
   Widget _buildCancelButton() {
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      height: 56,
+      height: 58,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: _dangerRed.withOpacity(0.24),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
       child: FilledButton.icon(
         onPressed: _isCancelling ? null : cancelSos,
         icon: _isCancelling
@@ -1813,21 +2214,59 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
             color: Colors.white,
           ),
         )
-            : const Icon(Icons.close_rounded),
+            : const Icon(Icons.power_settings_new_rounded),
         label: Text(
-          _isCancelling ? 'Cancelling...' : 'Cancel SOS',
+          _isCancelling ? 'Stopping Emergency...' : 'Stop Active SOS',
           style: const TextStyle(
+            fontSize: 15.5,
             fontWeight: FontWeight.w900,
+            letterSpacing: 0.2,
           ),
         ),
         style: FilledButton.styleFrom(
-          backgroundColor: _darkText,
+          backgroundColor: _dangerRed,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: _darkText.withOpacity(0.5),
+          disabledBackgroundColor: _dangerRed.withOpacity(0.45),
+          elevation: 0,
+          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(17),
+            borderRadius: BorderRadius.circular(18),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSafetyNote() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111827),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF243041),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Icon(
+            Icons.shield_moon_rounded,
+            color: Color(0xFF22C55E),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Keep this screen open if possible. The app will continue trying to update your location and deliver emergency tracking.',
+              style: TextStyle(
+                color: Color(0xFFCBD5E1),
+                fontSize: 13.5,
+                height: 1.45,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1835,46 +2274,85 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _softBg,
+      backgroundColor: const Color(0xFF0B1120),
       appBar: AppBar(
-        title: const Text('Active SOS'),
-        backgroundColor: _softBg,
-        foregroundColor: _darkText,
+        title: const Text(
+          'Active SOS',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
-        leading: IconButton(
-          tooltip: 'Back',
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            Navigator.of(context).maybePop();
-          },
-        ),
-      ),
-      body: SafeArea(
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
-          children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildHeaderCard(),
-                    const SizedBox(height: 24),
-                    _buildLocationCard(),
-                    const SizedBox(height: 22),
-                    _buildAlertStatusCard(),
-                    const SizedBox(height: 22),
-                    _buildLiveTrackingCard(),
-                    const SizedBox(height: 24),
-                    _buildCancelButton(),
-                  ],
-                ),
+        leadingWidth: 60,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF111827),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: const Color(0xFF243041),
               ),
             ),
-          ],
+            child: IconButton(
+              tooltip: 'Back',
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.of(context).maybePop();
+              },
+            ),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF08101E),
+              Color(0xFF0B1120),
+              Color(0xFF111827),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+            children: [
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildHeaderCard(),
+                      const SizedBox(height: 22),
+                      _buildLocationCard(),
+                      const SizedBox(height: 18),
+                      _buildAlertStatusCard(),
+                      const SizedBox(height: 18),
+                      _buildLiveTrackingCard(),
+                      const SizedBox(height: 18),
+                      _buildSafetyNote(),
+                      const SizedBox(height: 22),
+                      _buildCancelButton(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

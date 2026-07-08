@@ -19,12 +19,17 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
   bool _isLoading = true;
   String? _errorMessage;
 
-  static const Color _dangerRed = Color(0xFFE53935);
+  static const Color _bgColor = Color(0xFF0B1120);
+  static const Color _cardColor = Color(0xFF111827);
+  static const Color _fieldColor = Color(0xFF0F172A);
+  static const Color _borderColor = Color(0xFF243041);
+  static const Color _dangerRed = Color(0xFFEF4444);
   static const Color _dangerDark = Color(0xFFB91C1C);
-  static const Color _darkText = Color(0xFF111827);
-  static const Color _mutedText = Color(0xFF6B7280);
-  static const Color _softBg = Color(0xFFF8FAFC);
-  static const Color _borderColor = Color(0xFFE5E7EB);
+  static const Color _successGreen = Color(0xFF22C55E);
+  static const Color _mapBlue = Color(0xFF3B82F6);
+  static const Color _warningAmber = Color(0xFFF59E0B);
+  static const Color _primaryText = Color(0xFFF8FAFC);
+  static const Color _mutedText = Color(0xFF94A3B8);
 
   @override
   void initState() {
@@ -33,7 +38,11 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
   }
 
   String formatDateTime(DateTime dateTime) {
-    return DateFormat('dd MMM yyyy, hh:mm a').format(dateTime);
+    final istDateTime = dateTime.toUtc().add(
+      const Duration(hours: 5, minutes: 30),
+    );
+
+    return '${DateFormat('dd MMM yyyy, hh:mm a').format(istDateTime)} IST';
   }
 
   String formatCoordinate(dynamic value) {
@@ -111,7 +120,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
     final cleanStatus = status.toLowerCase();
 
     if (cleanStatus == 'active') {
-      return Colors.green;
+      return _successGreen;
     }
 
     if (cleanStatus == 'cancelled') {
@@ -119,10 +128,10 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
     }
 
     if (cleanStatus == 'offline_sms') {
-      return Colors.orange;
+      return _warningAmber;
     }
 
-    return Colors.grey;
+    return _mutedText;
   }
 
   IconData getStatusIcon(String status) {
@@ -161,8 +170,13 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
 
   Widget _buildLoadingState() {
     return const Center(
-      child: CircularProgressIndicator(
-        color: _dangerRed,
+      child: SizedBox(
+        width: 34,
+        height: 34,
+        child: CircularProgressIndicator(
+          color: _dangerRed,
+          strokeWidth: 3,
+        ),
       ),
     );
   }
@@ -176,16 +190,16 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: _cardColor,
               borderRadius: BorderRadius.circular(26),
               border: Border.all(
                 color: _borderColor,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 24,
-                  offset: const Offset(0, 12),
+                  color: Colors.black.withOpacity(0.26),
+                  blurRadius: 26,
+                  offset: const Offset(0, 14),
                 ),
               ],
             ),
@@ -193,16 +207,19 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 72,
-                  height: 72,
+                  width: 74,
+                  height: 74,
                   decoration: BoxDecoration(
-                    color: _dangerRed.withOpacity(0.1),
+                    color: _dangerRed.withOpacity(0.14),
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: _dangerRed.withOpacity(0.28),
+                    ),
                   ),
                   child: const Icon(
                     Icons.error_outline_rounded,
                     color: _dangerRed,
-                    size: 38,
+                    size: 40,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -210,7 +227,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
                   _errorMessage!,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    color: _darkText,
+                    color: _primaryText,
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
                   ),
@@ -233,7 +250,12 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
                   child: FilledButton.icon(
                     onPressed: loadSosHistory,
                     icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Try Again'),
+                    label: const Text(
+                      'Try Again',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                     style: FilledButton.styleFrom(
                       backgroundColor: _dangerRed,
                       foregroundColor: Colors.white,
@@ -257,59 +279,82 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
         padding: const EdgeInsets.all(24),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 430),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 92,
-                height: 92,
-                decoration: BoxDecoration(
-                  color: _dangerRed.withOpacity(0.09),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.history_rounded,
-                  color: _dangerRed,
-                  size: 48,
-                ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: _cardColor,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: _borderColor,
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'No SOS history yet',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: _darkText,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 94,
+                  height: 94,
+                  decoration: BoxDecoration(
+                    color: _dangerRed.withOpacity(0.14),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: _dangerRed.withOpacity(0.28),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.history_rounded,
+                    color: _dangerRed,
+                    size: 50,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Your emergency alert history will appear here after you start an SOS session.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: _mutedText,
-                  fontSize: 14.5,
-                  height: 1.45,
-                  fontWeight: FontWeight.w500,
+                const SizedBox(height: 20),
+                const Text(
+                  'No SOS history yet',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _primaryText,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 22),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton.icon(
-                  onPressed: loadSosHistory,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Refresh'),
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                const SizedBox(height: 8),
+                const Text(
+                  'Your emergency alert history will appear here after you start an SOS session.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _mutedText,
+                    fontSize: 14.5,
+                    height: 1.45,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: loadSosHistory,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text(
+                      'Refresh',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFCBD5E1),
+                      side: const BorderSide(
+                        color: _borderColor,
+                      ),
+                      backgroundColor: _fieldColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -319,6 +364,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
   Widget _buildHistoryList() {
     return RefreshIndicator(
       color: _dangerRed,
+      backgroundColor: _cardColor,
       onRefresh: loadSosHistory,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(
@@ -337,7 +383,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
                   const Text(
                     'Recent SOS Alerts',
                     style: TextStyle(
-                      color: _darkText,
+                      color: _primaryText,
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
                     ),
@@ -370,65 +416,124 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
         .where((item) => item.status.toLowerCase() == 'cancelled')
         .length;
 
+    final int offlineSmsCount = _historyItems
+        .where((item) => item.status.toLowerCase() == 'offline_sms')
+        .length;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
-            _dangerRed,
-            _dangerDark,
+            Color(0xFF0F172A),
+            Color(0xFF111827),
+            Color(0xFF172033),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: _borderColor,
+        ),
         boxShadow: [
           BoxShadow(
-            color: _dangerRed.withOpacity(0.24),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            color: Colors.black.withOpacity(0.28),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
-              borderRadius: BorderRadius.circular(19),
-            ),
-            child: const Icon(
-              Icons.history_rounded,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+          Row(
+            children: [
+              Container(
+                width: 62,
+                height: 62,
+                decoration: BoxDecoration(
+                  color: _dangerRed.withOpacity(0.16),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: _dangerRed.withOpacity(0.35),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.history_rounded,
+                  color: _dangerRed,
+                  size: 34,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
                   '${_historyItems.length} SOS Alert${_historyItems.length == 1 ? '' : 's'}',
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 21,
+                    color: _primaryText,
+                    fontSize: 22,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  'Active: $activeCount  •  Cancelled: $cancelledCount',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.88),
-                    fontSize: 13.5,
-                    height: 1.35,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _buildSummaryChip(
+                label: 'Active: $activeCount',
+                color: _successGreen,
+                icon: Icons.radio_button_checked_rounded,
+              ),
+              _buildSummaryChip(
+                label: 'Cancelled: $cancelledCount',
+                color: _dangerRed,
+                icon: Icons.cancel_rounded,
+              ),
+              _buildSummaryChip(
+                label: 'Offline SMS: $offlineSmsCount',
+                color: _warningAmber,
+                icon: Icons.sms_outlined,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryChip({
+    required String label,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.13),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(0.28),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],
@@ -444,109 +549,152 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(17),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: _borderColor,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.045),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: Colors.black.withOpacity(0.22),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: _dangerRed.withOpacity(0.1),
-                child: Text(
-                  '$displayNumber',
-                  style: const TextStyle(
-                    color: _dangerRed,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'SOS Alert (ID #${item.id})',
-                  style: const TextStyle(
-                    color: _darkText,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-              _buildStatusChip(item.status),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildInfoRow(
-            icon: Icons.wifi_tethering_rounded,
-            label: 'Network',
-            value: item.networkMode,
-          ),
-          _buildInfoRow(
-            icon: Icons.my_location_rounded,
-            label: 'Start Lat',
-            value: formatCoordinate(item.startingLatitude),
-          ),
-          _buildInfoRow(
-            icon: Icons.location_on_outlined,
-            label: 'Start Lng',
-            value: formatCoordinate(item.startingLongitude),
-          ),
-          _buildInfoRow(
-            icon: Icons.update_rounded,
-            label: 'Last Update',
-            value: item.lastUpdatedAt == null
-                ? 'Not available'
-                : formatDateTime(item.lastUpdatedAt!),
-          ),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: item.lastUpdatedGoogleMapsUrl == null
-                  ? null
-                  : () {
-                openLastUpdatedLocation(item.lastUpdatedGoogleMapsUrl);
-              },
-              icon: const Icon(Icons.map_rounded),
-              label: const Text('Open Last Updated Location'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: _dangerRed,
-                side: const BorderSide(
-                  color: _dangerRed,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+        ),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.fromLTRB(16, 12, 14, 12),
+          childrenPadding: const EdgeInsets.fromLTRB(17, 0, 17, 17),
+          iconColor: _mutedText,
+          collapsedIconColor: _mutedText,
+          initiallyExpanded: false,
+          leading: CircleAvatar(
+            radius: 22,
+            backgroundColor: _dangerRed.withOpacity(0.14),
+            child: Text(
+              '$displayNumber',
+              style: const TextStyle(
+                color: _dangerRed,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          _buildInfoRow(
-            icon: Icons.access_time_rounded,
-            label: 'Created At',
-            value: formatDateTime(item.createdAt),
+          title: Text(
+            'SOS Alert #${item.id}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: _primaryText,
+              fontSize: 16.5,
+              fontWeight: FontWeight.w900,
+            ),
           ),
-          if (item.cancelledAt != null)
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 7),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                _buildStatusChip(item.status),
+                Text(
+                  formatDateTime(item.createdAt),
+                  style: const TextStyle(
+                    color: _mutedText,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          children: [
             _buildInfoRow(
-              icon: Icons.cancel_outlined,
-              label: 'Cancelled At',
-              value: formatDateTime(item.cancelledAt!),
-              valueColor: statusColor,
+              icon: Icons.wifi_tethering_rounded,
+              label: 'Network',
+              value: item.networkMode,
+              iconColor: _mapBlue,
             ),
-        ],
+            _buildInfoRow(
+              icon: Icons.my_location_rounded,
+              label: 'Start Lat',
+              value: formatCoordinate(item.startingLatitude),
+              iconColor: _successGreen,
+            ),
+            _buildInfoRow(
+              icon: Icons.location_on_outlined,
+              label: 'Start Lng',
+              value: formatCoordinate(item.startingLongitude),
+              iconColor: _successGreen,
+            ),
+            _buildInfoRow(
+              icon: Icons.update_rounded,
+              label: 'Last Update',
+              value: item.lastUpdatedAt == null
+                  ? 'Not available'
+                  : formatDateTime(item.lastUpdatedAt!),
+              iconColor: _warningAmber,
+            ),
+            const SizedBox(height: 4),
+            _buildMapButton(item.lastUpdatedGoogleMapsUrl),
+            const SizedBox(height: 12),
+            _buildInfoRow(
+              icon: Icons.access_time_rounded,
+              label: 'Created At',
+              value: formatDateTime(item.createdAt),
+              iconColor: _mapBlue,
+            ),
+            if (item.cancelledAt != null)
+              _buildInfoRow(
+                icon: Icons.cancel_outlined,
+                label: 'Cancelled At',
+                value: formatDateTime(item.cancelledAt!),
+                valueColor: statusColor,
+                iconColor: statusColor,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapButton(String? url) {
+    final bool hasUrl = url != null && url.trim().isNotEmpty;
+
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: OutlinedButton.icon(
+        onPressed: hasUrl
+            ? () {
+          openLastUpdatedLocation(url);
+        }
+            : null,
+        icon: const Icon(Icons.map_rounded),
+        label: const Text(
+          'Open Last Updated Location',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: hasUrl ? _mapBlue : _mutedText,
+          side: BorderSide(
+            color: hasUrl ? _mapBlue.withOpacity(0.45) : _borderColor,
+          ),
+          backgroundColor: _fieldColor,
+          disabledForegroundColor: _mutedText,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+        ),
       ),
     );
   }
@@ -557,10 +705,10 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(30),
+        color: statusColor.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: statusColor.withOpacity(0.18),
+          color: statusColor.withOpacity(0.24),
         ),
       ),
       child: Row(
@@ -590,16 +738,25 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
     required String label,
     required String value,
     Color? valueColor,
+    Color? iconColor,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 11),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _fieldColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _borderColor,
+        ),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
             icon,
             size: 19,
-            color: _mutedText,
+            color: iconColor ?? _mutedText,
           ),
           const SizedBox(width: 10),
           SizedBox(
@@ -617,7 +774,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
             child: Text(
               value,
               style: TextStyle(
-                color: valueColor ?? _darkText,
+                color: valueColor ?? _primaryText,
                 fontSize: 14,
                 height: 1.35,
                 fontWeight: FontWeight.w700,
@@ -632,30 +789,82 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _softBg,
+      backgroundColor: _bgColor,
       appBar: AppBar(
-        title: const Text('SOS History'),
-        backgroundColor: _softBg,
-        foregroundColor: _darkText,
+        title: const Text(
+          'SOS History',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
-        leading: IconButton(
-          tooltip: 'Back',
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            Navigator.of(context).maybePop();
-          },
+        leadingWidth: 60,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: _cardColor,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _borderColor,
+              ),
+            ),
+            child: IconButton(
+              tooltip: 'Back',
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.of(context).maybePop();
+              },
+            ),
+          ),
         ),
         actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: _isLoading ? null : loadSosHistory,
-            icon: const Icon(Icons.refresh_rounded),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: _cardColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: _borderColor,
+                ),
+              ),
+              child: IconButton(
+                tooltip: 'Refresh',
+                onPressed: _isLoading ? null : loadSosHistory,
+                icon: const Icon(
+                  Icons.refresh_rounded,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      body: SafeArea(
-        child: buildBody(),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF08101E),
+              Color(0xFF0B1120),
+              Color(0xFF111827),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: buildBody(),
+        ),
       ),
     );
   }

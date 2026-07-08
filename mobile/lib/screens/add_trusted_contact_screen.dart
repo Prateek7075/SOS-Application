@@ -17,12 +17,17 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
   final phoneController = TextEditingController();
   final relationshipController = TextEditingController();
 
-  static const Color _dangerRed = Color(0xFFE53935);
+  static const Color _bgColor = Color(0xFF0B1120);
+  static const Color _cardColor = Color(0xFF111827);
+  static const Color _fieldColor = Color(0xFF0F172A);
+  static const Color _borderColor = Color(0xFF243041);
+  static const Color _dangerRed = Color(0xFFEF4444);
   static const Color _dangerDark = Color(0xFFB91C1C);
-  static const Color _darkText = Color(0xFF111827);
-  static const Color _mutedText = Color(0xFF6B7280);
-  static const Color _softBg = Color(0xFFF8FAFC);
-  static const Color _borderColor = Color(0xFFE5E7EB);
+  static const Color _successGreen = Color(0xFF22C55E);
+  static const Color _mapBlue = Color(0xFF3B82F6);
+  static const Color _warningAmber = Color(0xFFF59E0B);
+  static const Color _primaryText = Color(0xFFF8FAFC);
+  static const Color _mutedText = Color(0xFF94A3B8);
 
   void saveContact() {
     if (!_formKey.currentState!.validate()) {
@@ -84,114 +89,197 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _softBg,
-      appBar: AppBar(
-        title: const Text('Add Trusted Contact'),
-        backgroundColor: _softBg,
-        foregroundColor: _darkText,
-        elevation: 0,
-        centerTitle: false,
-        leading: IconButton(
-          tooltip: 'Back',
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            Navigator.of(context).maybePop();
-          },
+  InputDecoration _inputDecoration({
+    required String label,
+    required IconData icon,
+    String? hint,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixIcon: Icon(
+        icon,
+        color: _mutedText,
+      ),
+      labelStyle: const TextStyle(
+        color: _mutedText,
+        fontWeight: FontWeight.w600,
+      ),
+      hintStyle: TextStyle(
+        color: _mutedText.withOpacity(0.7),
+        fontWeight: FontWeight.w500,
+      ),
+      filled: true,
+      fillColor: _fieldColor,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 16,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(
+          color: _borderColor,
         ),
       ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildHeader(),
-                    const SizedBox(height: 20),
-                    _buildFormCard(),
-                    const SizedBox(height: 20),
-                    _buildSaveButton(),
-                    const SizedBox(height: 16),
-                    _buildSafetyNote(),
-                  ],
-                ),
-              ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(
+          color: _mapBlue,
+          width: 1.4,
+        ),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(
+          color: _dangerRed,
+        ),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(
+          color: _dangerRed,
+          width: 1.4,
+        ),
+      ),
+      errorStyle: const TextStyle(
+        color: Color(0xFFFCA5A5),
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.13),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(0.28),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: color,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
-            _dangerRed,
-            _dangerDark,
+            Color(0xFF0F172A),
+            Color(0xFF111827),
+            Color(0xFF172033),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: _borderColor,
+        ),
         boxShadow: [
           BoxShadow(
-            color: _dangerRed.withOpacity(0.24),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            color: Colors.black.withOpacity(0.28),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 62,
-            height: 62,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.person_add_alt_1_rounded,
-              color: Colors.white,
-              size: 34,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 62,
+                height: 62,
+                decoration: BoxDecoration(
+                  color: _dangerRed.withOpacity(0.16),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: _dangerRed.withOpacity(0.35),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.person_add_alt_1_rounded,
+                  color: _dangerRed,
+                  size: 34,
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Add Trusted Contact',
+                      style: TextStyle(
+                        color: _primaryText,
+                        fontSize: 23,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 7),
+                    Text(
+                      'Choose someone who can receive your SOS alert and location during an emergency.',
+                      style: TextStyle(
+                        color: Color(0xFFCBD5E1),
+                        fontSize: 14,
+                        height: 1.4,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Add Trusted Contact',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  'This person can receive your SOS alert and location.',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                    height: 1.35,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(height: 18),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _buildStatusBadge(
+                icon: Icons.shield_rounded,
+                label: 'Trusted person',
+                color: _successGreen,
+              ),
+              _buildStatusBadge(
+                icon: Icons.sms_rounded,
+                label: 'SOS SMS ready',
+                color: _mapBlue,
+              ),
+              _buildStatusBadge(
+                icon: Icons.warning_amber_rounded,
+                label: 'Emergency only',
+                color: _warningAmber,
+              ),
+            ],
           ),
         ],
       ),
@@ -202,16 +290,16 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _cardColor,
         borderRadius: BorderRadius.circular(26),
         border: Border.all(
           color: _borderColor,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.24),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
@@ -219,16 +307,16 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
-            'Contact Details',
+            'Contact details',
             style: TextStyle(
-              color: _darkText,
+              color: _primaryText,
               fontSize: 18,
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 6),
           const Text(
-            'Add a person you trust during emergencies.',
+            'Save the contact with a correct phone number so your emergency alert reaches them.',
             style: TextStyle(
               color: _mutedText,
               fontSize: 13.5,
@@ -240,9 +328,14 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
           TextFormField(
             controller: nameController,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'Contact Name',
-              prefixIcon: Icon(Icons.person_outline_rounded),
+            style: const TextStyle(
+              color: _primaryText,
+              fontWeight: FontWeight.w700,
+            ),
+            cursorColor: _mapBlue,
+            decoration: _inputDecoration(
+              label: 'Contact Name',
+              icon: Icons.person_outline_rounded,
             ),
             validator: (value) {
               return requiredValidator(
@@ -256,9 +349,14 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
             controller: phoneController,
             keyboardType: TextInputType.phone,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'Phone Number',
-              prefixIcon: Icon(Icons.phone_outlined),
+            style: const TextStyle(
+              color: _primaryText,
+              fontWeight: FontWeight.w700,
+            ),
+            cursorColor: _mapBlue,
+            decoration: _inputDecoration(
+              label: 'Phone Number',
+              icon: Icons.phone_outlined,
             ),
             validator: phoneValidator,
           ),
@@ -266,13 +364,18 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
           TextFormField(
             controller: relationshipController,
             textInputAction: TextInputAction.done,
+            style: const TextStyle(
+              color: _primaryText,
+              fontWeight: FontWeight.w700,
+            ),
+            cursorColor: _mapBlue,
             onFieldSubmitted: (_) {
               saveContact();
             },
-            decoration: const InputDecoration(
-              labelText: 'Relationship',
-              hintText: 'Example: Father, Mother, Friend',
-              prefixIcon: Icon(Icons.favorite_border_rounded),
+            decoration: _inputDecoration(
+              label: 'Relationship',
+              hint: 'Example: Father, Mother, Friend',
+              icon: Icons.favorite_border_rounded,
             ),
           ),
         ],
@@ -281,24 +384,40 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
   }
 
   Widget _buildSaveButton() {
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      height: 54,
+      height: 58,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: _dangerRed.withOpacity(0.28),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
       child: FilledButton.icon(
         onPressed: saveContact,
-        icon: const Icon(Icons.save_rounded),
+        icon: const Icon(
+          Icons.verified_user_rounded,
+          size: 22,
+        ),
         label: const Text(
-          'Save Contact',
+          'Save Trusted Contact',
           style: TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.2,
           ),
         ),
         style: FilledButton.styleFrom(
           backgroundColor: _dangerRed,
           foregroundColor: Colors.white,
+          elevation: 0,
+          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
           ),
         ),
       ),
@@ -309,10 +428,10 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _dangerRed.withOpacity(0.06),
+        color: _fieldColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _dangerRed.withOpacity(0.12),
+          color: _borderColor,
         ),
       ),
       child: const Row(
@@ -320,13 +439,13 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
         children: [
           Icon(
             Icons.info_outline_rounded,
-            color: _dangerRed,
+            color: _warningAmber,
             size: 22,
           ),
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Make sure the phone number is correct. SOS alerts will be sent to this contact during emergency.',
+              'Make sure the phone number is correct. SOS alerts and location details will be sent to this contact during an emergency.',
               style: TextStyle(
                 color: _mutedText,
                 fontSize: 13.5,
@@ -336,6 +455,90 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _bgColor,
+      appBar: AppBar(
+        title: const Text(
+          'Add Trusted Contact',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false,
+        leadingWidth: 60,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF111827),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: const Color(0xFF243041),
+              ),
+            ),
+            child: IconButton(
+              tooltip: 'Back',
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.of(context).maybePop();
+              },
+            ),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF08101E),
+              Color(0xFF0B1120),
+              Color(0xFF111827),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildHeader(),
+                      const SizedBox(height: 20),
+                      _buildFormCard(),
+                      const SizedBox(height: 20),
+                      _buildSaveButton(),
+                      const SizedBox(height: 16),
+                      _buildSafetyNote(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

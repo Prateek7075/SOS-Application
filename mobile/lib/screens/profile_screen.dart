@@ -27,8 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   final UserProfileApiService _profileApiService = UserProfileApiService();
 
-  final ActiveSosLocalService _activeSosLocalService =
-  ActiveSosLocalService();
+  final ActiveSosLocalService _activeSosLocalService = ActiveSosLocalService();
 
   final BackgroundLocationService _backgroundLocationService =
   BackgroundLocationService();
@@ -52,12 +51,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoggingOut = false;
   bool _isLoadingServerProfile = false;
 
-  static const Color _dangerRed = Color(0xFFE53935);
+  static const Color _bgColor = Color(0xFF0B1120);
+  static const Color _cardColor = Color(0xFF111827);
+  static const Color _fieldColor = Color(0xFF0F172A);
+  static const Color _borderColor = Color(0xFF243041);
+  static const Color _dangerRed = Color(0xFFEF4444);
   static const Color _dangerDark = Color(0xFFB91C1C);
-  static const Color _darkText = Color(0xFF111827);
-  static const Color _mutedText = Color(0xFF6B7280);
-  static const Color _softBg = Color(0xFFF8FAFC);
-  static const Color _borderColor = Color(0xFFE5E7EB);
+  static const Color _successGreen = Color(0xFF22C55E);
+  static const Color _mapBlue = Color(0xFF3B82F6);
+  static const Color _warningAmber = Color(0xFFF59E0B);
+  static const Color _primaryText = Color(0xFFF8FAFC);
+  static const Color _mutedText = Color(0xFF94A3B8);
 
   @override
   void initState() {
@@ -205,36 +209,95 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       final shouldLogout = await showDialog<bool>(
         context: context,
+        barrierColor: Colors.black.withOpacity(0.72),
         builder: (dialogContext) {
           return AlertDialog(
+            backgroundColor: _cardColor,
+            surfaceTintColor: Colors.transparent,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(22),
-            ),
-            title: const Text(
-              'Logout',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
+              borderRadius: BorderRadius.circular(26),
+              side: const BorderSide(
+                color: _borderColor,
               ),
+            ),
+            titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
+            contentPadding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            title: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: _dangerRed.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _dangerRed.withOpacity(0.28),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.logout_rounded,
+                    color: _dangerRed,
+                    size: 25,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Logout?',
+                    style: TextStyle(
+                      color: _primaryText,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
             ),
             content: const Text(
               'Are you sure you want to logout from your SOS account?',
+              style: TextStyle(
+                color: Color(0xFFCBD5E1),
+                fontSize: 14,
+                height: 1.45,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.pop(dialogContext, false);
                 },
-                child: const Text('Cancel'),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFFCBD5E1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
               FilledButton.icon(
                 onPressed: () {
                   Navigator.pop(dialogContext, true);
                 },
                 icon: const Icon(Icons.logout_rounded),
-                label: const Text('Logout'),
+                label: const Text(
+                  'Logout',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
                 style: FilledButton.styleFrom(
                   backgroundColor: _dangerRed,
                   foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
             ],
@@ -381,19 +444,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(''),
-      ),
-    );
-
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
+        backgroundColor: _cardColor,
         behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required String label,
+    required IconData icon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(
+        icon,
+        color: _mutedText,
+      ),
+      labelStyle: const TextStyle(
+        color: _mutedText,
+        fontWeight: FontWeight.w600,
+      ),
+      filled: true,
+      fillColor: _fieldColor,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 16,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(
+          color: _borderColor,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(
+          color: _mapBlue,
+          width: 1.4,
+        ),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(
+          color: _dangerRed,
+        ),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(
+          color: _dangerRed,
+          width: 1.4,
+        ),
+      ),
+      errorStyle: const TextStyle(
+        color: Color(0xFFFCA5A5),
+        fontWeight: FontWeight.w600,
       ),
     );
   }
@@ -416,12 +526,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ? TextInputType.multiline
           : keyboardType ?? TextInputType.text,
       maxLines: maxLines,
-      textInputAction: isMultiline
-          ? TextInputAction.newline
-          : textInputAction,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
+      textInputAction: isMultiline ? TextInputAction.newline : textInputAction,
+      style: const TextStyle(
+        color: _primaryText,
+        fontWeight: FontWeight.w700,
+        height: 1.35,
+      ),
+      cursorColor: _mapBlue,
+      decoration: _inputDecoration(
+        label: label,
+        icon: icon,
       ),
     );
   }
@@ -429,106 +543,120 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _softBg,
+      backgroundColor: _bgColor,
       appBar: AppBar(
-        title: const Text('Emergency Profile'),
-        backgroundColor: _softBg,
-        foregroundColor: _darkText,
+        title: const Text(
+          'Emergency Profile',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
-        leading: IconButton(
-          tooltip: 'Back',
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            Navigator.of(context).maybePop();
-          },
+        leadingWidth: 60,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: _cardColor,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _borderColor,
+              ),
+            ),
+            child: IconButton(
+              tooltip: 'Back',
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.of(context).maybePop();
+              },
+            ),
+          ),
         ),
         actions: [
-          IconButton(
-            onPressed: _isLoggingOut ? null : logout,
-            tooltip: 'Logout',
-            icon: _isLoggingOut
-                ? const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-                : const Icon(Icons.logout_rounded),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: _cardColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: _borderColor,
+                ),
+              ),
+              child: IconButton(
+                onPressed: _isLoggingOut ? null : logout,
+                tooltip: 'Logout',
+                icon: _isLoggingOut
+                    ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+                    : const Icon(
+                  Icons.logout_rounded,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
-            children: [
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 560),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildProfileHeader(),
-                      const SizedBox(height: 18),
-                      if (_isLoadingServerProfile) ...[
-                        _buildSyncingBox(),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF08101E),
+              Color(0xFF0B1120),
+              Color(0xFF111827),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 560),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildProfileHeader(),
+                        const SizedBox(height: 18),
+                        if (_isLoadingServerProfile) ...[
+                          _buildSyncingBox(),
+                          const SizedBox(height: 16),
+                        ],
+                        _buildFormCard(),
+                        const SizedBox(height: 20),
+                        _buildSaveButton(),
+                        const SizedBox(height: 12),
+                        _buildLogoutButton(),
                         const SizedBox(height: 16),
+                        _buildLogoutCard(),
                       ],
-                      _buildFormCard(),
-                      const SizedBox(height: 20),
-                      FilledButton.icon(
-                        onPressed: _isSaving ? null : saveProfile,
-                        icon: _isSaving
-                            ? const SizedBox(
-                          width: 17,
-                          height: 17,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                            : const Icon(Icons.save_rounded),
-                        label: Text(
-                          _isSaving ? 'Saving...' : 'Save Profile',
-                        ),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: _dangerRed,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(double.infinity, 54),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      OutlinedButton.icon(
-                        onPressed: _isLoggingOut ? null : logout,
-                        icon: _isLoggingOut
-                            ? const SizedBox(
-                          width: 17,
-                          height: 17,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                            : const Icon(Icons.logout_rounded),
-                        label: Text(
-                          _isLoggingOut ? 'Logging out...' : 'Logout',
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 54),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildLogoutCard(),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -537,38 +665,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildProfileHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
-            _dangerRed,
-            _dangerDark,
+            Color(0xFF0F172A),
+            Color(0xFF111827),
+            Color(0xFF172033),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: _borderColor,
+        ),
         boxShadow: [
           BoxShadow(
-            color: _dangerRed.withOpacity(0.24),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            color: Colors.black.withOpacity(0.28),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 62,
-            height: 62,
+            width: 66,
+            height: 66,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
+              color: _dangerRed.withOpacity(0.16),
               shape: BoxShape.circle,
+              border: Border.all(
+                color: _dangerRed.withOpacity(0.35),
+              ),
             ),
             child: const Icon(
               Icons.health_and_safety_rounded,
-              color: Colors.white,
-              size: 34,
+              color: _dangerRed,
+              size: 36,
             ),
           ),
           const SizedBox(width: 16),
@@ -579,7 +714,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Text(
                   'Your Safety Profile',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: _primaryText,
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
                   ),
@@ -588,7 +723,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Text(
                   'Keep these details updated for emergency alerts.',
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: Color(0xFFCBD5E1),
                     fontSize: 14,
                     height: 1.35,
                     fontWeight: FontWeight.w500,
@@ -606,7 +741,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _fieldColor,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: _borderColor,
@@ -619,7 +754,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             height: 22,
             child: CircularProgressIndicator(
               strokeWidth: 2.4,
-              color: _dangerRed,
+              color: _mapBlue,
             ),
           ),
           SizedBox(width: 12),
@@ -642,16 +777,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _cardColor,
         borderRadius: BorderRadius.circular(26),
         border: Border.all(
           color: _borderColor,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.24),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
@@ -661,12 +796,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const Text(
             'Personal Details',
             style: TextStyle(
-              color: _darkText,
+              color: _primaryText,
               fontSize: 18,
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 6),
           const Text(
             'These details may help your trusted contacts during an emergency.',
             style: TextStyle(
@@ -725,14 +860,98 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildSaveButton() {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: _dangerRed.withOpacity(0.28),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: FilledButton.icon(
+        onPressed: _isSaving ? null : saveProfile,
+        icon: _isSaving
+            ? const SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Colors.white,
+          ),
+        )
+            : const Icon(Icons.save_rounded),
+        label: Text(
+          _isSaving ? 'Saving Profile...' : 'Save Profile',
+          style: const TextStyle(
+            fontSize: 15.5,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.2,
+          ),
+        ),
+        style: FilledButton.styleFrom(
+          backgroundColor: _dangerRed,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: _dangerRed.withOpacity(0.45),
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: OutlinedButton.icon(
+        onPressed: _isLoggingOut ? null : logout,
+        icon: _isLoggingOut
+            ? const SizedBox(
+          width: 17,
+          height: 17,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Color(0xFFFCA5A5),
+          ),
+        )
+            : const Icon(Icons.logout_rounded),
+        label: Text(
+          _isLoggingOut ? 'Logging out...' : 'Logout',
+          style: const TextStyle(
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFFFCA5A5),
+          side: const BorderSide(
+            color: _borderColor,
+          ),
+          backgroundColor: _fieldColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(17),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildLogoutCard() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _dangerRed.withOpacity(0.06),
+        color: _fieldColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: _dangerRed.withOpacity(0.15),
+          color: _dangerRed.withOpacity(0.22),
         ),
       ),
       child: const Row(

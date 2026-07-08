@@ -24,12 +24,17 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
   bool isImporting = false;
   String? errorMessage;
 
-  static const Color _dangerRed = Color(0xFFE53935);
+  static const Color _bgColor = Color(0xFF0B1120);
+  static const Color _cardColor = Color(0xFF111827);
+  static const Color _fieldColor = Color(0xFF0F172A);
+  static const Color _borderColor = Color(0xFF243041);
+  static const Color _dangerRed = Color(0xFFEF4444);
   static const Color _dangerDark = Color(0xFFB91C1C);
-  static const Color _darkText = Color(0xFF111827);
-  static const Color _mutedText = Color(0xFF6B7280);
-  static const Color _softBg = Color(0xFFF8FAFC);
-  static const Color _borderColor = Color(0xFFE5E7EB);
+  static const Color _successGreen = Color(0xFF22C55E);
+  static const Color _mapBlue = Color(0xFF3B82F6);
+  static const Color _warningAmber = Color(0xFFF59E0B);
+  static const Color _primaryText = Color(0xFFF8FAFC);
+  static const Color _mutedText = Color(0xFF94A3B8);
 
   @override
   void initState() {
@@ -278,36 +283,95 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
   Future<bool?> showDeleteConfirmation(EmergencyContact contact) {
     return showDialog<bool>(
       context: context,
+      barrierColor: Colors.black.withOpacity(0.72),
       builder: (dialogContext) {
         return AlertDialog(
+          backgroundColor: _cardColor,
+          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
-          ),
-          title: const Text(
-            'Delete Contact?',
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
+            borderRadius: BorderRadius.circular(26),
+            side: const BorderSide(
+              color: _borderColor,
             ),
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
+          contentPadding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          title: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: _dangerRed.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _dangerRed.withOpacity(0.28),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: _dangerRed,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Delete Contact?',
+                  style: TextStyle(
+                    color: _primaryText,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
           ),
           content: Text(
             'Are you sure you want to remove ${contact.name} from your trusted contacts?',
+            style: const TextStyle(
+              color: Color(0xFFCBD5E1),
+              fontSize: 14,
+              height: 1.45,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(dialogContext, false);
               },
-              child: const Text('Cancel'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFCBD5E1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
             FilledButton.icon(
               onPressed: () {
                 Navigator.pop(dialogContext, true);
               },
               icon: const Icon(Icons.delete_outline_rounded),
-              label: const Text('Delete'),
+              label: const Text(
+                'Delete',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
               style: FilledButton.styleFrom(
                 backgroundColor: _dangerRed,
                 foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
           ],
@@ -346,6 +410,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
+        backgroundColor: _cardColor,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -369,8 +434,13 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
 
   Widget _buildLoadingState() {
     return const Center(
-      child: CircularProgressIndicator(
-        color: _dangerRed,
+      child: SizedBox(
+        width: 34,
+        height: 34,
+        child: CircularProgressIndicator(
+          color: _dangerRed,
+          strokeWidth: 3,
+        ),
       ),
     );
   }
@@ -384,13 +454,16 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
           constraints: const BoxConstraints(maxWidth: 420),
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            color: _cardColor,
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(
+              color: _borderColor,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 22,
-                offset: const Offset(0, 10),
+                color: Colors.black.withOpacity(0.26),
+                blurRadius: 26,
+                offset: const Offset(0, 14),
               ),
             ],
           ),
@@ -398,16 +471,19 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 64,
-                height: 64,
+                width: 66,
+                height: 66,
                 decoration: BoxDecoration(
-                  color: _dangerRed.withOpacity(0.1),
+                  color: _dangerRed.withOpacity(0.14),
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: _dangerRed.withOpacity(0.28),
+                  ),
                 ),
                 child: const Icon(
                   Icons.error_outline_rounded,
                   color: _dangerRed,
-                  size: 34,
+                  size: 36,
                 ),
               ),
               const SizedBox(height: 16),
@@ -415,9 +491,9 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
                 errorMessage!,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: _darkText,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
+                  color: _primaryText,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
               const SizedBox(height: 8),
@@ -428,15 +504,29 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
                   color: _mutedText,
                   fontSize: 14,
                   height: 1.4,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
+                height: 52,
                 child: FilledButton.icon(
                   onPressed: loadContacts,
                   icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Try Again'),
+                  label: const Text(
+                    'Try Again',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _dangerRed,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -453,84 +543,61 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
         padding: const EdgeInsets.all(24),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 460),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 92,
-                height: 92,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      _dangerRed.withOpacity(0.14),
-                      _dangerRed.withOpacity(0.05),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.contacts_rounded,
-                  size: 46,
-                  color: _dangerRed,
-                ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: _cardColor,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: _borderColor,
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'No trusted contacts yet',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: _darkText,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Add people who should receive your SOS alert and location during an emergency.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: _mutedText,
-                  fontSize: 14.5,
-                  height: 1.45,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 26),
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: FilledButton.icon(
-                  onPressed: isImporting ? null : importFromPhoneContacts,
-                  icon: isImporting
-                      ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 94,
+                  height: 94,
+                  decoration: BoxDecoration(
+                    color: _dangerRed.withOpacity(0.14),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: _dangerRed.withOpacity(0.28),
                     ),
-                  )
-                      : const Icon(Icons.contact_phone_rounded),
-                  label: Text(
-                    isImporting
-                        ? 'Importing...'
-                        : 'Import from Phone Contacts',
+                  ),
+                  child: const Icon(
+                    Icons.contacts_rounded,
+                    size: 48,
+                    color: _dangerRed,
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: OutlinedButton.icon(
-                  onPressed: openAddContactScreen,
-                  icon: const Icon(Icons.person_add_alt_1_rounded),
-                  label: const Text('Add Manually'),
+                const SizedBox(height: 20),
+                const Text(
+                  'No trusted contacts yet',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _primaryText,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                const Text(
+                  'Add people who should receive your SOS alert and location during an emergency.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _mutedText,
+                    fontSize: 14.5,
+                    height: 1.45,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 26),
+                _buildImportButton(),
+                const SizedBox(height: 12),
+                _buildAddManualButton(),
+              ],
+            ),
           ),
         ),
       ),
@@ -541,12 +608,13 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
     return SafeArea(
       child: RefreshIndicator(
         color: _dangerRed,
+        backgroundColor: _cardColor,
         onRefresh: loadContacts,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 110),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
           children: [
             Center(
               child: ConstrainedBox(
@@ -559,7 +627,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
                     const Text(
                       'Saved Contacts',
                       style: TextStyle(
-                        color: _darkText,
+                        color: _primaryText,
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
                       ),
@@ -578,38 +646,45 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
 
   Widget _buildTopSummaryCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
-            _dangerRed,
-            _dangerDark,
+            Color(0xFF0F172A),
+            Color(0xFF111827),
+            Color(0xFF172033),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: _borderColor,
+        ),
         boxShadow: [
           BoxShadow(
-            color: _dangerRed.withOpacity(0.24),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            color: Colors.black.withOpacity(0.28),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 58,
-            height: 58,
+            width: 62,
+            height: 62,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
-              borderRadius: BorderRadius.circular(19),
+              color: _dangerRed.withOpacity(0.16),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: _dangerRed.withOpacity(0.35),
+              ),
             ),
             child: const Icon(
               Icons.groups_rounded,
-              color: Colors.white,
-              size: 32,
+              color: _dangerRed,
+              size: 34,
             ),
           ),
           const SizedBox(width: 16),
@@ -620,18 +695,19 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
                 Text(
                   '${contacts.length} Trusted Contact${contacts.length == 1 ? '' : 's'}',
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 21,
+                    color: _primaryText,
+                    fontSize: 22,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
+                const SizedBox(height: 7),
+                const Text(
                   'These contacts can receive your SOS alert and location.',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.88),
+                    color: Color(0xFFCBD5E1),
                     fontSize: 13.5,
                     height: 1.35,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -650,16 +726,16 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _cardColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: _borderColor,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.045),
-            blurRadius: 16,
-            offset: const Offset(0, 7),
+            color: Colors.black.withOpacity(0.22),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -674,8 +750,11 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: _dangerRed.withOpacity(0.1),
+                  color: _dangerRed.withOpacity(0.14),
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: _dangerRed.withOpacity(0.26),
+                  ),
                 ),
                 child: Center(
                   child: Text(
@@ -698,20 +777,20 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: _darkText,
+                        color: _primaryText,
                         fontSize: 16.5,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
                         const Icon(
                           Icons.phone_outlined,
                           size: 15,
-                          color: _mutedText,
+                          color: _mapBlue,
                         ),
-                        const SizedBox(width: 5),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             contact.phone,
@@ -733,9 +812,9 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
                           const Icon(
                             Icons.favorite_border_rounded,
                             size: 15,
-                            color: _mutedText,
+                            color: _warningAmber,
                           ),
-                          const SizedBox(width: 5),
+                          const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               contact.relationship,
@@ -760,7 +839,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
                   deleteContact(contact);
                 },
                 style: IconButton.styleFrom(
-                  backgroundColor: _dangerRed.withOpacity(0.08),
+                  backgroundColor: _dangerRed.withOpacity(0.12),
                 ),
                 icon: const Icon(
                   Icons.delete_outline_rounded,
@@ -774,50 +853,151 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
     );
   }
 
-  Widget _buildBottomActionBar() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: Colors.black.withOpacity(0.06),
+  Widget _buildImportButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: OutlinedButton.icon(
+        onPressed: isImporting ? null : importFromPhoneContacts,
+        icon: isImporting
+            ? const SizedBox(
+          width: 17,
+          height: 17,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: _mapBlue,
+          ),
+        )
+            : const Icon(Icons.contact_phone_rounded),
+        label: Text(
+          isImporting ? 'Importing...' : 'Import from Phone Contacts',
+          style: const TextStyle(
+            fontWeight: FontWeight.w900,
           ),
         ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: _mapBlue,
+          side: BorderSide(
+            color: _mapBlue.withOpacity(0.45),
+          ),
+          backgroundColor: _fieldColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(17),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddManualButton() {
+    return Container(
+      width: double.infinity,
+      height: 54,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(17),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 18,
-            offset: const Offset(0, -6),
+            color: _dangerRed.withOpacity(0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: isImporting ? null : importFromPhoneContacts,
-                icon: isImporting
-                    ? const SizedBox(
-                  width: 17,
-                  height: 17,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-                    : const Icon(Icons.contact_phone_rounded),
-                label: Text(isImporting ? 'Importing' : 'Import'),
-              ),
+      child: FilledButton.icon(
+        onPressed: openAddContactScreen,
+        icon: const Icon(Icons.person_add_alt_1_rounded),
+        label: const Text(
+          'Add Manually',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        style: FilledButton.styleFrom(
+          backgroundColor: _dangerRed,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(17),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomActionBar() {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF162033),
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(
+              color: const Color(0xFF2B3A52),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: openAddContactScreen,
-                icon: const Icon(Icons.person_add_alt_1_rounded),
-                label: const Text('Add'),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.38),
+                blurRadius: 28,
+                offset: const Offset(0, 14),
               ),
-            ),
-          ],
+              BoxShadow(
+                color: Colors.white.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: isImporting ? null : importFromPhoneContacts,
+                  icon: isImporting
+                      ? const SizedBox(
+                    width: 17,
+                    height: 17,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: _mapBlue,
+                    ),
+                  )
+                      : const Icon(Icons.contact_phone_rounded),
+                  label: Text(isImporting ? 'Importing' : 'Import'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _mapBlue,
+                    side: BorderSide(
+                      color: _mapBlue.withOpacity(0.45),
+                    ),
+                    backgroundColor: _fieldColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: openAddContactScreen,
+                  icon: const Icon(Icons.person_add_alt_1_rounded),
+                  label: const Text('Add'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _dangerRed,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -829,27 +1009,90 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
         !isLoading && errorMessage == null && contacts.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: _softBg,
+      backgroundColor: _bgColor,
       appBar: AppBar(
-        title: const Text('Trusted Contacts'),
-        backgroundColor: _softBg,
+        title: const Text(
+          'Trusted Contacts',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
+        leadingWidth: 60,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: _cardColor,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _borderColor,
+              ),
+            ),
+            child: IconButton(
+              tooltip: 'Back',
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.of(context).maybePop();
+              },
+            ),
+          ),
+        ),
         actions: [
-          IconButton(
-            onPressed: isImporting ? null : importFromPhoneContacts,
-            tooltip: 'Import from phone contacts',
-            icon: isImporting
-                ? const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-                : const Icon(Icons.contact_phone_rounded),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: _cardColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: _borderColor,
+                ),
+              ),
+              child: IconButton(
+                onPressed: isImporting ? null : importFromPhoneContacts,
+                tooltip: 'Import from phone contacts',
+                icon: isImporting
+                    ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+                    : const Icon(
+                  Icons.contact_phone_rounded,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      body: buildBody(),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF08101E),
+              Color(0xFF0B1120),
+              Color(0xFF111827),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: buildBody(),
+      ),
       bottomNavigationBar: showBottomActions ? _buildBottomActionBar() : null,
     );
   }

@@ -20,12 +20,17 @@ class _CustomSosMessageScreenState extends State<CustomSosMessageScreen> {
 
   static const String _defaultMessage = 'I need help.';
 
-  static const Color _dangerRed = Color(0xFFE53935);
+  static const Color _bgColor = Color(0xFF0B1120);
+  static const Color _cardColor = Color(0xFF111827);
+  static const Color _fieldColor = Color(0xFF0F172A);
+  static const Color _borderColor = Color(0xFF243041);
+  static const Color _dangerRed = Color(0xFFEF4444);
   static const Color _dangerDark = Color(0xFFB91C1C);
-  static const Color _darkText = Color(0xFF111827);
-  static const Color _mutedText = Color(0xFF6B7280);
-  static const Color _softBg = Color(0xFFF8FAFC);
-  static const Color _borderColor = Color(0xFFE5E7EB);
+  static const Color _successGreen = Color(0xFF22C55E);
+  static const Color _mapBlue = Color(0xFF3B82F6);
+  static const Color _warningAmber = Color(0xFFF59E0B);
+  static const Color _primaryText = Color(0xFFF8FAFC);
+  static const Color _mutedText = Color(0xFF94A3B8);
 
   @override
   void initState() {
@@ -129,26 +134,77 @@ Please contact me immediately.
   Future<void> resetMessage() async {
     final shouldReset = await showDialog<bool>(
       context: context,
+      barrierColor: Colors.black.withOpacity(0.72),
       builder: (dialogContext) {
         return AlertDialog(
+          backgroundColor: _cardColor,
+          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
-          ),
-          title: const Text(
-            'Reset message?',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
+            borderRadius: BorderRadius.circular(26),
+            side: const BorderSide(
+              color: _borderColor,
             ),
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
+          contentPadding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          title: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: _dangerRed.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _dangerRed.withOpacity(0.28),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.restart_alt_rounded,
+                  color: _dangerRed,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Reset message?',
+                  style: TextStyle(
+                    color: _primaryText,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
           ),
           content: const Text(
             'This will remove your custom message and use the default message: "I need help."',
+            style: TextStyle(
+              color: Color(0xFFCBD5E1),
+              fontSize: 14,
+              height: 1.45,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(dialogContext, false);
               },
-              child: const Text('Cancel'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFFCBD5E1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
             FilledButton(
               onPressed: () {
@@ -157,8 +213,16 @@ Please contact me immediately.
               style: FilledButton.styleFrom(
                 backgroundColor: _dangerRed,
                 foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
-              child: const Text('Reset'),
+              child: const Text(
+                'Reset',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
           ],
         );
@@ -208,6 +272,7 @@ Please contact me immediately.
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
+        backgroundColor: _cardColor,
       ),
     );
   }
@@ -226,67 +291,187 @@ Please contact me immediately.
     );
   }
 
+  InputDecoration _messageInputDecoration() {
+    return InputDecoration(
+      hintText: 'Example: I am in danger. Please call me immediately.',
+      alignLabelWithHint: true,
+      prefixIcon: const Padding(
+        padding: EdgeInsets.only(bottom: 82),
+        child: Icon(
+          Icons.message_outlined,
+          color: _mutedText,
+        ),
+      ),
+      hintStyle: TextStyle(
+        color: _mutedText.withOpacity(0.7),
+        fontWeight: FontWeight.w500,
+      ),
+      filled: true,
+      fillColor: _fieldColor,
+      counterStyle: const TextStyle(
+        color: _mutedText,
+        fontWeight: FontWeight.w600,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(
+          color: _borderColor,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(
+          color: _mapBlue,
+          width: 1.4,
+        ),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(
+          color: _dangerRed,
+        ),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(
+          color: _dangerRed,
+          width: 1.4,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.13),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(0.28),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: color,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeaderCard() {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
-            _dangerRed,
-            _dangerDark,
+            Color(0xFF0F172A),
+            Color(0xFF111827),
+            Color(0xFF172033),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: _borderColor,
+        ),
         boxShadow: [
           BoxShadow(
-            color: _dangerRed.withOpacity(0.25),
-            blurRadius: 26,
-            offset: const Offset(0, 13),
+            color: Colors.black.withOpacity(0.28),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 66,
-            height: 66,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.edit_note_rounded,
-              color: Colors.white,
-              size: 38,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 66,
+                height: 66,
+                decoration: BoxDecoration(
+                  color: _dangerRed.withOpacity(0.16),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: _dangerRed.withOpacity(0.35),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.edit_note_rounded,
+                  color: _dangerRed,
+                  size: 38,
+                ),
+              ),
+              const SizedBox(width: 15),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'SOS Message',
+                      style: TextStyle(
+                        color: _primaryText,
+                        fontSize: 23,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'Customize the emergency text sent in SMS alerts.',
+                      style: TextStyle(
+                        color: Color(0xFFCBD5E1),
+                        fontSize: 13.8,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'SOS Message',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 23,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Customize the emergency text sent in SMS alerts.',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.88),
-                    fontSize: 13.8,
-                    height: 1.35,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(height: 18),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _buildStatusBadge(
+                icon: Icons.sms_rounded,
+                label: 'SMS alert text',
+                color: _mapBlue,
+              ),
+              _buildStatusBadge(
+                icon: Icons.location_on_rounded,
+                label: 'Location added',
+                color: _successGreen,
+              ),
+              _buildStatusBadge(
+                icon: Icons.battery_5_bar_rounded,
+                label: 'Battery added',
+                color: _warningAmber,
+              ),
+            ],
           ),
         ],
       ),
@@ -299,16 +484,16 @@ Please contact me immediately.
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _cardColor,
         borderRadius: BorderRadius.circular(26),
         border: Border.all(
           color: _borderColor,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.24),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
@@ -318,14 +503,14 @@ Please contact me immediately.
           const Text(
             'Custom SOS Message',
             style: TextStyle(
-              color: _darkText,
+              color: _primaryText,
               fontSize: 18,
               fontWeight: FontWeight.w900,
             ),
           ),
           const SizedBox(height: 6),
           const Text(
-            'This will replace only the line "I need help." Location, battery, profile and tracking link will still be added automatically.',
+            'This replaces only the line "I need help." Location, battery, profile and tracking link will still be added automatically.',
             style: TextStyle(
               color: _mutedText,
               fontSize: 13.5,
@@ -340,20 +525,16 @@ Please contact me immediately.
             maxLength: 250,
             textInputAction: TextInputAction.newline,
             keyboardType: TextInputType.multiline,
+            style: const TextStyle(
+              color: _primaryText,
+              fontWeight: FontWeight.w700,
+              height: 1.35,
+            ),
+            cursorColor: _mapBlue,
             onChanged: (_) {
               setState(() {});
             },
-            decoration: InputDecoration(
-              hintText: 'Example: I am in danger. Please call me immediately.',
-              alignLabelWithHint: true,
-              prefixIcon: const Padding(
-                padding: EdgeInsets.only(bottom: 82),
-                child: Icon(Icons.message_outlined),
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-            ),
+            decoration: _messageInputDecoration(),
           ),
           const SizedBox(height: 4),
           Text(
@@ -375,7 +556,7 @@ Please contact me immediately.
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _cardColor,
         borderRadius: BorderRadius.circular(26),
         border: Border.all(
           color: _borderColor,
@@ -394,7 +575,7 @@ Please contact me immediately.
               Text(
                 'Preview SMS',
                 style: TextStyle(
-                  color: _darkText,
+                  color: _primaryText,
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
                 ),
@@ -405,7 +586,7 @@ Please contact me immediately.
           Container(
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
-              color: _softBg,
+              color: _fieldColor,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: _borderColor,
@@ -414,7 +595,7 @@ Please contact me immediately.
             child: Text(
               getPreviewMessage(),
               style: const TextStyle(
-                color: _darkText,
+                color: Color(0xFFCBD5E1),
                 fontSize: 13.5,
                 height: 1.45,
                 fontWeight: FontWeight.w600,
@@ -430,8 +611,18 @@ Please contact me immediately.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
-          height: 54,
+        Container(
+          height: 56,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: _dangerRed.withOpacity(0.28),
+                blurRadius: 22,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
           child: FilledButton.icon(
             onPressed: _isSaving ? null : saveMessage,
             icon: _isSaving
@@ -443,19 +634,23 @@ Please contact me immediately.
                 color: Colors.white,
               ),
             )
-                : const Icon(Icons.save_rounded),
+                : const Icon(Icons.verified_rounded),
             label: Text(
-              _isSaving ? 'Saving...' : 'Save Message',
+              _isSaving ? 'Saving Message...' : 'Save SOS Message',
               style: const TextStyle(
                 fontWeight: FontWeight.w900,
+                fontSize: 15.5,
+                letterSpacing: 0.2,
               ),
             ),
             style: FilledButton.styleFrom(
               backgroundColor: _dangerRed,
               foregroundColor: Colors.white,
-              disabledBackgroundColor: _dangerRed.withOpacity(0.5),
+              disabledBackgroundColor: _dangerRed.withOpacity(0.45),
+              elevation: 0,
+              shadowColor: Colors.transparent,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(17),
+                borderRadius: BorderRadius.circular(18),
               ),
             ),
           ),
@@ -473,10 +668,11 @@ Please contact me immediately.
               ),
             ),
             style: OutlinedButton.styleFrom(
-              foregroundColor: _dangerRed,
-              side: BorderSide(
-                color: _dangerRed.withOpacity(0.4),
+              foregroundColor: const Color(0xFFFCA5A5),
+              side: const BorderSide(
+                color: _borderColor,
               ),
+              backgroundColor: _fieldColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(17),
               ),
@@ -491,10 +687,10 @@ Please contact me immediately.
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _dangerRed.withOpacity(0.06),
+        color: _fieldColor,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: _dangerRed.withOpacity(0.12),
+          color: _borderColor,
         ),
       ),
       child: const Row(
@@ -502,7 +698,7 @@ Please contact me immediately.
         children: [
           Icon(
             Icons.info_outline_rounded,
-            color: _dangerRed,
+            color: _warningAmber,
             size: 22,
           ),
           SizedBox(width: 11),
@@ -522,55 +718,101 @@ Please contact me immediately.
     );
   }
 
+  Widget _buildLoadingView() {
+    return const Center(
+      child: SizedBox(
+        width: 34,
+        height: 34,
+        child: CircularProgressIndicator(
+          color: _dangerRed,
+          strokeWidth: 3,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _softBg,
+      backgroundColor: _bgColor,
       appBar: AppBar(
-        title: const Text('SOS Message'),
-        backgroundColor: _softBg,
-        foregroundColor: _darkText,
+        title: const Text(
+          'SOS Message',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
-        leading: IconButton(
-          tooltip: 'Back',
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            Navigator.of(context).maybePop();
-          },
-        ),
-      ),
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(
-          child: CircularProgressIndicator(
-            color: _dangerRed,
-          ),
-        )
-            : ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
-          children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildHeaderCard(),
-                    const SizedBox(height: 22),
-                    _buildEditorCard(),
-                    const SizedBox(height: 18),
-                    _buildPreviewCard(),
-                    const SizedBox(height: 18),
-                    _buildSafetyNote(),
-                    const SizedBox(height: 22),
-                    _buildButtons(),
-                  ],
-                ),
+        leadingWidth: 60,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: _cardColor,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _borderColor,
               ),
             ),
-          ],
+            child: IconButton(
+              tooltip: 'Back',
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.of(context).maybePop();
+              },
+            ),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF08101E),
+              Color(0xFF0B1120),
+              Color(0xFF111827),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: _isLoading
+              ? _buildLoadingView()
+              : ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+            children: [
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildHeaderCard(),
+                      const SizedBox(height: 22),
+                      _buildEditorCard(),
+                      const SizedBox(height: 18),
+                      _buildPreviewCard(),
+                      const SizedBox(height: 18),
+                      _buildSafetyNote(),
+                      const SizedBox(height: 22),
+                      _buildButtons(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

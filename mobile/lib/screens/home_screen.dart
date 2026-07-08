@@ -53,12 +53,17 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
   bool _isCancellingSos = false;
   bool _isRouteObserverSubscribed = false;
 
-  static const Color _dangerRed = Color(0xFFE53935);
+  static const Color _bgColor = Color(0xFF0B1120);
+  static const Color _cardColor = Color(0xFF111827);
+  static const Color _fieldColor = Color(0xFF0F172A);
+  static const Color _borderColor = Color(0xFF243041);
+  static const Color _dangerRed = Color(0xFFEF4444);
   static const Color _dangerDark = Color(0xFFB91C1C);
-  static const Color _darkText = Color(0xFF111827);
-  static const Color _mutedText = Color(0xFF6B7280);
-  static const Color _softBg = Color(0xFFF8FAFC);
-  static const Color _cardBg = Colors.white;
+  static const Color _successGreen = Color(0xFF22C55E);
+  static const Color _mapBlue = Color(0xFF3B82F6);
+  static const Color _warningAmber = Color(0xFFF59E0B);
+  static const Color _primaryText = Color(0xFFF8FAFC);
+  static const Color _mutedText = Color(0xFF94A3B8);
   static const Color _activeDark = Color(0xFF111827);
 
   @override
@@ -393,96 +398,263 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
   Widget build(BuildContext context) {
     final bool isSosActive = _activeSosSession != null;
     final double screenWidth = MediaQuery.of(context).size.width;
-    final double sosSize = screenWidth < 360 ? 190 : 220;
+    final double sosSize = screenWidth < 360 ? 198 : 230;
 
     return Scaffold(
-      backgroundColor: _softBg,
+      backgroundColor: _bgColor,
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: _softBg,
-        centerTitle: false,
         title: const Text(
           'Emergency SOS',
           style: TextStyle(
-            color: _darkText,
-            fontSize: 24,
-            fontWeight: FontWeight.w800,
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.2,
           ),
         ),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              backgroundColor:
-              isSosActive ? _dangerRed.withOpacity(0.12) : Colors.green.withOpacity(0.12),
-              child: Icon(
-                isSosActive
-                    ? Icons.warning_amber_rounded
-                    : Icons.shield_outlined,
-                color: isSosActive ? _dangerRed : Colors.green,
-              ),
-            ),
+            child: _buildAppBarStatus(isSosActive),
           ),
         ],
       ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 520),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildHeader(isSosActive),
-                      const SizedBox(height: 18),
-                      _buildStatusCard(isSosActive),
-                      const SizedBox(height: 26),
-                      _buildSosButton(
-                        isSosActive: isSosActive,
-                        sosSize: sosSize,
-                      ),
-                      const SizedBox(height: 22),
-                      _buildInstructionText(isSosActive),
-                      const SizedBox(height: 26),
-                      _buildEmergencyProfileCard(),
-                      const SizedBox(height: 20),
-                      _buildQuickActions(),
-                    ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF08101E),
+              Color(0xFF0B1120),
+              Color(0xFF111827),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 540),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildHeader(isSosActive),
+                        const SizedBox(height: 18),
+                        _buildStatusCard(isSosActive),
+                        const SizedBox(height: 26),
+                        _buildSosButton(
+                          isSosActive: isSosActive,
+                          sosSize: sosSize,
+                        ),
+                        const SizedBox(height: 22),
+                        _buildInstructionText(isSosActive),
+                        const SizedBox(height: 26),
+                        _buildSosMessageAction(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
+      ),
+      bottomNavigationBar: _buildBottomActionBar(),
+    );
+  }
+
+  Widget _buildAppBarStatus(bool isSosActive) {
+    final Color color = isSosActive ? _dangerRed : _successGreen;
+
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: _cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _borderColor,
+        ),
+      ),
+      child: Icon(
+        isSosActive ? Icons.warning_amber_rounded : Icons.shield_rounded,
+        color: color,
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.13),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(0.28),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: color,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader(bool isSosActive) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isSosActive
-              ? [
-            _activeDark,
-            const Color(0xFF374151),
-          ]
-              : [
-            _dangerRed,
-            _dangerDark,
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF0F172A),
+            Color(0xFF111827),
+            Color(0xFF172033),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: _borderColor,
+        ),
         boxShadow: [
           BoxShadow(
-            color: (isSosActive ? _activeDark : _dangerRed).withOpacity(0.22),
+            color: Colors.black.withOpacity(0.28),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 62,
+                height: 62,
+                decoration: BoxDecoration(
+                  color: (isSosActive ? _dangerRed : _successGreen)
+                      .withOpacity(0.16),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: (isSosActive ? _dangerRed : _successGreen)
+                        .withOpacity(0.35),
+                  ),
+                ),
+                child: Icon(
+                  isSosActive
+                      ? Icons.emergency_share_rounded
+                      : Icons.shield_rounded,
+                  color: isSosActive ? _dangerRed : _successGreen,
+                  size: 34,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isSosActive ? 'SOS is active' : 'Stay safe, $name',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: _primaryText,
+                        fontSize: 23,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      isSosActive
+                          ? 'Your emergency tracking session is currently running.'
+                          : 'Hold the SOS button when you need emergency help.',
+                      style: const TextStyle(
+                        color: Color(0xFFCBD5E1),
+                        fontSize: 14,
+                        height: 1.4,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _buildStatusBadge(
+                icon: isSosActive
+                    ? Icons.location_searching_rounded
+                    : Icons.check_circle_outline_rounded,
+                label: isSosActive ? 'Live tracking' : 'Ready',
+                color: isSosActive ? _dangerRed : _successGreen,
+              ),
+              _buildStatusBadge(
+                icon: Icons.sms_rounded,
+                label: 'SMS fallback',
+                color: _mapBlue,
+              ),
+              _buildStatusBadge(
+                icon: Icons.contacts_rounded,
+                label: 'Trusted contacts',
+                color: _warningAmber,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusCard(bool isSosActive) {
+    final Color statusColor = isSosActive ? _dangerRed : _successGreen;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: _cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: statusColor.withOpacity(0.30),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.24),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -491,87 +663,20 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
       child: Row(
         children: [
           Container(
-            width: 58,
-            height: 58,
+            width: 50,
+            height: 50,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.emergency_share_rounded,
-              color: Colors.white,
-              size: 30,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isSosActive ? 'SOS is active' : 'Stay safe, $name',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 21,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  isSosActive
-                      ? 'Your emergency session is running.'
-                      : 'Hold the SOS button when you need help.',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.88),
-                    fontSize: 14,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusCard(bool isSosActive) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: _cardBg,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: isSosActive
-              ? _dangerRed.withOpacity(0.24)
-              : Colors.green.withOpacity(0.22),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: isSosActive
-                  ? _dangerRed.withOpacity(0.12)
-                  : Colors.green.withOpacity(0.12),
+              color: statusColor.withOpacity(0.14),
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: statusColor.withOpacity(0.26),
+              ),
             ),
             child: Icon(
               isSosActive
                   ? Icons.location_on_rounded
                   : Icons.check_circle_outline_rounded,
-              color: isSosActive ? _dangerRed : Colors.green,
+              color: statusColor,
               size: 28,
             ),
           ),
@@ -583,25 +688,27 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                 Text(
                   sosStatus,
                   style: const TextStyle(
-                    color: _darkText,
+                    color: _primaryText,
                     fontSize: 17,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 5),
                 Text(
                   isSosActive
-                      ? 'Tap SOS button to view active tracking.'
+                      ? 'Tap the SOS button to view active tracking details.'
                       : 'Emergency alert is ready to start.',
                   style: const TextStyle(
                     color: _mutedText,
                     fontSize: 13.5,
                     height: 1.35,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 10),
           _buildLiveIndicator(isSosActive),
         ],
       ),
@@ -609,21 +716,25 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
   }
 
   Widget _buildLiveIndicator(bool isSosActive) {
+    final Color color = isSosActive ? _dangerRed : _successGreen;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: isSosActive
-            ? _dangerRed.withOpacity(0.1)
-            : Colors.green.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(30),
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: color.withOpacity(0.24),
+        ),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: 7,
             height: 7,
             decoration: BoxDecoration(
-              color: isSosActive ? _dangerRed : Colors.green,
+              color: color,
               shape: BoxShape.circle,
             ),
           ),
@@ -631,7 +742,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
           Text(
             isSosActive ? 'LIVE' : 'READY',
             style: TextStyle(
-              color: isSosActive ? _dangerRed : Colors.green,
+              color: color,
               fontSize: 11,
               fontWeight: FontWeight.w900,
               letterSpacing: 0.4,
@@ -652,54 +763,57 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
       child: GestureDetector(
         onTap: isSosActive
             ? () {
-          openActiveSos();
-        }
+                openActiveSos();
+              }
             : null,
         onLongPress: disabled
             ? null
             : () {
-          handleSosLongPress();
-        },
+                handleSosLongPress();
+              },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           width: sosSize,
           height: sosSize,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: isSosActive
-                  ? [
-                _activeDark,
-                const Color(0xFF374151),
-              ]
-                  : [
-                const Color(0xFFFF5252),
-                _dangerRed,
-                _dangerDark,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
             boxShadow: [
               BoxShadow(
-                color: (isSosActive ? _activeDark : _dangerRed)
-                    .withOpacity(0.35),
-                blurRadius: 32,
-                offset: const Offset(0, 18),
+                color: _dangerRed.withOpacity(isSosActive ? 0.22 : 0.34),
+                blurRadius: 38,
+                spreadRadius: isSosActive ? 4 : 8,
               ),
               BoxShadow(
-                color: Colors.white.withOpacity(0.9),
-                blurRadius: 10,
-                offset: const Offset(-4, -4),
+                color: Colors.black.withOpacity(0.34),
+                blurRadius: 28,
+                offset: const Offset(0, 18),
               ),
             ],
+            gradient: RadialGradient(
+              colors: isSosActive
+                  ? [
+                      const Color(0xFFF87171),
+                      _dangerRed,
+                      _dangerDark,
+                    ]
+                  : [
+                      const Color(0xFFFF8A8A),
+                      _dangerRed,
+                      _dangerDark,
+                    ],
+              stops: const [0.0, 0.65, 1.0],
+            ),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.22),
+              width: 3,
+            ),
           ),
           child: Container(
-            margin: const EdgeInsets.all(12),
+            margin: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.55),
+                color: Colors.white.withOpacity(0.36),
                 width: 2,
               ),
             ),
@@ -710,17 +824,17 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                   _isCheckingSos
                       ? 'CHECKING...'
                       : _isCancellingSos
-                      ? 'CANCELLING...'
-                      : isSosActive
-                      ? 'SOS ACTIVE\nHOLD TO CANCEL'
-                      : 'HOLD\nSOS',
+                          ? 'STOPPING...'
+                          : isSosActive
+                              ? 'SOS ACTIVE\nTAP TO VIEW'
+                              : 'HOLD\nSOS',
                   key: ValueKey(
                     '$_isCheckingSos-$_isCancellingSos-$isSosActive',
                   ),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: isSosActive ? 20 : 36,
+                    fontSize: isSosActive ? 20 : 38,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.8,
                     height: 1.12,
@@ -743,248 +857,207 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
               : 'Long press the SOS button to send emergency alert.',
           textAlign: TextAlign.center,
           style: const TextStyle(
-            color: _darkText,
+            color: _primaryText,
             fontSize: 16,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
           ),
         ),
         const SizedBox(height: 7),
         Text(
           isSosActive
-              ? 'Long press again only if you want to cancel the active SOS.'
-              : 'Your contacts will receive emergency information with location.',
+              ? 'To stop the active SOS, open the active SOS screen or long press again.'
+              : 'Your trusted contacts will receive emergency information with location.',
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: _mutedText,
             fontSize: 13.5,
             height: 1.4,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildEmergencyProfileCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: _cardBg,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+  Future<void> _openSafetyCheck() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PermissionHealthCheckScreen(),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: _dangerRed.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: const Icon(
-                  Icons.badge_outlined,
-                  color: _dangerRed,
-                ),
+    );
+  }
+
+  Future<void> _openTrustedContacts() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const TrustedContactsScreen(),
+      ),
+    );
+  }
+
+  Future<void> _openProfile() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ProfileScreen(),
+      ),
+    );
+
+    if (result != null && result is UserProfile) {
+      updateProfileOnHome(result);
+    } else {
+      await loadSavedProfile();
+    }
+  }
+
+  Future<void> _openSosHistory() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SosHistoryScreen(),
+      ),
+    );
+  }
+
+  Future<void> _openSosMessage() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CustomSosMessageScreen(),
+      ),
+    );
+  }
+
+  Widget _buildSosMessageAction() {
+    return _buildActionTile(
+      icon: Icons.edit_note_rounded,
+      title: 'SOS Message',
+      subtitle: 'Customize emergency SMS text',
+      iconColor: _mapBlue,
+      onTap: () {
+        unawaited(_openSosMessage());
+      },
+    );
+  }
+
+  Widget _buildBottomActionBar() {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF162033), // slightly different from home bg
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(
+              color: const Color(0xFF2B3A52),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.38),
+                blurRadius: 28,
+                offset: const Offset(0, 14),
               ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Emergency Profile',
-                      style: TextStyle(
-                        color: _darkText,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    SizedBox(height: 3),
-                    Text(
-                      'Important details for emergency use',
-                      style: TextStyle(
-                        color: _mutedText,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
+              BoxShadow(
+                color: Colors.white.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, -2),
               ),
             ],
           ),
-          const SizedBox(height: 18),
-          _buildProfileRow(
-            icon: Icons.person_outline_rounded,
-            label: 'Name',
-            value: name,
+          child: Row(
+            children: [
+              _buildBottomBarItem(
+                icon: Icons.health_and_safety_rounded,
+                label: 'Safety',
+                color: _successGreen,
+                onTap: () {
+                  unawaited(_openSafetyCheck());
+                },
+              ),
+              _buildBottomBarItem(
+                icon: Icons.contacts_rounded,
+                label: 'Contacts',
+                color: _dangerRed,
+                onTap: () {
+                  unawaited(_openTrustedContacts());
+                },
+              ),
+              _buildBottomBarItem(
+                icon: Icons.person_rounded,
+                label: 'Profile',
+                color: _warningAmber,
+                onTap: () {
+                  unawaited(_openProfile());
+                },
+              ),
+              _buildBottomBarItem(
+                icon: Icons.history_rounded,
+                label: 'History',
+                color: _mapBlue,
+                onTap: () {
+                  unawaited(_openSosHistory());
+                },
+              ),
+            ],
           ),
-          _buildProfileRow(
-            icon: Icons.bloodtype_outlined,
-            label: 'Blood Group',
-            value: bloodGroup,
-            isImportant: true,
-          ),
-          _buildProfileRow(
-            icon: Icons.phone_outlined,
-            label: 'My Phone',
-            value: phone,
-          ),
-          _buildProfileRow(
-            icon: Icons.family_restroom_outlined,
-            label: 'Relative',
-            value: '$relativeName ($relativePhone)',
-          ),
-          _buildProfileRow(
-            icon: Icons.home_outlined,
-            label: 'Address',
-            value: address,
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildProfileRow({
+  Widget _buildBottomBarItem({
     required IconData icon,
     required String label,
-    required String value,
-    bool isImportant = false,
+    required Color color,
+    required VoidCallback onTap,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 13),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            size: 20,
-            color: isImportant ? _dangerRed : _mutedText,
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 92,
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: _mutedText,
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-              ),
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.13),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: color.withOpacity(0.25),
+                    ),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFFCBD5E1),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                color: isImportant ? _dangerRed : _darkText,
-                fontSize: 14.5,
-                fontWeight: isImportant ? FontWeight.w800 : FontWeight.w600,
-                height: 1.35,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildQuickActions() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Quick Actions',
-          style: TextStyle(
-            color: _darkText,
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        _buildActionTile(
-          icon: Icons.health_and_safety_rounded,
-          title: 'Safety Check',
-          subtitle: 'Check permissions and SOS readiness',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const PermissionHealthCheckScreen(),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildActionTile(
-          icon: Icons.edit_note_rounded,
-          title: 'SOS Message',
-          subtitle: 'Customize emergency SMS text',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const CustomSosMessageScreen(),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildActionTile(
-          icon: Icons.contacts_rounded,
-          title: 'Trusted Contacts',
-          subtitle: 'Add, edit, or delete emergency contacts',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const TrustedContactsScreen(),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildActionTile(
-          icon: Icons.person_rounded,
-          title: 'Profile',
-          subtitle: 'Update your medical and personal details',
-          onTap: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ProfileScreen(),
-              ),
-            );
-
-            if (result != null && result is UserProfile) {
-              updateProfileOnHome(result);
-            } else {
-              await loadSavedProfile();
-            }
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildActionTile(
-          icon: Icons.history_rounded,
-          title: 'SOS History',
-          subtitle: 'View your previous emergency alerts',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const SosHistoryScreen(),
-              ),
-            );
-          },
-        ),
-      ],
     );
   }
 
@@ -993,33 +1066,37 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    required Color iconColor,
   }) {
     return Material(
-      color: _cardBg,
-      borderRadius: BorderRadius.circular(20),
+      color: _cardColor,
+      borderRadius: BorderRadius.circular(22),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: const Color(0xFFE5E7EB),
+              color: _borderColor,
             ),
           ),
           child: Row(
             children: [
               Container(
-                width: 46,
-                height: 46,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: _dangerRed.withOpacity(0.09),
-                  borderRadius: BorderRadius.circular(15),
+                  color: iconColor.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: iconColor.withOpacity(0.26),
+                  ),
                 ),
                 child: Icon(
                   icon,
-                  color: _dangerRed,
+                  color: iconColor,
                 ),
               ),
               const SizedBox(width: 14),
@@ -1030,9 +1107,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                     Text(
                       title,
                       style: const TextStyle(
-                        color: _darkText,
+                        color: _primaryText,
                         fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1042,6 +1119,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                         color: _mutedText,
                         fontSize: 13,
                         height: 1.35,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
