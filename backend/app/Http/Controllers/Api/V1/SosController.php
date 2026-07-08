@@ -254,9 +254,14 @@ class SosController extends Controller
             ], 410);
         }
 
-        $latestLocation = $sosEvent->locationUpdates()
+        $locationHistory = $sosEvent->locationUpdates()
             ->latest('created_at')
-            ->first();
+            ->limit(100)
+            ->get()
+            ->reverse()
+            ->values();
+
+        $latestLocation = $locationHistory->last();
 
         $lastUpdateAgeSeconds = null;
         $trackingState = 'waiting';
@@ -339,6 +344,16 @@ class SosController extends Controller
                     'battery_percentage' => $latestLocation->battery_percentage,
                     'created_at' => $latestLocation->created_at,
                 ] : null,
+
+                'location_history' => $locationHistory->map(function ($location) {
+                    return [
+                        'latitude' => $location->latitude,
+                        'longitude' => $location->longitude,
+                        'accuracy' => $location->accuracy,
+                        'battery_percentage' => $location->battery_percentage,
+                        'created_at' => $location->created_at,
+                    ];
+                })->values(),
 
                 'expires_at' => $sosEvent->expires_at,
             ],

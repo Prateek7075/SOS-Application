@@ -632,6 +632,8 @@
 
     let map = null;
     let marker = null;
+    let routeLine = null;
+    let startMarker = null;
     let latestMapLatitude = null;
     let latestMapLongitude = null;
     let centerLocationControlAdded = false;
@@ -699,13 +701,13 @@
             return 'Not available';
         }
 
-        const value = Number(seconds);
+        const value = Math.round(Number(seconds));
 
         if (value < 60) {
-            return `${value} seconds ago`;
+            return `${value} second${value === 1 ? '' : 's'} ago`;
         }
 
-        const minutes = Math.floor(value / 60);
+        const minutes = Math.round(value / 60);
 
         if (minutes < 60) {
             return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
@@ -826,12 +828,61 @@
             return;
         }
 
-        map.setView([latestMapLatitude, latestMapLongitude], 16, {
+        map.setView([latestMapLatitude, latestMapLongitude], 32, {
             animate: true,
         });
 
         if (marker) {
             marker.openPopup();
+        }
+    }
+
+    function updateRouteLine(locationHistory) {
+        if (!map || !Array.isArray(locationHistory) || locationHistory.length === 0) {
+            return;
+        }
+
+        const routePoints = locationHistory
+            .map((location) => {
+                const lat = parseFloat(location.latitude);
+                const lng = parseFloat(location.longitude);
+
+                if (Number.isNaN(lat) || Number.isNaN(lng)) {
+                    return null;
+                }
+
+                return [lat, lng];
+            })
+            .filter((point) => point !== null);
+
+        if (routePoints.length === 0) {
+            return;
+        }
+
+        if (!routeLine) {
+            routeLine = L.polyline(routePoints, {
+                color: '#e53935',
+                weight: 5,
+                opacity: 0.85,
+            }).addTo(map);
+        } else {
+            routeLine.setLatLngs(routePoints);
+        }
+
+        const firstPoint = routePoints[0];
+
+        if (!startMarker) {
+            startMarker = L.circleMarker(firstPoint, {
+                radius: 7,
+                color: '#111827',
+                fillColor: '#ffffff',
+                fillOpacity: 1,
+                weight: 3,
+            }).addTo(map);
+
+            startMarker.bindPopup('SOS route started here');
+        } else {
+            startMarker.setLatLng(firstPoint);
         }
     }
 
@@ -1056,6 +1107,7 @@
             const longitude = locationToShow.longitude;
 
             initializeOrUpdateMap(latitude, longitude);
+            updateRouteLine(data.location_history || []);
 
             locationDetails.innerHTML = `
                 <div class="profile-grid" style="margin-top: 14px;">
