@@ -3,7 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\SosLocationUpdate;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class SosEvent extends Model
 {
@@ -23,8 +24,14 @@ class SosEvent extends Model
         'cancelled_at' => 'datetime',
     ];
 
-    public function locationUpdates()
+    public function locationUpdates(): HasMany
     {
         return $this->hasMany(SosLocationUpdate::class);
+    }
+
+    public function latestLocationUpdate(): HasOne
+    {
+        return $this->hasOne(SosLocationUpdate::class)
+            ->latestOfMany();
     }
 }

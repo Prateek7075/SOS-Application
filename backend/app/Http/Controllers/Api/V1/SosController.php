@@ -366,6 +366,7 @@ class SosController extends Controller
 
         $sosEvents = SosEvent::query()
             ->where('user_id', $user->id)
+            ->with('latestLocationUpdate')
             ->latest()
             ->get([
                 'id',
@@ -378,10 +379,49 @@ class SosController extends Controller
                 'created_at',
             ]);
 
+        $history = $sosEvents->map(function (SosEvent $sosEvent) {
+            $latestLocation = $sosEvent->latestLocationUpdate;
+
+            $lastLatitude = $latestLocation?->latitude ?? $sosEvent->initial_latitude;
+            $lastLongitude = $latestLocation?->longitude ?? $sosEvent->initial_longitude;
+
+            $googleMapsUrl = null;
+
+            if ($lastLatitude !== null && $lastLongitude !== null) {
+                $googleMapsUrl = "https://www.google.com/maps/search/?api=1&query={$lastLatitude},{$lastLongitude}";
+            }
+
+            return [
+                'id' => $sosEvent->id,
+                'status' => $sosEvent->status,
+                'network_mode' => $sosEvent->network_mode,
+                'expires_at' => $sosEvent->expires_at,
+                'cancelled_at' => $sosEvent->cancelled_at,
+                'created_at' => $sosEvent->created_at,
+
+                // Keep old fields so current Flutter code does not break.
+                'initial_latitude' => $sosEvent->initial_latitude,
+                'initial_longitude' => $sosEvent->initial_longitude,
+
+                'starting_location' => [
+                    'latitude' => $sosEvent->initial_latitude,
+                    'longitude' => $sosEvent->initial_longitude,
+                ],
+
+                'last_updated_location' => [
+                    'latitude' => $lastLatitude,
+                    'longitude' => $lastLongitude,
+                    'google_maps_url' => $googleMapsUrl,
+                    'updated_at' => $latestLocation?->created_at ?? $sosEvent->created_at,
+                    'source' => $latestLocation ? 'latest_location_update' : 'initial_location',
+                ],
+            ];
+        });
+
         return response()->json([
             'success' => true,
             'data' => [
-                'sos_events' => $sosEvents,
+                'sos_events' => $history,
             ],
         ]);
     }

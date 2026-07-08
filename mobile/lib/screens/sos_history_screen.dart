@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/sos_history_item.dart';
 import '../services/sos_api_service.dart';
@@ -59,6 +60,19 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
     }
 
     return cleanStatus[0].toUpperCase() + cleanStatus.substring(1);
+  }
+
+  Future<void> openLastUpdatedLocation(String? url) async {
+    if (url == null || url.trim().isEmpty) {
+      return;
+    }
+
+    final uri = Uri.parse(url);
+
+    await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
   }
 
   Future<void> loadSosHistory() async {
@@ -483,14 +497,43 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
           ),
           _buildInfoRow(
             icon: Icons.my_location_rounded,
-            label: 'Latitude',
-            value: formatCoordinate(item.initialLatitude),
+            label: 'Start Lat',
+            value: formatCoordinate(item.startingLatitude),
           ),
           _buildInfoRow(
             icon: Icons.location_on_outlined,
-            label: 'Longitude',
-            value: formatCoordinate(item.initialLongitude),
+            label: 'Start Lng',
+            value: formatCoordinate(item.startingLongitude),
           ),
+          _buildInfoRow(
+            icon: Icons.update_rounded,
+            label: 'Last Update',
+            value: item.lastUpdatedAt == null
+                ? 'Not available'
+                : formatDateTime(item.lastUpdatedAt!),
+          ),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: item.lastUpdatedGoogleMapsUrl == null
+                  ? null
+                  : () {
+                openLastUpdatedLocation(item.lastUpdatedGoogleMapsUrl);
+              },
+              icon: const Icon(Icons.map_rounded),
+              label: const Text('Open Last Updated Location'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _dangerRed,
+                side: const BorderSide(
+                  color: _dangerRed,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           _buildInfoRow(
             icon: Icons.access_time_rounded,
             label: 'Created At',
