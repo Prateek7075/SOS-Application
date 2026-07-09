@@ -17,11 +17,15 @@ class SosEvent extends Model
         'network_mode',
         'expires_at',
         'cancelled_at',
+        'final_latitude',
+        'final_longitude',
+        'final_location_updated_at',
     ];
 
     protected $casts = [
         'expires_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'final_location_updated_at' => 'datetime',
     ];
 
     public function locationUpdates(): HasMany

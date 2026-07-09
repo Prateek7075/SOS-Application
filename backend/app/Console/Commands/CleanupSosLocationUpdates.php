@@ -10,7 +10,7 @@ class CleanupSosLocationUpdates extends Command
 {
     protected $signature = 'sos:cleanup-location-updates {--hours=24}';
 
-    protected $description = 'Delete old SOS location updates after SOS is cancelled or offline synced';
+    protected $description = 'Save final SOS location and delete old SOS location updates after SOS is cancelled or offline synced';
 
     public function handle(): int
     {
@@ -23,6 +23,7 @@ class CleanupSosLocationUpdates extends Command
         $cutoffTime = now()->subHours($retentionHours);
 
         $deletedCount = 0;
+        $savedFinalLocationCount = 0;
 
         SosEvent::query()
             ->where(function ($query) use ($cutoffTime) {
@@ -38,15 +39,35 @@ class CleanupSosLocationUpdates extends Command
                         ->where('created_at', '<=', $cutoffTime);
                 });
             })
+            ->with('latestLocationUpdate')
             ->select('id')
-            ->chunkById(100, function ($sosEvents) use (&$deletedCount) {
+            ->chunkById(100, function ($sosEvents) use (&$deletedCount, &$savedFinalLocationCount) {
                 $sosEventIds = $sosEvents->pluck('id');
+
+                foreach ($sosEvents as $sosEvent) {
+                    $latestLocation = $sosEvent->latestLocationUpdate;
+
+                    if (
+                        $latestLocation &&
+                        $latestLocation->latitude !== null &&
+                        $latestLocation->longitude !== null
+                    ) {
+                        $sosEvent->update([
+                            'final_latitude' => $latestLocation->latitude,
+                            'final_longitude' => $latestLocation->longitude,
+                            'final_location_updated_at' => $latestLocation->created_at,
+                        ]);
+
+                        $savedFinalLocationCount++;
+                    }
+                }
 
                 $deletedCount += SosLocationUpdate::query()
                     ->whereIn('sos_event_id', $sosEventIds)
                     ->delete();
             });
 
+        $this->info("Saved {$savedFinalLocationCount} final SOS locations.");
         $this->info("Deleted {$deletedCount} SOS location update records.");
 
         return self::SUCCESS;
