@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 import 'dart:async';
 
@@ -11,6 +12,7 @@ import 'trusted_contacts_screen.dart';
 import 'profile_screen.dart';
 import 'sos_history_screen.dart';
 import 'permission_health_check_screen.dart';
+import 'app_tour_screen.dart';
 
 import '../models/user_profile.dart';
 
@@ -72,17 +74,93 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
 
   bool _shortcutInfoDialogShownInThisSession = false;
 
+  static const bool _showAppTourEveryTimeForTesting = false;
+
+  static const String _appTourCompletedKey = 'app_tour_completed_v1';
+
+  bool _appTourCheckedInThisSession = false;
+
+  static const bool _showHomeShowcaseEveryTimeForTesting = false;
+
+  static const String _homeShowcaseCompletedKey =
+      'home_showcase_completed_v1';
+
+  bool _homeShowcaseStarted = false;
+
+  final GlobalKey _sosButtonShowcaseKey = GlobalKey();
+  final GlobalKey _sosMessageShowcaseKey = GlobalKey();
+  final GlobalKey _safetyCheckShowcaseKey = GlobalKey();
+  final GlobalKey _contactsShowcaseKey = GlobalKey();
+  final GlobalKey _profileShowcaseKey = GlobalKey();
+  final GlobalKey _historyShowcaseKey = GlobalKey();
+
+
+
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addObserver(this);
 
+    ShowcaseView.register(
+      blurValue: 1.4,
+      globalTooltipActionConfig: const TooltipActionConfig(
+        position: TooltipActionPosition.outside,
+        alignment: MainAxisAlignment.spaceBetween,
+        actionGap: 12,
+        gapBetweenContentAndAction: 14,
+      ),
+      globalTooltipActions: [
+        TooltipActionButton(
+          type: TooltipDefaultActionType.previous,
+          backgroundColor: _fieldColor,
+          borderRadius: BorderRadius.circular(999),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 8,
+          ),
+          border: Border.all(
+            color: _borderColor,
+          ),
+          textStyle: const TextStyle(
+            color: Color(0xFFCBD5E1),
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        TooltipActionButton(
+          type: TooltipDefaultActionType.next,
+          backgroundColor: _dangerRed,
+          borderRadius: BorderRadius.circular(999),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          textStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        TooltipActionButton(
+          type: TooltipDefaultActionType.skip,
+          backgroundColor: Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
+          textStyle: const TextStyle(
+            color: Color(0xFFFCA5A5),
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    );
+
     unawaited(loadSavedProfile());
     unawaited(loadActiveSos());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      showShortcutFeatureInfoPopupIfNeeded();
+      unawaited(startHomeIntroFlow());
     });
   }
 
@@ -102,6 +180,100 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
     }
   }
 
+  Future<void> showAppTourIfNeeded() async {
+    if (!mounted || _appTourCheckedInThisSession) {
+      return;
+    }
+
+    _appTourCheckedInThisSession = true;
+
+    final prefs = await SharedPreferences.getInstance();
+
+    if (!_showAppTourEveryTimeForTesting) {
+      final isTourCompleted = prefs.getBool(_appTourCompletedKey) ?? false;
+
+      if (isTourCompleted) {
+        return;
+      }
+    }
+
+    final completed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => const AppTourScreen(),
+      ),
+    );
+
+    if (completed == true && !_showAppTourEveryTimeForTesting) {
+      await prefs.setBool(_appTourCompletedKey, true);
+    }
+  }
+
+  Future<void> startHomeIntroFlow() async {
+    await showAppTourIfNeeded();
+
+    if (!mounted) {
+      return;
+    }
+
+    await Future.delayed(const Duration(milliseconds: 700));
+
+    if (!mounted) {
+      return;
+    }
+
+    final didStartHomeShowcase = await showHomeShowcaseIfNeeded();
+
+    if (didStartHomeShowcase) {
+      // Do not show shortcut popup on the same app open,
+      // otherwise it can overlap/confuse the showcase flow.
+      return;
+    }
+
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (!mounted) {
+      return;
+    }
+
+    await showShortcutFeatureInfoPopupIfNeeded();
+  }
+
+  Future<bool> showHomeShowcaseIfNeeded() async {
+    if (!mounted || _homeShowcaseStarted) {
+      return false;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+
+    if (!_showHomeShowcaseEveryTimeForTesting) {
+      final isShowcaseCompleted =
+          prefs.getBool(_homeShowcaseCompletedKey) ?? false;
+
+      if (isShowcaseCompleted) {
+        return false;
+      }
+    }
+
+    _homeShowcaseStarted = true;
+
+    ShowcaseView.get().startShowCase([
+      _sosButtonShowcaseKey,
+      _sosMessageShowcaseKey,
+      _safetyCheckShowcaseKey,
+      _contactsShowcaseKey,
+      _profileShowcaseKey,
+      _historyShowcaseKey,
+    ]);
+
+    if (!_showHomeShowcaseEveryTimeForTesting) {
+      await prefs.setBool(_homeShowcaseCompletedKey, true);
+    }
+
+    return true;
+  }
+
+
   Future<void> showShortcutFeatureInfoPopupIfNeeded() async {
     if (!mounted || _shortcutInfoDialogShownInThisSession) {
       return;
@@ -118,6 +290,14 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
     _shortcutInfoDialogShownInThisSession = true;
 
     bool doNotShowAgain = false;
+
+    if (!_showAppTourEveryTimeForTesting) {
+      final isTourCompleted = prefs.getBool(_appTourCompletedKey) ?? false;
+
+      if (!isTourCompleted) {
+        return;
+      }
+    }
 
     final shouldDisablePopup = await showDialog<bool>(
       context: context,
@@ -641,6 +821,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
   void dispose() {
     routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
+    ShowcaseView.get().unregister();
     super.dispose();
   }
 
@@ -702,9 +883,17 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                         const SizedBox(height: 18),
                         _buildStatusCard(isSosActive),
                         const SizedBox(height: 26),
-                        _buildSosButton(
-                          isSosActive: isSosActive,
-                          sosSize: sosSize,
+                        _buildThemedShowcase(
+                          showcaseKey: _sosButtonShowcaseKey,
+                          title: 'Hold SOS Button',
+                          description:
+                              'Long press this button to start emergency SOS. It creates live tracking and alerts trusted contacts.',
+                          targetShapeBorder: const CircleBorder(),
+                          targetPadding: const EdgeInsets.all(8),
+                          child: _buildSosButton(
+                            isSosActive: isSosActive,
+                            sosSize: sosSize,
+                          ),
                         ),
                         const SizedBox(height: 22),
                         _buildInstructionText(isSosActive),
@@ -776,6 +965,50 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildThemedShowcase({
+    required GlobalKey showcaseKey,
+    required String title,
+    required String description,
+    required Widget child,
+    ShapeBorder? targetShapeBorder,
+    BorderRadius? targetBorderRadius,
+    EdgeInsets targetPadding = EdgeInsets.zero,
+  }) {
+    final borderRadius = targetBorderRadius ?? BorderRadius.circular(22);
+
+    return Showcase(
+      key: showcaseKey,
+      title: title,
+      description: description,
+      overlayColor: Colors.black,
+      overlayOpacity: 0.74,
+      blurValue: 1.4,
+      tooltipBackgroundColor: _cardColor,
+      textColor: _primaryText,
+      tooltipBorderRadius: BorderRadius.circular(24),
+      tooltipPadding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+      titleTextStyle: const TextStyle(
+        color: _primaryText,
+        fontSize: 17,
+        fontWeight: FontWeight.w900,
+        height: 1.25,
+      ),
+      descTextStyle: const TextStyle(
+        color: Color(0xFFCBD5E1),
+        fontSize: 13.5,
+        height: 1.45,
+        fontWeight: FontWeight.w600,
+      ),
+      targetShapeBorder: targetShapeBorder ??
+          RoundedRectangleBorder(
+            borderRadius: borderRadius,
+          ),
+      targetBorderRadius: targetShapeBorder == null ? borderRadius : null,
+      targetPadding: targetPadding,
+      child: child,
     );
   }
 
@@ -1181,14 +1414,22 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
   }
 
   Widget _buildSosMessageAction() {
-    return _buildActionTile(
-      icon: Icons.edit_note_rounded,
+    return _buildThemedShowcase(
+      showcaseKey: _sosMessageShowcaseKey,
       title: 'SOS Message',
-      subtitle: 'Customize emergency SMS text',
-      iconColor: _mapBlue,
-      onTap: () {
-        unawaited(_openSosMessage());
-      },
+      description:
+          'Use this to customize the emergency SMS text that your trusted contacts will receive.',
+      targetBorderRadius: BorderRadius.circular(22),
+      targetPadding: const EdgeInsets.all(4),
+      child: _buildActionTile(
+        icon: Icons.edit_note_rounded,
+        title: 'SOS Message',
+        subtitle: 'Customize emergency SMS text',
+        iconColor: _mapBlue,
+        onTap: () {
+          unawaited(_openSosMessage());
+        },
+      ),
     );
   }
 
@@ -1221,6 +1462,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
           child: Row(
             children: [
               _buildBottomBarItem(
+                showcaseKey: _safetyCheckShowcaseKey,
+                showcaseTitle: 'Safety Check',
+                showcaseDescription:
+                    'Check GPS, SMS permission, internet, battery settings, profile, and trusted contacts before testing SOS.',
                 icon: Icons.health_and_safety_rounded,
                 label: 'Safety',
                 color: _successGreen,
@@ -1229,6 +1474,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                 },
               ),
               _buildBottomBarItem(
+                showcaseKey: _contactsShowcaseKey,
+                showcaseTitle: 'Trusted Contacts',
+                showcaseDescription:
+                    'Add or import the people who should receive your SOS alert and live location.',
                 icon: Icons.contacts_rounded,
                 label: 'Contacts',
                 color: _dangerRed,
@@ -1237,6 +1486,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                 },
               ),
               _buildBottomBarItem(
+                showcaseKey: _profileShowcaseKey,
+                showcaseTitle: 'Emergency Profile',
+                showcaseDescription:
+                    'Add your name, phone, blood group, address, and emergency relative details.',
                 icon: Icons.person_rounded,
                 label: 'Profile',
                 color: _warningAmber,
@@ -1245,6 +1498,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                 },
               ),
               _buildBottomBarItem(
+                showcaseKey: _historyShowcaseKey,
+                showcaseTitle: 'SOS History',
+                showcaseDescription:
+                    'View previous SOS events, start location, last updated location, status, and time details.',
                 icon: Icons.history_rounded,
                 label: 'History',
                 color: _mapBlue,
@@ -1260,56 +1517,73 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
   }
 
   Widget _buildBottomBarItem({
+    GlobalKey? showcaseKey,
+    String? showcaseTitle,
+    String? showcaseDescription,
     required IconData icon,
     required String label,
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.13),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: color.withOpacity(0.25),
-                    ),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: color,
-                    size: 22,
+    Widget item = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.13),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: color.withOpacity(0.25),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFFCBD5E1),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
-                  ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 22,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFFCBD5E1),
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
+
+    if (showcaseKey != null) {
+      item = _buildThemedShowcase(
+        showcaseKey: showcaseKey,
+        title: showcaseTitle ?? label,
+        description: showcaseDescription ?? '',
+        targetBorderRadius: BorderRadius.circular(20),
+        targetPadding: const EdgeInsets.all(4),
+        child: item,
+      );
+    }
+
+    return Expanded(
+      child: item,
+    );
   }
+
 
   Widget _buildShortcutInfoPoint({
     required IconData icon,
