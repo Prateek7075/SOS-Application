@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'dart:async';
 
@@ -66,6 +67,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
   static const Color _mutedText = Color(0xFF94A3B8);
   static const Color _activeDark = Color(0xFF111827);
 
+  static const String _shortcutInfoPopupDisabledKey =
+      'shortcut_info_popup_disabled_v1';
+
+  bool _shortcutInfoDialogShownInThisSession = false;
+
   @override
   void initState() {
     super.initState();
@@ -74,6 +80,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
 
     unawaited(loadSavedProfile());
     unawaited(loadActiveSos());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showShortcutFeatureInfoPopupIfNeeded();
+    });
   }
 
   @override
@@ -91,6 +101,246 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
       _isRouteObserverSubscribed = true;
     }
   }
+
+  Future<void> showShortcutFeatureInfoPopupIfNeeded() async {
+    if (!mounted || _shortcutInfoDialogShownInThisSession) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final isPopupDisabled =
+        prefs.getBool(_shortcutInfoPopupDisabledKey) ?? false;
+
+    if (isPopupDisabled) {
+      return;
+    }
+
+    _shortcutInfoDialogShownInThisSession = true;
+
+    bool doNotShowAgain = false;
+
+    final shouldDisablePopup = await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.72),
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: _cardColor,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(26),
+                side: const BorderSide(
+                  color: _borderColor,
+                ),
+              ),
+              titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
+              contentPadding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
+              actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              title: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: _dangerRed.withOpacity(0.14),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _dangerRed.withOpacity(0.28),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.flash_on_rounded,
+                      color: _dangerRed,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Quick SOS Shortcut',
+                      style: TextStyle(
+                        color: _primaryText,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'You can start emergency SOS faster using the home screen widget or quick SOS shortcut.',
+                      style: TextStyle(
+                        color: Color(0xFFCBD5E1),
+                        fontSize: 15,
+                        height: 1.45,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    const Text(
+                      'How it works',
+                      style: TextStyle(
+                        color: _primaryText,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    _buildShortcutInfoPoint(
+                      icon: Icons.widgets_rounded,
+                      text: 'Add the SOS widget or shortcut icon to your home screen.',
+                      color: _mapBlue,
+                    ),
+                    const SizedBox(height: 10),
+                    _buildShortcutInfoPoint(
+                      icon: Icons.touch_app_rounded,
+                      text: 'Tap the widget or shortcut to open Quick SOS faster.',
+                      color: _successGreen,
+                    ),
+                    const SizedBox(height: 10),
+                    _buildShortcutInfoPoint(
+                      icon: Icons.warning_amber_rounded,
+                      text: 'Use it carefully to avoid accidental emergency alerts.',
+                      color: _warningAmber,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: _dangerRed.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: _dangerRed.withOpacity(0.24),
+                        ),
+                      ),
+                      child: const Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            color: _dangerRed,
+                            size: 22,
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Only use this shortcut when you really want to start emergency SOS.',
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                height: 1.45,
+                                color: Color(0xFFFCA5A5),
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Theme(
+                      data: Theme.of(context).copyWith(
+                        checkboxTheme: CheckboxThemeData(
+                          fillColor: WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return _dangerRed;
+                            }
+
+                            return Colors.transparent;
+                          }),
+                          checkColor: WidgetStateProperty.all(Colors.white),
+                          side: const BorderSide(
+                            color: _mutedText,
+                            width: 1.4,
+                          ),
+                        ),
+                      ),
+                      child: CheckboxListTile(
+                        value: doNotShowAgain,
+                        onChanged: (value) {
+                          setDialogState(() {
+                            doNotShowAgain = value ?? false;
+                          });
+                        },
+                        contentPadding: EdgeInsets.zero,
+                        controlAffinity: ListTileControlAffinity.leading,
+                        activeColor: _dangerRed,
+                        title: const Text(
+                          'Do not show again',
+                          style: TextStyle(
+                            color: _primaryText,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop(false);
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFFCBD5E1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _dangerRed,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop(doNotShowAgain);
+                  },
+                  icon: const Icon(Icons.check_rounded),
+                  label: const Text(
+                    'Got it',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (shouldDisablePopup == true) {
+      await prefs.setBool(_shortcutInfoPopupDisabledKey, true);
+    }
+  }
+
+
 
   @override
   void didPopNext() {
@@ -1057,6 +1307,56 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildShortcutInfoPoint({
+    required IconData icon,
+    required String text,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _fieldColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _borderColor,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.14),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: color.withOpacity(0.26),
+              ),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 19,
+            ),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: _mutedText,
+                fontSize: 13.5,
+                height: 1.4,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
