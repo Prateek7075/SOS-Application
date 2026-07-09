@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'firebase_options.dart';
 import 'route_observer.dart';
@@ -40,11 +41,24 @@ class SosApp extends StatelessWidget {
       title: 'Emergency SOS',
       debugShowCheckedModeBanner: false,
       navigatorObservers: [routeObserver],
+
+      builder: (context, child) {
+        final mediaQuery = MediaQuery.of(context);
+
+        return MediaQuery(
+          data: mediaQuery.copyWith(
+            textScaler: const TextScaler.linear(0.92),
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+
       routes: {
         '/quick-sos': (context) => const QuickSosScreen(),
       },
       theme: ThemeData(
         useMaterial3: true,
+        fontFamily: GoogleFonts.poppins().fontFamily,
         brightness: Brightness.dark,
 
         colorScheme: const ColorScheme.dark(
@@ -305,54 +319,56 @@ class SosApp extends StatelessWidget {
           selectionHandleColor: mapBlue,
         ),
 
-        textTheme: const TextTheme(
-          headlineLarge: TextStyle(
-            color: primaryText,
-            fontWeight: FontWeight.w900,
-          ),
-          headlineMedium: TextStyle(
-            color: primaryText,
-            fontWeight: FontWeight.w900,
-          ),
-          headlineSmall: TextStyle(
-            color: primaryText,
-            fontWeight: FontWeight.w900,
-          ),
-          titleLarge: TextStyle(
-            color: primaryText,
-            fontWeight: FontWeight.w900,
-          ),
-          titleMedium: TextStyle(
-            color: primaryText,
-            fontWeight: FontWeight.w800,
-          ),
-          titleSmall: TextStyle(
-            color: primaryText,
-            fontWeight: FontWeight.w700,
-          ),
-          bodyLarge: TextStyle(
-            color: softText,
-            fontWeight: FontWeight.w500,
-          ),
-          bodyMedium: TextStyle(
-            color: softText,
-            fontWeight: FontWeight.w500,
-          ),
-          bodySmall: TextStyle(
-            color: mutedText,
-            fontWeight: FontWeight.w500,
-          ),
-          labelLarge: TextStyle(
-            color: primaryText,
-            fontWeight: FontWeight.w800,
-          ),
-          labelMedium: TextStyle(
-            color: mutedText,
-            fontWeight: FontWeight.w700,
-          ),
-          labelSmall: TextStyle(
-            color: mutedText,
-            fontWeight: FontWeight.w700,
+        textTheme: GoogleFonts.poppinsTextTheme(
+          const TextTheme(
+            headlineLarge: TextStyle(
+              color: primaryText,
+              fontWeight: FontWeight.w900,
+            ),
+            headlineMedium: TextStyle(
+              color: primaryText,
+              fontWeight: FontWeight.w900,
+            ),
+            headlineSmall: TextStyle(
+              color: primaryText,
+              fontWeight: FontWeight.w900,
+            ),
+            titleLarge: TextStyle(
+              color: primaryText,
+              fontWeight: FontWeight.w900,
+            ),
+            titleMedium: TextStyle(
+              color: primaryText,
+              fontWeight: FontWeight.w800,
+            ),
+            titleSmall: TextStyle(
+              color: primaryText,
+              fontWeight: FontWeight.w700,
+            ),
+            bodyLarge: TextStyle(
+              color: softText,
+              fontWeight: FontWeight.w500,
+            ),
+            bodyMedium: TextStyle(
+              color: softText,
+              fontWeight: FontWeight.w500,
+            ),
+            bodySmall: TextStyle(
+              color: mutedText,
+              fontWeight: FontWeight.w500,
+            ),
+            labelLarge: TextStyle(
+              color: primaryText,
+              fontWeight: FontWeight.w800,
+            ),
+            labelMedium: TextStyle(
+              color: mutedText,
+              fontWeight: FontWeight.w700,
+            ),
+            labelSmall: TextStyle(
+              color: mutedText,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),

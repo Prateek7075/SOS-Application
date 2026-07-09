@@ -46,6 +46,7 @@ dependencies:
   flutter_contacts: ^2.2.2
   battery_plus: ^7.1.0
   showcaseview: ^5.1.0
+  google_fonts: ^8.1.0
 
 dev_dependencies:
   flutter_test:
