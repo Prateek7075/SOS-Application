@@ -377,13 +377,25 @@ class SosController extends Controller
                 'expires_at',
                 'cancelled_at',
                 'created_at',
+                'final_latitude',
+                'final_longitude',
+                'final_location_updated_at',
             ]);
 
         $history = $sosEvents->map(function (SosEvent $sosEvent) {
             $latestLocation = $sosEvent->latestLocationUpdate;
 
-            $lastLatitude = $latestLocation?->latitude ?? $sosEvent->initial_latitude;
-            $lastLongitude = $latestLocation?->longitude ?? $sosEvent->initial_longitude;
+            $lastLatitude = $latestLocation?->latitude
+                ?? $sosEvent->final_latitude
+                ?? $sosEvent->initial_latitude;
+
+            $lastLongitude = $latestLocation?->longitude
+                ?? $sosEvent->final_longitude
+                ?? $sosEvent->initial_longitude;
+
+            $lastUpdatedAt = $latestLocation?->created_at
+                ?? $sosEvent->final_location_updated_at
+                ?? $sosEvent->created_at;
 
             $googleMapsUrl = null;
 
@@ -412,8 +424,10 @@ class SosController extends Controller
                     'latitude' => $lastLatitude,
                     'longitude' => $lastLongitude,
                     'google_maps_url' => $googleMapsUrl,
-                    'updated_at' => $latestLocation?->created_at ?? $sosEvent->created_at,
-                    'source' => $latestLocation ? 'latest_location_update' : 'initial_location',
+                    'updated_at' => $lastUpdatedAt,
+                    'source' => $latestLocation
+                        ? 'latest_location_update'
+                        : ($sosEvent->final_latitude ? 'saved_final_location' : 'initial_location'),
                 ],
             ];
         });
