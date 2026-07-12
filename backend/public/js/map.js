@@ -1,4 +1,4 @@
-import centerMarkerLocationIcon from '../center_location_btn.png';
+const centerLocationIcon = '/images/center_location_btn.png';
 
 const trackingToken = window.trackingToken;
 const maxVisibleAccuracyRadiusMeters = 300;
