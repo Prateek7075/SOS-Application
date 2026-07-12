@@ -1,4 +1,6 @@
-const trackingToken = @json($trackingToken);
+import centerLocationIcon from '../center_location_btn.png';
+
+    const trackingToken = window.trackingToken;
     const maxVisibleAccuracyRadiusMeters = 300;
 
     let map = null;
@@ -407,7 +409,7 @@ const trackingToken = @json($trackingToken);
             button.type = 'button';
             button.className = 'map-center-control';
             button.title = 'Center location';
-            button.innerHTML = '<img src = "../center_location_btn.png" alt="Center location">';
+            button.innerHTML = `<img src="${centerLocationIcon}" alt="Center location">`;
 
             button.addEventListener('click', (event) => {
                 event.preventDefault();

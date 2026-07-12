@@ -10,10 +10,7 @@
         rel="stylesheet"
         href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css"
     />
-    <link
-            rel="stylesheet"
-            href="../css/map.css"
-    />
+    @vite('resources/css/map.css')
 
 </head>
 <body>
@@ -117,6 +114,10 @@
 
 <!-- MapLibre GL JS -->
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
-<script src="../js/map.js"></script>
+<script>
+    window.trackingToken = @json($trackingToken);
+</script>
+
+@vite('resources/js/map.js')
 </body>
 </html>
