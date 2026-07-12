@@ -12,6 +12,8 @@ let latestMapLongitude = null;
 
 let trackingRequestInProgress = false;
 
+const autoCenterOnLocationUpdate = true;
+
 const mapLayerIds = [
     'street-layer',
     'satellite-layer',
@@ -645,6 +647,15 @@ function initializeOrUpdateMap(latitude, longitude) {
         return false;
     }
 
+    const previousLatitude = latestMapLatitude;
+    const previousLongitude = latestMapLongitude;
+
+    const locationChanged =
+        previousLatitude === null ||
+        previousLongitude === null ||
+        previousLatitude !== lat ||
+        previousLongitude !== lng;
+
     latestMapLatitude = lat;
     latestMapLongitude = lng;
 
@@ -680,6 +691,17 @@ function initializeOrUpdateMap(latitude, longitude) {
     }
 
     createOrUpdateMarker(lat, lng);
+
+    if (
+        autoCenterOnLocationUpdate &&
+        locationChanged
+    ) {
+        map.easeTo({
+            center: [lng, lat],
+            duration: 700,
+            essential: true,
+        });
+    }
 
     return true;
 }

@@ -313,8 +313,8 @@ body {
 }
 
 .maplibregl-ctrl-group button {
-    width: 34px;
-    height: 34px;
+    width: 38px;
+    height: 38px;
 
     background:
         rgba(17, 24, 39, 0.96) !important;
@@ -431,36 +431,34 @@ body {
 /* Custom center-location map control */
 
 .map-center-control {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 
-    width: 34px;
-    height: 34px;
-    padding: 0;
+    width: 38px !important;
+    height: 38px !important;
+    padding: 0 !important;
 
-    color: var(--danger) !important;
-
-    background:
-        rgba(17, 24, 39, 0.96) !important;
-
-    border: none;
+    background: rgba(17, 24, 39, 0.96) !important;
+    border: none !important;
 
     cursor: pointer;
 }
 
 .map-center-control:hover {
-    background:
-        rgba(239, 68, 68, 0.14) !important;
+    background: rgba(239, 68, 68, 0.18) !important;
 }
 
 .map-center-control img {
-    display: block;
+    display: block !important;
 
-    width: 20px;
-    height: 20px;
+    width: 26px !important;
+    height: 26px !important;
 
-    object-fit: contain;
+    object-fit: contain !important;
+    object-position: center !important;
+
+    pointer-events: none;
 }
 
 /* SOS marker */
