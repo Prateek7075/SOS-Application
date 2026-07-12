@@ -16,10 +16,8 @@
         href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css"
     >
 
-    {{-- Tracking page CSS --}}
-    @vite([
-        'resources/css/map.css',
-    ])
+    <link rel="stylesheet" href="{{ asset('css/map.css') }}">
+
 </head>
 
 <body>
@@ -212,10 +210,6 @@
     window.trackingToken = @json($trackingToken);
 </script>
 
-{{-- Tracking page JavaScript --}}
-@vite([
-    'resources/js/map.js',
-])
-
+<script src="{{ asset('js/map.js') }}"></script>
 </body>
 </html>
