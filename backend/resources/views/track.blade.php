@@ -16,7 +16,7 @@
         href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css"
     >
 
-    <link rel="stylesheet" href="{{ asset('css/map.css') }}">
+    <link rel="stylesheet" href="{{ secure_asset('css/map.css') }}">
 
 </head>
 
@@ -210,6 +210,6 @@
     window.trackingToken = @json($trackingToken);
 </script>
 
-<script src="{{ asset('js/map.js') }}"></script>
+<script src="{{ secure_asset('js/map.js') }}"></script>
 </body>
 </html>
