@@ -17,6 +17,12 @@ class MainActivity : FlutterActivity() {
     private val channelName = "sos_sms_channel"
     private val routeExtraName = "route"
 
+    private val heartbeatPrefsName = "sos_foreground_service_state"
+    private val keyServiceHeartbeatAt = "native_service_last_heartbeat_at"
+    private val keyActiveSosEventId = "native_service_active_sos_event_id"
+    private val keyActiveTrackingToken = "native_service_active_tracking_token"
+    private val staleHeartbeatThresholdMilliseconds = 90000L
+
     private var currentFlutterEngine: FlutterEngine? = null
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -222,11 +228,66 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
+                "getForegroundLocationServiceState" -> {
+                    try {
+                        result.success(getForegroundLocationServiceState())
+                    } catch (error: Exception) {
+                        result.error(
+                            "SERVICE_STATE_READ_FAILED",
+                            error.message,
+                            null
+                        )
+                    }
+                }
+
                 else -> {
                     result.notImplemented()
                 }
             }
         }
+    }
+
+    private fun getForegroundLocationServiceState(): Map<String, Any?> {
+        val prefs = getSharedPreferences(
+            heartbeatPrefsName,
+            Context.MODE_PRIVATE
+        )
+
+        val heartbeatAt = prefs.getLong(
+            keyServiceHeartbeatAt,
+            0L
+        )
+
+        val activeSosEventId = prefs.getInt(
+            keyActiveSosEventId,
+            -1
+        )
+
+        val activeTrackingToken = prefs.getString(
+            keyActiveTrackingToken,
+            ""
+        ) ?: ""
+
+        val now = System.currentTimeMillis()
+
+        val heartbeatAgeMilliseconds =
+            if (heartbeatAt > 0L) {
+                now - heartbeatAt
+            } else {
+                null
+            }
+
+        val isHeartbeatFresh =
+            heartbeatAgeMilliseconds != null &&
+                    heartbeatAgeMilliseconds <= staleHeartbeatThresholdMilliseconds
+
+        return mapOf(
+            "lastHeartbeatAt" to heartbeatAt,
+            "heartbeatAgeMilliseconds" to heartbeatAgeMilliseconds,
+            "activeSosEventId" to activeSosEventId,
+            "activeTrackingToken" to activeTrackingToken,
+            "isHeartbeatFresh" to isHeartbeatFresh,
+        )
     }
 
     override fun getInitialRoute(): String {

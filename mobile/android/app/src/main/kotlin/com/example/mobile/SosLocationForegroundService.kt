@@ -45,6 +45,12 @@ class SosLocationForegroundService : Service() {
 
         private const val RETRY_PREFS_NAME = "native_sos_location_retry_queue"
         private const val MAX_RETRY_QUEUE_SIZE = 200
+
+        private const val HEARTBEAT_PREFS_NAME = "sos_foreground_service_state"
+        private const val KEY_SERVICE_HEARTBEAT_AT = "native_service_last_heartbeat_at"
+        private const val KEY_ACTIVE_SOS_EVENT_ID = "native_service_active_sos_event_id"
+        private const val KEY_ACTIVE_TRACKING_TOKEN = "native_service_active_tracking_token"
+        private const val HEARTBEAT_INTERVAL_MS = 30000L
     }
 
     private data class LocationPayload(
@@ -68,6 +74,19 @@ class SosLocationForegroundService : Service() {
     private var apiBaseUrl: String = ""
 
     private var lastLocationSentAt = 0L
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    private val heartbeatRunnable = object : Runnable {
+        override fun run() {
+            saveServiceHeartbeat()
+
+            mainHandler.postDelayed(
+                this,
+                HEARTBEAT_INTERVAL_MS
+            )
+        }
+    }
 
     private lateinit var locationManager: LocationManager
 
@@ -109,8 +128,72 @@ class SosLocationForegroundService : Service() {
         createNotificationChannel()
     }
 
+    private fun getHeartbeatPrefs() =
+        getSharedPreferences(HEARTBEAT_PREFS_NAME, Context.MODE_PRIVATE)
+
+    private fun saveServiceHeartbeat() {
+        if (
+            sosEventId == -1 ||
+            trackingToken.isBlank()
+        ) {
+            return
+        }
+
+        getHeartbeatPrefs()
+            .edit()
+            .putLong(
+                KEY_SERVICE_HEARTBEAT_AT,
+                System.currentTimeMillis()
+            )
+            .putInt(
+                KEY_ACTIVE_SOS_EVENT_ID,
+                sosEventId
+            )
+            .putString(
+                KEY_ACTIVE_TRACKING_TOKEN,
+                trackingToken
+            )
+            .apply()
+
+        Log.d(
+            TAG,
+            "Service heartbeat saved. SOS=$sosEventId"
+        )
+    }
+
+    private fun startServiceHeartbeat() {
+        mainHandler.removeCallbacks(heartbeatRunnable)
+
+        saveServiceHeartbeat()
+
+        mainHandler.postDelayed(
+            heartbeatRunnable,
+            HEARTBEAT_INTERVAL_MS
+        )
+    }
+
+    private fun stopServiceHeartbeat() {
+        mainHandler.removeCallbacks(heartbeatRunnable)
+    }
+
+    private fun clearServiceHeartbeat() {
+        getHeartbeatPrefs()
+            .edit()
+            .remove(KEY_SERVICE_HEARTBEAT_AT)
+            .remove(KEY_ACTIVE_SOS_EVENT_ID)
+            .remove(KEY_ACTIVE_TRACKING_TOKEN)
+            .apply()
+
+        Log.d(TAG, "Service heartbeat cleared")
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
+            SosRecoveryWorker.clearRecoveryState(applicationContext)
+            SosRecoveryWorker.cancel(applicationContext)
+
+            stopServiceHeartbeat()
+            clearServiceHeartbeat()
             stopTracking()
             clearPendingLocationUpdates()
             stopSelf()
@@ -123,9 +206,20 @@ class SosLocationForegroundService : Service() {
 
         if (sosEventId == -1 || trackingToken.isBlank() || apiBaseUrl.isBlank()) {
             Log.e(TAG, "Invalid SOS event ID, tracking token, or API base URL")
+            stopServiceHeartbeat()
+            clearServiceHeartbeat()
             stopSelf()
             return START_NOT_STICKY
         }
+
+        SosRecoveryWorker.saveRecoveryState(
+            context = applicationContext,
+            sosEventId = sosEventId,
+            trackingToken = trackingToken,
+            apiBaseUrl = apiBaseUrl
+        )
+
+        SosRecoveryWorker.schedule(applicationContext)
 
         val notification = createNotification()
 
@@ -139,6 +233,7 @@ class SosLocationForegroundService : Service() {
             startForeground(NOTIFICATION_ID, notification)
         }
 
+        startServiceHeartbeat()
         startTracking()
 
         return START_STICKY
@@ -152,6 +247,8 @@ class SosLocationForegroundService : Service() {
             != PackageManager.PERMISSION_GRANTED
         ) {
             Log.e(TAG, "Location permission not granted")
+            stopServiceHeartbeat()
+            clearServiceHeartbeat()
             stopSelf()
             return
         }
@@ -520,7 +617,12 @@ class SosLocationForegroundService : Service() {
             "Stopping SOS foreground service. Backend rejected SOS=$sosEventId Response=$responseCode Body=$shortResponseBody"
         )
 
-        Handler(Looper.getMainLooper()).post {
+        mainHandler.post {
+            SosRecoveryWorker.clearRecoveryState(applicationContext)
+            SosRecoveryWorker.cancel(applicationContext)
+
+            stopServiceHeartbeat()
+            clearServiceHeartbeat()
             clearPendingLocationUpdates()
             stopTracking()
 
@@ -543,6 +645,8 @@ class SosLocationForegroundService : Service() {
         if (sosEventId == -1 || apiBaseUrl.isBlank() || trackingToken.isBlank()) {
             return
         }
+
+        saveServiceHeartbeat()
 
         val currentTime = System.currentTimeMillis()
 
@@ -700,6 +804,8 @@ class SosLocationForegroundService : Service() {
     }
 
     override fun onDestroy() {
+        stopServiceHeartbeat()
+        clearServiceHeartbeat()
         stopTracking()
         super.onDestroy()
     }

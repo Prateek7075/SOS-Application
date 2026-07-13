@@ -21,6 +21,7 @@ import '../services/background_location_service.dart';
 import '../services/sos_api_service.dart';
 import '../services/user_profile_local_service.dart';
 import '../services/user_profile_api_service.dart';
+import '../services/active_sos_monitor_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -664,6 +665,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
         sosEventId: session.sosEventId,
       );
 
+      ActiveSosMonitorService.instance.stop();
+
       await _backgroundLocationService.stop();
       await _activeSosLocalService.clear();
 
@@ -718,6 +721,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
           : 'SOS is currently active';
     });
 
+    if (localSession != null) {
+      ActiveSosMonitorService.instance.start();
+    } else {
+      ActiveSosMonitorService.instance.stop();
+    }
+
     try {
       final backendActiveSos = await _sosApiService.getActiveSos();
 
@@ -726,6 +735,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
       }
 
       if (backendActiveSos == null) {
+        ActiveSosMonitorService.instance.stop();
+
         await _backgroundLocationService.stop();
         await _activeSosLocalService.clear();
 
@@ -760,6 +771,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
         _isCheckingSos = false;
         sosStatus = 'SOS is currently active';
       });
+
+      ActiveSosMonitorService.instance.start();
+
     } catch (error) {
       debugPrint('Could not load active SOS from backend: $error');
 
@@ -775,6 +789,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
             ? 'SOS not started'
             : 'SOS is currently active';
       });
+
+      if (localSession != null) {
+        ActiveSosMonitorService.instance.start();
+      }
+
     }
   }
 
@@ -797,6 +816,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
       }
 
       if (backendStatus != 'active') {
+        ActiveSosMonitorService.instance.stop();
+
         await _backgroundLocationService.stop();
         await _activeSosLocalService.clear();
 

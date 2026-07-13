@@ -19,7 +19,7 @@ import '../services/offline_sos_local_service.dart';
 import '../services/custom_sos_message_local_service.dart';
 import '../services/battery_optimization_service.dart';
 import '../services/failed_sos_location_local_service.dart';
-import '../services/battery_optimization_service.dart';
+import '../services/active_sos_monitor_service.dart';
 
 class ActiveSosScreen extends StatefulWidget {
   const ActiveSosScreen({
@@ -34,6 +34,9 @@ class ActiveSosScreen extends StatefulWidget {
 }
 
 class _ActiveSosScreenState extends State<ActiveSosScreen> {
+
+  static const int _locationUpdateIntervalSeconds = 30;
+
   final LocationService _locationService = LocationService();
   final NetworkService _networkService = NetworkService();
   final SosApiService _sosApiService = SosApiService();
@@ -70,7 +73,8 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   Timer? _statusCheckTimer;
   Timer? _offlineInternetCheckTimer;
 
-  int _nextUpdateSeconds = 30;
+  int _nextUpdateSeconds = _locationUpdateIntervalSeconds;
+  DateTime? _nextLocationUpdateAt;
 
   bool _isUpdatingLocation = false;
   bool _isCancelling = false;
@@ -152,8 +156,68 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       _batteryPercentage = session.batteryPercentage;
     });
 
-    startLocationCountdown();
+    await refreshCountdownFromSavedActiveSos();
+
+    startLiveLocationUpdates();
     startSosStatusCheckTimer();
+    ActiveSosMonitorService.instance.start();
+  }
+
+  int getRemainingSecondsUntilNextLocationUpdate(DateTime? nextLocationUpdateAt) {
+    if (nextLocationUpdateAt == null) {
+      return _locationUpdateIntervalSeconds;
+    }
+
+    final remainingSeconds = nextLocationUpdateAt
+        .difference(DateTime.now())
+        .inSeconds;
+
+    if (remainingSeconds <= 0) {
+      return 0;
+    }
+
+    if (remainingSeconds > _locationUpdateIntervalSeconds) {
+      return _locationUpdateIntervalSeconds;
+    }
+
+    return remainingSeconds;
+  }
+
+  Future<void> refreshCountdownFromSavedActiveSos() async {
+    final activeSosSession = await _activeSosLocalService.getActiveSos();
+
+    if (!mounted || activeSosSession == null) {
+      return;
+    }
+
+    setState(() {
+      _nextLocationUpdateAt = activeSosSession.nextLocationUpdateAt;
+      _nextUpdateSeconds = getRemainingSecondsUntilNextLocationUpdate(
+        _nextLocationUpdateAt,
+      );
+    });
+  }
+
+  Future<void> saveNextLocationUpdateTime() async {
+    final nextUpdateAt = DateTime.now().add(
+      const Duration(seconds: _locationUpdateIntervalSeconds),
+    );
+
+    _nextLocationUpdateAt = nextUpdateAt;
+
+    await _activeSosLocalService.saveNextLocationUpdateTime(
+      nextLocationUpdateAt: nextUpdateAt,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _nextUpdateSeconds = getRemainingSecondsUntilNextLocationUpdate(
+        _nextLocationUpdateAt,
+      );
+    });
   }
 
   Future<void> startSosFlow() async {
@@ -324,6 +388,9 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         trackingToken: sosEvent.trackingToken,
         trackingUrl: sosEvent.trackingUrl,
         batteryPercentage: batteryPercentage,
+        nextLocationUpdateAt: DateTime.now().add(
+          const Duration(seconds: _locationUpdateIntervalSeconds),
+        ),
       );
 
       if (!mounted) {
@@ -369,6 +436,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
       startLiveLocationUpdates();
       startSosStatusCheckTimer();
+      ActiveSosMonitorService.instance.start();
 
       unawaited(
         sendLiveLocationUpdate(),
@@ -448,6 +516,9 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         trackingToken: sosEvent.trackingToken,
         trackingUrl: sosEvent.trackingUrl,
         batteryPercentage: batteryPercentage,
+        nextLocationUpdateAt: DateTime.now().add(
+          const Duration(seconds: _locationUpdateIntervalSeconds),
+        ),
       );
 
       await _offlineSosLocalService.removeOfflineSos(event.localId);
@@ -489,6 +560,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
       startLiveLocationUpdates();
       startSosStatusCheckTimer();
+      ActiveSosMonitorService.instance.start();
 
       unawaited(
         sendLiveLocationUpdate(),
@@ -853,6 +925,8 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       _countdownTimer?.cancel();
       _statusCheckTimer?.cancel();
 
+      ActiveSosMonitorService.instance.stop();
+
       await _backgroundLocationService.stop();
       await _activeSosLocalService.clear();
 
@@ -880,7 +954,8 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
   void startLocationCountdown() {
     _countdownTimer?.cancel();
-    _nextUpdateSeconds = 30;
+
+    unawaited(refreshCountdownFromSavedActiveSos());
 
     _countdownTimer = Timer.periodic(
       const Duration(seconds: 1),
@@ -891,11 +966,9 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         }
 
         setState(() {
-          if (_nextUpdateSeconds > 1) {
-            _nextUpdateSeconds--;
-          } else {
-            _nextUpdateSeconds = 30;
-          }
+          _nextUpdateSeconds = getRemainingSecondsUntilNextLocationUpdate(
+            _nextLocationUpdateAt,
+          );
         });
       },
     );
@@ -903,18 +976,22 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
   void startLiveLocationUpdates() {
     _locationTimer?.cancel();
+
+    unawaited(saveNextLocationUpdateTime());
+
     startLocationCountdown();
 
     debugPrint('Flutter fallback location timer started');
 
     _locationTimer = Timer.periodic(
-      const Duration(seconds: 30),
+      const Duration(seconds: _locationUpdateIntervalSeconds),
           (timer) {
         if (!mounted) {
           timer.cancel();
           return;
         }
 
+        unawaited(saveNextLocationUpdateTime());
         unawaited(sendLiveLocationUpdate());
       },
     );
@@ -971,6 +1048,22 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         batteryPercentage: batteryPercentage,
       );
 
+      final now = DateTime.now();
+
+      final nextUpdateAt = _nextLocationUpdateAt != null &&
+          _nextLocationUpdateAt!.isAfter(now)
+          ? _nextLocationUpdateAt!
+          : now.add(
+        const Duration(seconds: _locationUpdateIntervalSeconds),
+      );
+
+      _nextLocationUpdateAt = nextUpdateAt;
+
+      await _activeSosLocalService.saveLocationUpdateTiming(
+        lastLocationUpdateAt: now,
+        nextLocationUpdateAt: nextUpdateAt,
+      );
+
       debugPrint('Live location update success for SOS $_sosEventId');
 
       if (!mounted) {
@@ -982,8 +1075,11 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         _longitude = position!.longitude;
         _gpsStatus = 'Location updated';
         _liveTracking = 'Live location updated';
-        _nextUpdateSeconds = 30;
+        _nextUpdateSeconds = getRemainingSecondsUntilNextLocationUpdate(
+          _nextLocationUpdateAt,
+        );
       });
+
     } catch (error) {
       debugPrint('Live location update failed: $error');
 
@@ -1097,6 +1193,8 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       _locationTimer?.cancel();
       _countdownTimer?.cancel();
       _statusCheckTimer?.cancel();
+
+      ActiveSosMonitorService.instance.stop();
 
       await _backgroundLocationService.stop();
       await _activeSosLocalService.clear();

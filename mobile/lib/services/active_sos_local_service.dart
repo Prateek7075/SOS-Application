@@ -9,12 +9,58 @@ class ActiveSosSession {
     required this.trackingToken,
     required this.trackingUrl,
     this.batteryPercentage,
+    this.lastLocationUpdateAtMilliseconds,
+    this.nextLocationUpdateAtMilliseconds,
   });
 
   final int sosEventId;
   final String trackingToken;
   final String trackingUrl;
   final int? batteryPercentage;
+  final int? lastLocationUpdateAtMilliseconds;
+  final int? nextLocationUpdateAtMilliseconds;
+
+  DateTime? get lastLocationUpdateAt {
+    final value = lastLocationUpdateAtMilliseconds;
+
+    if (value == null || value <= 0) {
+      return null;
+    }
+
+    return DateTime.fromMillisecondsSinceEpoch(value);
+  }
+
+  DateTime? get nextLocationUpdateAt {
+    final value = nextLocationUpdateAtMilliseconds;
+
+    if (value == null || value <= 0) {
+      return null;
+    }
+
+    return DateTime.fromMillisecondsSinceEpoch(value);
+  }
+
+  ActiveSosSession copyWith({
+    int? sosEventId,
+    String? trackingToken,
+    String? trackingUrl,
+    int? batteryPercentage,
+    int? lastLocationUpdateAtMilliseconds,
+    int? nextLocationUpdateAtMilliseconds,
+  }) {
+    return ActiveSosSession(
+      sosEventId: sosEventId ?? this.sosEventId,
+      trackingToken: trackingToken ?? this.trackingToken,
+      trackingUrl: trackingUrl ?? this.trackingUrl,
+      batteryPercentage: batteryPercentage ?? this.batteryPercentage,
+      lastLocationUpdateAtMilliseconds:
+      lastLocationUpdateAtMilliseconds ??
+          this.lastLocationUpdateAtMilliseconds,
+      nextLocationUpdateAtMilliseconds:
+      nextLocationUpdateAtMilliseconds ??
+          this.nextLocationUpdateAtMilliseconds,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -22,6 +68,10 @@ class ActiveSosSession {
       'tracking_token': trackingToken,
       'tracking_url': trackingUrl,
       'battery_percentage': batteryPercentage,
+      'last_location_update_at_milliseconds':
+      lastLocationUpdateAtMilliseconds,
+      'next_location_update_at_milliseconds':
+      nextLocationUpdateAtMilliseconds,
     };
   }
 
@@ -31,6 +81,12 @@ class ActiveSosSession {
       trackingToken: json['tracking_token']?.toString() ?? '',
       trackingUrl: json['tracking_url']?.toString() ?? '',
       batteryPercentage: _parseInt(json['battery_percentage']),
+      lastLocationUpdateAtMilliseconds: _parseInt(
+        json['last_location_update_at_milliseconds'],
+      ),
+      nextLocationUpdateAtMilliseconds: _parseInt(
+        json['next_location_update_at_milliseconds'],
+      ),
     );
   }
 
@@ -73,6 +129,8 @@ class ActiveSosLocalService {
     required String trackingToken,
     required String trackingUrl,
     int? batteryPercentage,
+    DateTime? lastLocationUpdateAt,
+    DateTime? nextLocationUpdateAt,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final activeSosKey = _currentUserActiveSosKey;
@@ -81,11 +139,19 @@ class ActiveSosLocalService {
       throw Exception('Cannot save active SOS because user is not logged in');
     }
 
+    final existingSession = await getActiveSos();
+
     final session = ActiveSosSession(
       sosEventId: sosEventId,
       trackingToken: trackingToken,
       trackingUrl: trackingUrl,
       batteryPercentage: batteryPercentage,
+      lastLocationUpdateAtMilliseconds:
+      lastLocationUpdateAt?.millisecondsSinceEpoch ??
+          existingSession?.lastLocationUpdateAtMilliseconds,
+      nextLocationUpdateAtMilliseconds:
+      nextLocationUpdateAt?.millisecondsSinceEpoch ??
+          existingSession?.nextLocationUpdateAtMilliseconds,
     );
 
     await prefs.setString(
@@ -152,6 +218,63 @@ class ActiveSosLocalService {
       await prefs.remove(_legacyActiveSosKey);
       return null;
     }
+  }
+
+  Future<void> saveLocationUpdateTiming({
+    required DateTime lastLocationUpdateAt,
+    required DateTime nextLocationUpdateAt,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final activeSosKey = _currentUserActiveSosKey;
+
+    if (activeSosKey == null) {
+      return;
+    }
+
+    final session = await getActiveSos();
+
+    if (session == null) {
+      return;
+    }
+
+    final updatedSession = session.copyWith(
+      lastLocationUpdateAtMilliseconds:
+      lastLocationUpdateAt.millisecondsSinceEpoch,
+      nextLocationUpdateAtMilliseconds:
+      nextLocationUpdateAt.millisecondsSinceEpoch,
+    );
+
+    await prefs.setString(
+      activeSosKey,
+      jsonEncode(updatedSession.toJson()),
+    );
+  }
+
+  Future<void> saveNextLocationUpdateTime({
+    required DateTime nextLocationUpdateAt,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final activeSosKey = _currentUserActiveSosKey;
+
+    if (activeSosKey == null) {
+      return;
+    }
+
+    final session = await getActiveSos();
+
+    if (session == null) {
+      return;
+    }
+
+    final updatedSession = session.copyWith(
+      nextLocationUpdateAtMilliseconds:
+      nextLocationUpdateAt.millisecondsSinceEpoch,
+    );
+
+    await prefs.setString(
+      activeSosKey,
+      jsonEncode(updatedSession.toJson()),
+    );
   }
 
   Future<void> clear() async {
