@@ -20,6 +20,7 @@ import '../services/custom_sos_message_local_service.dart';
 import '../services/battery_optimization_service.dart';
 import '../services/failed_sos_location_local_service.dart';
 import '../services/active_sos_monitor_service.dart';
+import '../services/safety_check_service.dart';
 
 class ActiveSosScreen extends StatefulWidget {
   const ActiveSosScreen({
@@ -50,6 +51,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   final CustomSosMessageLocalService _customSosMessageLocalService = CustomSosMessageLocalService();
   final BatteryOptimizationService _batteryOptimizationService = BatteryOptimizationService();
   final FailedSosLocationLocalService _failedSosLocationLocalService = FailedSosLocationLocalService();
+  final SafetyCheckService _safetyCheckService = SafetyCheckService();
 
   String _gpsStatus = 'Finding location...';
   String _networkStatus = 'Checking network...';
@@ -72,6 +74,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   Timer? _countdownTimer;
   Timer? _statusCheckTimer;
   Timer? _offlineInternetCheckTimer;
+  Timer? _safetyCheckTimer;
 
   int _nextUpdateSeconds = _locationUpdateIntervalSeconds;
   DateTime? _nextLocationUpdateAt;
@@ -82,6 +85,12 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   bool _isStoppingBecauseInactive = false;
   bool _isConvertingOfflineSosToLive = false;
   bool _isSyncingFailedLocationUpdates = false;
+
+  bool _isRunningSafetyCheck = false;
+
+  SafetyCheckResult? _safetyCheckResult;
+
+  Set<String> _lastSafetyIssueKeys = <String>{};
 
   String _batteryOptimizationStatus = 'Checking battery optimization...';
   bool _isBatteryOptimizationAllowed = true;
@@ -121,6 +130,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     _countdownTimer?.cancel();
     _statusCheckTimer?.cancel();
     _offlineInternetCheckTimer?.cancel();
+    _safetyCheckTimer?.cancel();
     super.dispose();
   }
 
@@ -161,6 +171,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     startLiveLocationUpdates();
     startSosStatusCheckTimer();
     ActiveSosMonitorService.instance.start();
+    startActiveSosSafetyMonitor();
   }
 
   int getRemainingSecondsUntilNextLocationUpdate(DateTime? nextLocationUpdateAt) {
@@ -236,6 +247,12 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         _smsFallback = 'Not sent';
         _liveTracking = 'Not started';
       });
+
+      unawaited(
+        runAutomaticSafetyCheck(
+          showSnackBarOnNewCriticalIssues: true,
+        ),
+      );
       return;
     }
 
@@ -292,6 +309,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     );
 
     startOfflineInternetCheckTimer();
+    startActiveSosSafetyMonitor();
   }
 
   void startOfflineInternetCheckTimer() {
@@ -437,6 +455,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       startLiveLocationUpdates();
       startSosStatusCheckTimer();
       ActiveSosMonitorService.instance.start();
+      startActiveSosSafetyMonitor();
 
       unawaited(
         sendLiveLocationUpdate(),
@@ -561,6 +580,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       startLiveLocationUpdates();
       startSosStatusCheckTimer();
       ActiveSosMonitorService.instance.start();
+      startActiveSosSafetyMonitor();
 
       unawaited(
         sendLiveLocationUpdate(),
@@ -924,6 +944,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       _locationTimer?.cancel();
       _countdownTimer?.cancel();
       _statusCheckTimer?.cancel();
+      _safetyCheckTimer?.cancel();
 
       ActiveSosMonitorService.instance.stop();
 
@@ -949,6 +970,84 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
       // Do not stop SOS if status check fails.
       // Internet may be slow/offline.
+    }
+  }
+
+  void startActiveSosSafetyMonitor() {
+    _safetyCheckTimer?.cancel();
+
+    unawaited(
+      runAutomaticSafetyCheck(
+        showSnackBarOnNewCriticalIssues: true,
+      ),
+    );
+
+    _safetyCheckTimer = Timer.periodic(
+      const Duration(seconds: 60),
+          (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+
+        unawaited(
+          runAutomaticSafetyCheck(
+            showSnackBarOnNewCriticalIssues: true,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> runAutomaticSafetyCheck({
+    bool showSnackBarOnNewCriticalIssues = false,
+  }) async {
+    if (_isRunningSafetyCheck) {
+      return;
+    }
+
+    _isRunningSafetyCheck = true;
+
+    try {
+      final result = await _safetyCheckService.runCheck(
+        sosEventId: _sosEventId,
+        trackingToken: _trackingToken,
+        includeBackgroundServiceCheck:
+        _sosEventId != null &&
+            _trackingToken != null &&
+            _trackingToken!.trim().isNotEmpty,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      final currentIssueKeys = result.issues.map((issue) {
+        return issue.key;
+      }).toSet();
+
+      final newCriticalIssues = result.criticalIssues.where((issue) {
+        return !_lastSafetyIssueKeys.contains(issue.key);
+      }).toList();
+
+      setState(() {
+        _safetyCheckResult = result;
+      });
+
+      if (
+      showSnackBarOnNewCriticalIssues &&
+          newCriticalIssues.isNotEmpty
+      ) {
+        final firstIssue = newCriticalIssues.first;
+
+        showError('${firstIssue.title}. ${firstIssue.message}');
+      }
+
+      _lastSafetyIssueKeys = currentIssueKeys;
+    } catch (error) {
+      debugPrint('Automatic safety check failed: $error');
+    } finally {
+      _isRunningSafetyCheck = false;
     }
   }
 
@@ -1193,6 +1292,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       _locationTimer?.cancel();
       _countdownTimer?.cancel();
       _statusCheckTimer?.cancel();
+      _safetyCheckTimer?.cancel();
 
       ActiveSosMonitorService.instance.stop();
 
@@ -1665,6 +1765,185 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
           ],
           const SizedBox(height: 16),
           ...children,
+        ],
+      ),
+    );
+  }
+
+  Color getSafetyIssueColor(SafetyIssueSeverity severity) {
+    if (severity == SafetyIssueSeverity.critical) {
+      return _dangerRed;
+    }
+
+    return _warningAmber;
+  }
+
+  IconData getSafetyIssueIcon(SafetyIssue issue) {
+    switch (issue.key) {
+      case 'location_permission':
+        return Icons.location_disabled_rounded;
+      case 'gps_disabled':
+        return Icons.gps_off_rounded;
+      case 'sms_permission':
+        return Icons.sms_failed_rounded;
+      case 'notification_permission':
+        return Icons.notifications_off_rounded;
+      case 'trusted_contacts':
+        return Icons.group_off_rounded;
+      case 'emergency_profile':
+        return Icons.badge_outlined;
+      case 'internet':
+        return Icons.wifi_off_rounded;
+      case 'battery_optimization':
+        return Icons.battery_alert_rounded;
+      case 'background_service_heartbeat':
+        return Icons.sync_problem_rounded;
+      default:
+        return Icons.warning_amber_rounded;
+    }
+  }
+
+  Widget _buildSafetyCheckCard() {
+    final result = _safetyCheckResult;
+
+    if (result == null) {
+      return _buildSectionCard(
+        title: 'Automatic safety check',
+        subtitle: 'Checking emergency readiness in the background.',
+        children: [
+          buildInfoTile(
+            title: 'Safety check',
+            value: 'Checking...',
+            icon: Icons.health_and_safety_rounded,
+            showStatus: false,
+            iconColor: _warningAmber,
+          ),
+        ],
+      );
+    }
+
+    if (!result.hasIssues) {
+      return _buildSectionCard(
+        title: 'Automatic safety check',
+        subtitle: 'The app is checking important SOS readiness in the background.',
+        children: [
+          buildInfoTile(
+            title: 'SOS readiness',
+            value:
+            'All important checks are currently ready (${result.readyCount}/${result.totalChecks})',
+            icon: Icons.verified_user_rounded,
+            showStatus: false,
+            iconColor: _successGreen,
+          ),
+        ],
+      );
+    }
+
+    return _buildSectionCard(
+      title: result.hasCriticalIssues
+          ? 'Safety warning'
+          : 'Safety notice',
+      subtitle:
+      'These issues can affect SOS reliability. SOS will continue, but please fix them if possible.',
+      children: [
+        ...result.issues.map(_buildSafetyIssueTile),
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 48,
+          child: OutlinedButton.icon(
+            onPressed: _isRunningSafetyCheck
+                ? null
+                : () {
+              unawaited(
+                runAutomaticSafetyCheck(
+                  showSnackBarOnNewCriticalIssues: true,
+                ),
+              );
+            },
+            icon: _isRunningSafetyCheck
+                ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+                : const Icon(Icons.refresh_rounded),
+            label: Text(
+              _isRunningSafetyCheck ? 'Checking...' : 'Refresh safety check',
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: const BorderSide(
+                color: Color(0xFF243041),
+              ),
+              backgroundColor: const Color(0xFF0F172A),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSafetyIssueTile(SafetyIssue issue) {
+    final issueColor = getSafetyIssueColor(issue.severity);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: issueColor.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: issueColor.withOpacity(0.25),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: issueColor.withOpacity(0.14),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              getSafetyIssueIcon(issue),
+              color: issueColor,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  issue.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14.2,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  issue.message,
+                  style: const TextStyle(
+                    color: Color(0xFFCBD5E1),
+                    fontSize: 12.8,
+                    height: 1.4,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -2436,6 +2715,8 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
                     children: [
                       _buildHeaderCard(),
                       const SizedBox(height: 22),
+                      _buildSafetyCheckCard(),
+                      const SizedBox(height: 18),
                       _buildLocationCard(),
                       const SizedBox(height: 18),
                       _buildAlertStatusCard(),

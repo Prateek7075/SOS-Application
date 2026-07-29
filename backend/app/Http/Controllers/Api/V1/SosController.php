@@ -22,6 +22,68 @@ class SosController extends Controller
 
     private const TRACKING_LINK_EXPIRY_HOURS = 24;
 
+    private function isTrackingLinkExpired(SosEvent $sosEvent): bool
+    {
+        return $sosEvent->expires_at &&
+            now()->greaterThanOrEqualTo($sosEvent->expires_at);
+    }
+
+    private function saveFinalLocationIfAvailable(SosEvent $sosEvent): void
+    {
+        $latestLocation = $sosEvent->locationUpdates()
+            ->latest('created_at')
+            ->first();
+
+        if (!$latestLocation || $latestLocation->latitude === null || $latestLocation->longitude === null) {
+            return;
+        }
+
+        $sosEvent->update([
+            'final_latitude' => $latestLocation->latitude,
+            'final_longitude' => $latestLocation->longitude,
+            'final_location_updated_at' => $latestLocation->created_at,
+        ]);
+    }
+
+    private function expireSosIfNeeded(SosEvent $sosEvent): bool
+    {
+        if (!$this->isTrackingLinkExpired($sosEvent)) {
+            return false;
+        }
+
+        if ($sosEvent->status === 'active') {
+            $this->saveFinalLocationIfAvailable($sosEvent);
+
+            $sosEvent->update([
+                'status' => 'expired',
+                'cancelled_at' => now(),
+            ]);
+
+            $sosEvent->refresh();
+
+            Log::warning('SOS_MARKED_EXPIRED', [
+                'sos_event_id' => $sosEvent->id,
+                'expires_at' => $sosEvent->expires_at,
+            ]);
+        }
+
+        return true;
+    }
+
+    private function expireOldActiveSosForUser(int $userId): void
+    {
+        SosEvent::query()
+            ->where('user_id', $userId)
+            ->where('status', 'active')
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', now())
+            ->chunkById(50, function ($sosEvents) {
+                foreach ($sosEvents as $sosEvent) {
+                    $this->expireSosIfNeeded($sosEvent);
+                }
+            });
+    }
+
 
     public function start(Request $request): JsonResponse
     {
@@ -32,6 +94,8 @@ class SosController extends Controller
             'longitude' => ['required', 'numeric'],
             'network_mode' => ['required', 'string'],
         ]);
+
+        $this->expireOldActiveSosForUser($user->id);
 
         $existingActiveSos = SosEvent::where('user_id', $user->id)
             ->where('status', 'active')
@@ -123,7 +187,7 @@ class SosController extends Controller
             ], 403);
         }
 
-        if ($sosEvent->expires_at && now()->greaterThan($sosEvent->expires_at)) {
+        if ($this->expireSosIfNeeded($sosEvent)) {
             Log::warning('SOS_LOCATION_REJECTED', array_merge($logContext, [
                 'reason' => 'tracking_link_expired',
                 'actual_sos_status' => $sosEvent->status,
@@ -239,7 +303,7 @@ class SosController extends Controller
     {
         $sosEvent = SosEvent::where('tracking_token', $trackingToken)->firstOrFail();
 
-        if ($sosEvent->expires_at && now()->greaterThan($sosEvent->expires_at)) {
+        if ($this->expireSosIfNeeded($sosEvent)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Tracking link has expired',
@@ -363,6 +427,8 @@ class SosController extends Controller
     public function history(Request $request): JsonResponse
     {
         $user = $request->user();
+
+        $this->expireOldActiveSosForUser($user->id);
 
         $sosEvents = SosEvent::query()
             ->where('user_id', $user->id)
@@ -490,6 +556,8 @@ class SosController extends Controller
     public function active(Request $request): JsonResponse
     {
         $user = $request->user();
+
+        $this->expireOldActiveSosForUser($user->id);
 
         $activeSos = SosEvent::where('user_id', $user->id)
             ->where('status', 'active')
