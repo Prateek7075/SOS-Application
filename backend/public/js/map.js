@@ -590,10 +590,18 @@ class CenterLocationControl {
         );
 
         button.innerHTML = `
-            <img
-                src="${centerLocationIcon}"
-                alt=""
+            <svg
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                aria-hidden="true"
+                focusable="false"
             >
+                <path
+                    fill="currentColor"
+                    d="M12 2a1 1 0 0 1 1 1v1.07A8.01 8.01 0 0 1 19.93 11H21a1 1 0 1 1 0 2h-1.07A8.01 8.01 0 0 1 13 19.93V21a1 1 0 1 1-2 0v-1.07A8.01 8.01 0 0 1 4.07 13H3a1 1 0 1 1 0-2h1.07A8.01 8.01 0 0 1 11 4.07V3a1 1 0 0 1 1-1Zm0 4a6 6 0 1 0 0 12A6 6 0 0 0 12 6Zm0 3a3 3 0 1 1 0 6a3 3 0 0 1 0-6Z"
+                />
+            </svg>
         `;
 
         button.addEventListener('click', (event) => {
@@ -634,6 +642,31 @@ function createSosMarkerElement() {
 }
 
 /**
+ * Check if the MapLibre browser library is ready.
+ */
+function isMapLibreAvailable() {
+    return typeof maplibregl !== 'undefined';
+}
+
+/**
+ * Show a readable message if MapLibre could not load.
+ */
+function showMapLibraryError() {
+    const mapElement = document.getElementById('map');
+
+    if (!mapElement) {
+        return;
+    }
+
+    mapElement.innerHTML = `
+        <div class="error" style="margin: 14px;">
+            Map library could not be loaded. Please refresh the page
+            or try another browser/network.
+        </div>
+    `;
+}
+
+/**
  * Create the map or update the current marker position.
  */
 function initializeOrUpdateMap(latitude, longitude) {
@@ -644,6 +677,12 @@ function initializeOrUpdateMap(latitude, longitude) {
         !Number.isFinite(lat) ||
         !Number.isFinite(lng)
     ) {
+        return false;
+    }
+
+    if (!isMapLibreAvailable()) {
+        console.error('MapLibre GL is not available. maplibregl is undefined.');
+        showMapLibraryError();
         return false;
     }
 

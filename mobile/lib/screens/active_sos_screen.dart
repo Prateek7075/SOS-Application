@@ -77,6 +77,8 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   Timer? _safetyCheckTimer;
 
   int _nextUpdateSeconds = _locationUpdateIntervalSeconds;
+  final ValueNotifier<int> _nextUpdateSecondsNotifier =
+      ValueNotifier<int>(_locationUpdateIntervalSeconds);
   DateTime? _nextLocationUpdateAt;
 
   bool _isUpdatingLocation = false;
@@ -131,6 +133,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     _statusCheckTimer?.cancel();
     _offlineInternetCheckTimer?.cancel();
     _safetyCheckTimer?.cancel();
+    _nextUpdateSecondsNotifier.dispose();
     super.dispose();
   }
 
@@ -194,6 +197,14 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     return remainingSeconds;
   }
 
+  void updateNextUpdateSeconds(int seconds) {
+    _nextUpdateSeconds = seconds;
+
+    if (_nextUpdateSecondsNotifier.value != seconds) {
+      _nextUpdateSecondsNotifier.value = seconds;
+    }
+  }
+
   Future<void> refreshCountdownFromSavedActiveSos() async {
     final activeSosSession = await _activeSosLocalService.getActiveSos();
 
@@ -201,12 +212,13 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       return;
     }
 
-    setState(() {
-      _nextLocationUpdateAt = activeSosSession.nextLocationUpdateAt;
-      _nextUpdateSeconds = getRemainingSecondsUntilNextLocationUpdate(
+    _nextLocationUpdateAt = activeSosSession.nextLocationUpdateAt;
+
+    updateNextUpdateSeconds(
+      getRemainingSecondsUntilNextLocationUpdate(
         _nextLocationUpdateAt,
-      );
-    });
+      ),
+    );
   }
 
   Future<void> saveNextLocationUpdateTime() async {
@@ -224,11 +236,11 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       return;
     }
 
-    setState(() {
-      _nextUpdateSeconds = getRemainingSecondsUntilNextLocationUpdate(
+    updateNextUpdateSeconds(
+      getRemainingSecondsUntilNextLocationUpdate(
         _nextLocationUpdateAt,
-      );
-    });
+      ),
+    );
   }
 
   Future<void> startSosFlow() async {
@@ -983,7 +995,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     );
 
     _safetyCheckTimer = Timer.periodic(
-      const Duration(seconds: 60),
+      const Duration(seconds: 90),
           (timer) {
         if (!mounted) {
           timer.cancel();
@@ -1058,17 +1070,17 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
     _countdownTimer = Timer.periodic(
       const Duration(seconds: 1),
-          (timer) {
+      (timer) {
         if (!mounted) {
           timer.cancel();
           return;
         }
 
-        setState(() {
-          _nextUpdateSeconds = getRemainingSecondsUntilNextLocationUpdate(
+        updateNextUpdateSeconds(
+          getRemainingSecondsUntilNextLocationUpdate(
             _nextLocationUpdateAt,
-          );
-        });
+          ),
+        );
       },
     );
   }
@@ -1169,14 +1181,17 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         return;
       }
 
+      updateNextUpdateSeconds(
+        getRemainingSecondsUntilNextLocationUpdate(
+          _nextLocationUpdateAt,
+        ),
+      );
+
       setState(() {
         _latitude = position!.latitude;
         _longitude = position!.longitude;
         _gpsStatus = 'Location updated';
         _liveTracking = 'Live location updated';
-        _nextUpdateSeconds = getRemainingSecondsUntilNextLocationUpdate(
-          _nextLocationUpdateAt,
-        );
       });
 
     } catch (error) {
@@ -1735,8 +1750,8 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.24),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -2170,8 +2185,8 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -2229,15 +2244,15 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
           const SizedBox(height: 24),
           Center(
             child: Container(
-              width: 250,
-              height: 250,
+              width: 220,
+              height: 220,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
                     color: const Color(0xFFEF4444).withOpacity(0.28),
-                    blurRadius: 36,
-                    spreadRadius: 8,
+                    blurRadius: 12,
+                    spreadRadius: 0,
                   ),
                 ],
                 gradient: const RadialGradient(
@@ -2292,13 +2307,18 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
                         color: Colors.black.withOpacity(0.18),
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: Text(
-                        'Next update in $_nextUpdateSeconds sec',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      child: ValueListenableBuilder<int>(
+                        valueListenable: _nextUpdateSecondsNotifier,
+                        builder: (context, seconds, _) {
+                          return Text(
+                            'Next update in $seconds sec',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -2575,8 +2595,8 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         boxShadow: [
           BoxShadow(
             color: _dangerRed.withOpacity(0.24),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -2704,7 +2724,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         ),
         child: SafeArea(
           child: ListView(
-            physics: const BouncingScrollPhysics(),
+            physics: const ClampingScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
             children: [
               Center(

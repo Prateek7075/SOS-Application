@@ -198,8 +198,8 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.26),
-                  blurRadius: 26,
-                  offset: const Offset(0, 14),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -368,7 +368,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
       onRefresh: loadSosHistory,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
+          parent: ClampingScrollPhysics(),
         ),
         padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
         children: [
@@ -439,8 +439,8 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -558,8 +558,8 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.22),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),

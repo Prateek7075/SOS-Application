@@ -248,7 +248,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const ClampingScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 460),
@@ -293,8 +293,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -309,8 +309,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               boxShadow: [
                 BoxShadow(
                   color: _dangerRed.withOpacity(0.28),
-                  blurRadius: 28,
-                  spreadRadius: 4,
+                  blurRadius: 10,
+                  spreadRadius: 0,
                 ),
               ],
               gradient: const RadialGradient(
@@ -391,8 +391,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.24),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -491,8 +491,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         boxShadow: [
           BoxShadow(
             color: _dangerRed.withOpacity(0.28),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),

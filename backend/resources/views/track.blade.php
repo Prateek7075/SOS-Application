@@ -16,6 +16,11 @@
         href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css"
     >
 
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/maplibre-gl/dist/maplibre-gl.css"
+    >
+
     <link rel="stylesheet" href="{{ secure_asset('css/map.css') }}">
 
 </head>
@@ -202,14 +207,77 @@
     </div>
 </div>
 
-{{-- MapLibre GL JavaScript --}}
-<script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
-
 {{-- Laravel tracking token passed to JavaScript --}}
 <script>
     window.trackingToken = @json($trackingToken);
 </script>
 
-<script src="{{ secure_asset('js/map.js') }}"></script>
+{{--
+    Load MapLibre before map.js.
+    If the first CDN is blocked or fails, load the second CDN.
+    map.js must run only after MapLibre is available.
+--}}
+<script>
+    function loadScriptOnce(src, onSuccess, onError) {
+        const script = document.createElement('script');
+
+        script.src = src;
+        script.async = false;
+        script.onload = onSuccess;
+        script.onerror = onError;
+
+        document.head.appendChild(script);
+    }
+
+    function showMapLibreLoadError() {
+        const mapElement = document.getElementById('map');
+
+        if (mapElement) {
+            mapElement.innerHTML = `
+                <div class="error" style="margin: 14px;">
+                    Map library could not be loaded. Please refresh the page
+                    or try another browser/network.
+                </div>
+            `;
+        }
+
+        console.error('MapLibre GL could not be loaded from CDN.');
+    }
+
+    function loadTrackingMapScript() {
+        loadScriptOnce(
+            "{{ secure_asset('js/map.js') }}",
+            function () {},
+            function () {
+                console.error('Could not load public/js/map.js');
+            }
+        );
+    }
+
+    function loadMapLibreAndTrackingScript() {
+        if (window.maplibregl) {
+            loadTrackingMapScript();
+            return;
+        }
+
+        loadScriptOnce(
+            'https://unpkg.com/maplibre-gl/dist/maplibre-gl.js',
+            function () {
+                loadTrackingMapScript();
+            },
+            function () {
+                loadScriptOnce(
+                    'https://cdn.jsdelivr.net/npm/maplibre-gl/dist/maplibre-gl.js',
+                    function () {
+                        loadTrackingMapScript();
+                    },
+                    showMapLibreLoadError
+                );
+            }
+        );
+    }
+
+    loadMapLibreAndTrackingScript();
+</script>
 </body>
 </html>

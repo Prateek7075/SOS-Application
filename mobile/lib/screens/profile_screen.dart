@@ -629,7 +629,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Form(
             key: _formKey,
             child: ListView(
-              physics: const BouncingScrollPhysics(),
+              physics: const ClampingScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
               children: [
                 Center(
@@ -683,8 +683,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -785,8 +785,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.24),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -869,8 +869,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         boxShadow: [
           BoxShadow(
             color: _dangerRed.withOpacity(0.28),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),

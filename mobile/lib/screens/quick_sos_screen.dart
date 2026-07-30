@@ -139,7 +139,7 @@ class _QuickSosScreenState extends State<QuickSosScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const ClampingScrollPhysics(),
               padding: const EdgeInsets.all(22),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 520),
@@ -207,8 +207,8 @@ class _QuickSosScreenState extends State<QuickSosScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -222,8 +222,8 @@ class _QuickSosScreenState extends State<QuickSosScreen> {
               boxShadow: [
                 BoxShadow(
                   color: _dangerRed.withOpacity(0.30),
-                  blurRadius: 36,
-                  spreadRadius: 6,
+                  blurRadius: 12,
+                  spreadRadius: 0,
                 ),
               ],
               gradient: const RadialGradient(
@@ -286,13 +286,13 @@ class _QuickSosScreenState extends State<QuickSosScreen> {
         boxShadow: [
           BoxShadow(
             color: _dangerRed.withOpacity(0.22),
-            blurRadius: 34,
-            spreadRadius: 4,
+            blurRadius: 12,
+            spreadRadius: 0,
           ),
           BoxShadow(
             color: Colors.black.withOpacity(0.34),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -316,8 +316,8 @@ class _QuickSosScreenState extends State<QuickSosScreen> {
         boxShadow: [
           BoxShadow(
             color: _dangerRed.withOpacity(0.28),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),

@@ -61,18 +61,18 @@ class SafetyCheckResult {
 
 class SafetyCheckService {
   final EmergencyContactLocalService _contactLocalService =
-  EmergencyContactLocalService();
+      EmergencyContactLocalService();
 
   final UserProfileLocalService _profileLocalService =
-  UserProfileLocalService();
+      UserProfileLocalService();
 
   final BatteryOptimizationService _batteryOptimizationService =
-  BatteryOptimizationService();
+      BatteryOptimizationService();
 
   final NetworkService _networkService = NetworkService();
 
   final BackgroundLocationService _backgroundLocationService =
-  BackgroundLocationService();
+      BackgroundLocationService();
 
   static const int _totalChecks = 8;
 
@@ -98,7 +98,7 @@ class SafetyCheckService {
           key: 'location_permission',
           title: 'Location permission missing',
           message:
-          'Live tracking needs location permission. SOS may not share your location properly.',
+              'Live tracking needs location permission. SOS may not share your location properly.',
           severity: SafetyIssueSeverity.critical,
         ),
       );
@@ -114,7 +114,7 @@ class SafetyCheckService {
           key: 'gps_disabled',
           title: 'Phone location is off',
           message:
-          'Turn on Location/GPS. Live tracking cannot update accurately without it.',
+              'Turn on Location/GPS. Live tracking cannot update accurately without it.',
           severity: SafetyIssueSeverity.critical,
         ),
       );
@@ -130,7 +130,7 @@ class SafetyCheckService {
           key: 'sms_permission',
           title: 'SMS permission missing',
           message:
-          'Offline SMS fallback may fail if internet is unavailable.',
+              'Offline SMS fallback may fail if internet is unavailable.',
           severity: SafetyIssueSeverity.warning,
         ),
       );
@@ -146,7 +146,7 @@ class SafetyCheckService {
           key: 'notification_permission',
           title: 'Notification permission missing',
           message:
-          'The foreground tracking notification or important warnings may not appear properly.',
+              'The foreground tracking notification or important warnings may not appear properly.',
           severity: SafetyIssueSeverity.warning,
         ),
       );
@@ -162,7 +162,7 @@ class SafetyCheckService {
           key: 'trusted_contacts',
           title: 'No trusted contacts',
           message:
-          'Emergency SMS cannot be sent because no trusted contact is saved.',
+              'Emergency SMS cannot be sent because no trusted contact is saved.',
           severity: SafetyIssueSeverity.critical,
         ),
       );
@@ -178,7 +178,7 @@ class SafetyCheckService {
           key: 'emergency_profile',
           title: 'Emergency profile incomplete',
           message:
-          'Add name, phone, relative name and relative phone so helpers get proper details.',
+              'Add name, phone, relative name and relative phone so helpers get proper details.',
           severity: SafetyIssueSeverity.warning,
         ),
       );
@@ -196,11 +196,11 @@ class SafetyCheckService {
       readyCount++;
     } else {
       issues.add(
-        SafetyIssue(
+        const SafetyIssue(
           key: 'internet',
           title: 'No internet detected',
           message:
-          'Live tracking may not update online. SMS fallback should still be used.',
+              'Live tracking may not update online. SMS fallback should still be used.',
           severity: SafetyIssueSeverity.warning,
         ),
       );
@@ -210,7 +210,7 @@ class SafetyCheckService {
 
     try {
       batteryOptimizationReady =
-      await _batteryOptimizationService.isIgnoringBatteryOptimizations();
+          await _batteryOptimizationService.isIgnoringBatteryOptimizations();
     } catch (_) {
       batteryOptimizationReady = false;
     }
@@ -223,20 +223,18 @@ class SafetyCheckService {
           key: 'battery_optimization',
           title: 'Battery restriction enabled',
           message:
-          'Background tracking may stop. Set the app to unrestricted battery usage.',
+              'Background tracking may stop. Set the app to unrestricted battery usage.',
           severity: SafetyIssueSeverity.warning,
         ),
       );
     }
 
-    if (
-    includeBackgroundServiceCheck &&
+    if (includeBackgroundServiceCheck &&
         sosEventId != null &&
         trackingToken != null &&
-        trackingToken.trim().isNotEmpty
-    ) {
+        trackingToken.trim().isNotEmpty) {
       final serviceState =
-      await _backgroundLocationService.getForegroundLocationServiceState();
+          await _backgroundLocationService.getForegroundLocationServiceState();
 
       final isServiceFreshForCurrentSos = serviceState.isFreshFor(
         sosEventId: sosEventId,
@@ -245,11 +243,11 @@ class SafetyCheckService {
 
       if (!isServiceFreshForCurrentSos) {
         issues.add(
-          SafetyIssue(
+          const SafetyIssue(
             key: 'background_service_heartbeat',
             title: 'Background tracking service is not fresh',
             message:
-            'The app will try to recover it, but live tracking may be delayed.',
+                'The app will try to recover it, but live tracking may be delayed.',
             severity: SafetyIssueSeverity.critical,
           ),
         );

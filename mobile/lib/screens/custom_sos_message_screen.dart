@@ -397,8 +397,8 @@ Please contact me immediately.
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -492,8 +492,8 @@ Please contact me immediately.
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.24),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -618,8 +618,8 @@ Please contact me immediately.
             boxShadow: [
               BoxShadow(
                 color: _dangerRed.withOpacity(0.28),
-                blurRadius: 22,
-                offset: const Offset(0, 10),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -789,7 +789,7 @@ Please contact me immediately.
           child: _isLoading
               ? _buildLoadingView()
               : ListView(
-            physics: const BouncingScrollPhysics(),
+            physics: const ClampingScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
             children: [
               Center(

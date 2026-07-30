@@ -1,6 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'firebase_options.dart';
 import 'route_observer.dart';
@@ -58,8 +57,12 @@ class SosApp extends StatelessWidget {
       },
       theme: ThemeData(
         useMaterial3: true,
-        fontFamily: GoogleFonts.poppins().fontFamily,
         brightness: Brightness.dark,
+
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        focusColor: Colors.transparent,
 
         colorScheme: const ColorScheme.dark(
           primary: dangerRed,
@@ -116,7 +119,7 @@ class SosApp extends StatelessWidget {
             disabledForegroundColor: Colors.white70,
             elevation: 0,
             shadowColor: Colors.transparent,
-            minimumSize: const Size(double.infinity, 54),
+            minimumSize: const Size(double.infinity, 52),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(18),
             ),
@@ -136,7 +139,7 @@ class SosApp extends StatelessWidget {
             disabledForegroundColor: Colors.white70,
             elevation: 0,
             shadowColor: Colors.transparent,
-            minimumSize: const Size(double.infinity, 54),
+            minimumSize: const Size(double.infinity, 52),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(18),
             ),
@@ -153,7 +156,7 @@ class SosApp extends StatelessWidget {
             foregroundColor: softText,
             disabledForegroundColor: mutedText,
             backgroundColor: fieldColor,
-            minimumSize: const Size(double.infinity, 54),
+            minimumSize: const Size(double.infinity, 52),
             side: const BorderSide(
               color: borderColor,
             ),
@@ -319,8 +322,7 @@ class SosApp extends StatelessWidget {
           selectionHandleColor: mapBlue,
         ),
 
-        textTheme: GoogleFonts.poppinsTextTheme(
-          const TextTheme(
+        textTheme: const TextTheme(
             headlineLarge: TextStyle(
               color: primaryText,
               fontWeight: FontWeight.w900,
@@ -370,7 +372,6 @@ class SosApp extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-        ),
       ),
       home: AuthGate(),
     );

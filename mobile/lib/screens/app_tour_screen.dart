@@ -233,8 +233,8 @@ class _AppTourScreenState extends State<AppTourScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -253,8 +253,8 @@ class _AppTourScreenState extends State<AppTourScreen> {
               boxShadow: [
                 BoxShadow(
                   color: item.color.withOpacity(0.24),
-                  blurRadius: 32,
-                  spreadRadius: 3,
+                  blurRadius: 12,
+                  spreadRadius: 0,
                 ),
               ],
             ),
@@ -348,8 +348,8 @@ class _AppTourScreenState extends State<AppTourScreen> {
         boxShadow: [
           BoxShadow(
             color: _dangerRed.withOpacity(0.28),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),

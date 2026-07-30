@@ -56,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
   bool _isCheckingSos = true;
   bool _isCancellingSos = false;
   bool _isRouteObserverSubscribed = false;
+  bool _isLoadingActiveSosNow = false;
 
   static const Color _bgColor = Color(0xFF0B1120);
   static const Color _cardColor = Color(0xFF111827);
@@ -104,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
     WidgetsBinding.instance.addObserver(this);
 
     ShowcaseView.register(
-      blurValue: 1.4,
+      blurValue: 0,
       globalTooltipActionConfig: const TooltipActionConfig(
         position: TooltipActionPosition.outside,
         alignment: MainAxisAlignment.spaceBetween,
@@ -161,7 +162,18 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
     unawaited(loadActiveSos());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(startHomeIntroFlow());
+      unawaited(
+        Future<void>.delayed(
+          const Duration(milliseconds: 900),
+          () async {
+            if (!mounted) {
+              return;
+            }
+
+            await startHomeIntroFlow();
+          },
+        ),
+      );
     });
   }
 
@@ -706,94 +718,104 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
   }
 
   Future<void> loadActiveSos() async {
-    final localSession = await _activeSosLocalService.getActiveSos();
-
-    if (!mounted) {
+    if (_isLoadingActiveSosNow) {
       return;
     }
 
-    // Fast UI update from local storage first.
-    setState(() {
-      _activeSosSession = localSession;
-      _isCheckingSos = false;
-      sosStatus = localSession == null
-          ? 'Checking active SOS...'
-          : 'SOS is currently active';
-    });
-
-    if (localSession != null) {
-      ActiveSosMonitorService.instance.start();
-    } else {
-      ActiveSosMonitorService.instance.stop();
-    }
+    _isLoadingActiveSosNow = true;
 
     try {
-      final backendActiveSos = await _sosApiService.getActiveSos();
-
-      if (!mounted) {
-        return;
-      }
-
-      if (backendActiveSos == null) {
-        ActiveSosMonitorService.instance.stop();
-
-        await _backgroundLocationService.stop();
-        await _activeSosLocalService.clear();
+        final localSession = await _activeSosLocalService.getActiveSos();
 
         if (!mounted) {
           return;
         }
 
+        // Fast UI update from local storage first.
         setState(() {
-          _activeSosSession = null;
+          _activeSosSession = localSession;
           _isCheckingSos = false;
-          sosStatus = 'SOS not started';
+          sosStatus = localSession == null
+              ? 'Checking active SOS...'
+              : 'SOS is currently active';
         });
 
-        return;
-      }
+        if (localSession != null) {
+          ActiveSosMonitorService.instance.start();
+        } else {
+          ActiveSosMonitorService.instance.stop();
+        }
 
-      await _activeSosLocalService.save(
-        sosEventId: backendActiveSos.id,
-        trackingToken: backendActiveSos.trackingToken,
-        trackingUrl: backendActiveSos.trackingUrl,
-        batteryPercentage: localSession?.batteryPercentage,
-      );
+        try {
+          final backendActiveSos = await _sosApiService.getActiveSos();
 
-      final updatedSession = await _activeSosLocalService.getActiveSos();
+          if (!mounted) {
+            return;
+          }
 
-      if (!mounted) {
-        return;
-      }
+          if (backendActiveSos == null) {
+            ActiveSosMonitorService.instance.stop();
 
-      setState(() {
-        _activeSosSession = updatedSession;
-        _isCheckingSos = false;
-        sosStatus = 'SOS is currently active';
-      });
+            await _backgroundLocationService.stop();
+            await _activeSosLocalService.clear();
 
-      ActiveSosMonitorService.instance.start();
+            if (!mounted) {
+              return;
+            }
 
-    } catch (error) {
-      debugPrint('Could not load active SOS from backend: $error');
+            setState(() {
+              _activeSosSession = null;
+              _isCheckingSos = false;
+              sosStatus = 'SOS not started';
+            });
 
-      if (!mounted) {
-        return;
-      }
+            return;
+          }
 
-      // If backend check fails, keep local session if available.
-      // Do not clear it because the user may have slow/no internet.
-      setState(() {
-        _isCheckingSos = false;
-        sosStatus = localSession == null
-            ? 'SOS not started'
-            : 'SOS is currently active';
-      });
+          await _activeSosLocalService.save(
+            sosEventId: backendActiveSos.id,
+            trackingToken: backendActiveSos.trackingToken,
+            trackingUrl: backendActiveSos.trackingUrl,
+            batteryPercentage: localSession?.batteryPercentage,
+          );
 
-      if (localSession != null) {
-        ActiveSosMonitorService.instance.start();
-      }
+          final updatedSession = await _activeSosLocalService.getActiveSos();
 
+          if (!mounted) {
+            return;
+          }
+
+          setState(() {
+            _activeSosSession = updatedSession;
+            _isCheckingSos = false;
+            sosStatus = 'SOS is currently active';
+          });
+
+          ActiveSosMonitorService.instance.start();
+
+        } catch (error) {
+          debugPrint('Could not load active SOS from backend: $error');
+
+          if (!mounted) {
+            return;
+          }
+
+          // If backend check fails, keep local session if available.
+          // Do not clear it because the user may have slow/no internet.
+          setState(() {
+            _isCheckingSos = false;
+            sosStatus = localSession == null
+                ? 'SOS not started'
+                : 'SOS is currently active';
+          });
+
+          if (localSession != null) {
+            ActiveSosMonitorService.instance.start();
+          }
+
+        }
+    } finally {
+      _isLoadingActiveSosNow = false;
     }
   }
 
@@ -892,7 +914,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
           child: LayoutBuilder(
             builder: (context, constraints) {
               return SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
+                physics: const ClampingScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
                 child: Center(
                   child: ConstrainedBox(
@@ -1053,8 +1075,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -1159,8 +1181,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.24),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -1284,12 +1306,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
             boxShadow: [
               BoxShadow(
                 color: _dangerRed.withOpacity(isSosActive ? 0.22 : 0.34),
-                blurRadius: 38,
+                blurRadius: 12,
                 spreadRadius: isSosActive ? 4 : 8,
               ),
               BoxShadow(
                 color: Colors.black.withOpacity(0.34),
-                blurRadius: 28,
+                blurRadius: 10,
                 offset: const Offset(0, 18),
               ),
             ],
@@ -1470,8 +1492,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.38),
-                blurRadius: 28,
-                offset: const Offset(0, 14),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
               BoxShadow(
                 color: Colors.white.withOpacity(0.04),

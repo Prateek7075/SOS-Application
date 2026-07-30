@@ -462,8 +462,8 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.26),
-                blurRadius: 26,
-                offset: const Offset(0, 14),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -539,7 +539,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
   Widget _buildEmptyState() {
     return Center(
       child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.all(24),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 460),
@@ -612,7 +612,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
         onRefresh: loadContacts,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
+            parent: ClampingScrollPhysics(),
           ),
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
           children: [
@@ -664,8 +664,8 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -734,8 +734,8 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.22),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -898,8 +898,8 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
         boxShadow: [
           BoxShadow(
             color: _dangerRed.withOpacity(0.25),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -941,8 +941,8 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.38),
-                blurRadius: 28,
-                offset: const Offset(0, 14),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
               BoxShadow(
                 color: Colors.white.withOpacity(0.04),
