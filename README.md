@@ -2,30 +2,32 @@
 
 A personal emergency SOS mobile application built with **Flutter**, **Laravel**, **MySQL**, and **Firebase Authentication**.
 
-The app allows a user to start an SOS alert, automatically send SMS messages to trusted contacts, share live location updates, and provide a public tracking page where emergency contacts can view the user's latest location on a live map.
+The app allows a user to start an emergency SOS alert, send SMS messages to trusted contacts, share live location updates, and provide a public tracking page where emergency contacts can view the user's latest location on a browser-based map.
 
-This project is built as a working **V1 MVP** and has been tested on a real Android phone.
+This project is an Android-focused emergency assistance MVP with offline-first local storage, Laravel APIs, Firebase authentication, native Android SMS, native foreground location tracking, and a public live tracking page.
+
+---
+
+## Repository Description
+
+A Flutter + Laravel emergency SOS mobile app that sends SMS alerts with live location tracking, trusted contacts, emergency profile details, Firebase authentication, offline fallback, local caching, and a public live tracking page with a moving map marker.
 
 ---
 
 ## Platform Support
 
-This V1 version is built and tested for Android only.
+This version is built and tested for **Android**.
 
 The app uses Android-specific features such as:
 
 - Native SMS sending
 - Android foreground location service
 - Android runtime permissions
+- Android battery optimization checks
+- Android home screen widget / app shortcut support
 - APK installation and testing
 
-iOS support is not included.
-
----
-
-## Repository Description
-
-A Flutter + Laravel emergency SOS mobile app that sends SMS alerts with live location tracking, trusted contacts, emergency profile details, Firebase authentication, and a public live tracking page with a moving map marker.
+**iOS support is not included** in the current version.
 
 ---
 
@@ -35,7 +37,7 @@ A Flutter + Laravel emergency SOS mobile app that sends SMS alerts with live loc
 
 - Firebase Email/Password login and registration
 - Firebase user synced with Laravel backend
-- User-specific data using Firebase UID
+- User-specific profile, contacts, SOS data, and local cache using Firebase UID
 
 ### Emergency Profile
 
@@ -61,14 +63,27 @@ Profile data uses an offline-first approach:
 - Add trusted contacts manually
 - Import trusted contacts from phone contacts
 - Contacts are saved in Laravel
-- Contacts are cached locally
-- Contacts are user-specific
+- Contacts are cached locally using user-specific local storage
+- Contacts can be loaded instantly from local cache
+- Backend refresh updates the local cache when internet is available
+
+### SOS History
+
+SOS history uses a fast local-first loading flow:
+
+- Cached SOS history is shown instantly from local storage
+- Backend history API is called in the background
+- Latest backend history replaces the local cache
+- History remains visible when internet is slow or unavailable
+- Updated statuses such as `active`, `cancelled`, and `expired` are refreshed from backend
 
 ### SOS Alert
 
-- Long press SOS button to start emergency alert
+- Long press SOS button to start an emergency alert
 - Active SOS state persists even if the app is closed or reopened
-- SOS can be cancelled
+- Existing active SOS is detected before starting a new SOS
+- User can continue existing SOS or cancel it and start a new one
+- SOS can be cancelled from the Active SOS screen or Home screen
 - Logout is blocked while SOS is active
 
 ### SMS Alert
@@ -83,17 +98,53 @@ The SMS includes:
 - Emergency relative details
 - Address
 - Current location
-- Live tracking link
+- Battery percentage
+- Live tracking link when available
 
 SMS is sent using the phone's SIM through Android native SMS.
+
+### Offline SOS Fallback
+
+If internet is not available when SOS starts:
+
+- SOS is saved locally as an offline SOS event
+- SMS fallback is sent to trusted contacts with current location
+- App keeps checking for internet
+- When internet returns, offline SOS is converted to live tracking
+- Live tracking link is created and sent to contacts
 
 ### Live Location Tracking
 
 - Android foreground service sends live location updates
-- Location updates are sent every 15 seconds
-- Backend stores all location updates
+- Flutter fallback timer also attempts location updates while screen is active
+- Location updates are sent every 30 seconds
+- Backend stores location updates in `sos_location_updates`
 - Location update API is protected using an SOS tracking token
-- Public tracking link shows the latest location
+- Failed location updates are saved locally for retry
+- Background service heartbeat helps detect whether native tracking is still alive
+- Active SOS monitor can restart the native foreground service if needed
+
+### Automatic Safety Check
+
+While SOS is active, the app automatically checks important readiness items:
+
+- Location permission
+- GPS/location service status
+- SMS permission
+- Notification permission
+- Trusted contacts availability
+- Emergency profile completeness
+- Internet status
+- Battery optimization status
+- Native background tracking heartbeat
+
+The app shows safety warnings if any important check may affect SOS reliability.
+
+### Battery Optimization Handling
+
+The app checks Android battery optimization status and warns the user if the phone may restrict background tracking.
+
+Users can open battery settings directly from the app.
 
 ### Public Tracking Page
 
@@ -102,21 +153,39 @@ Emergency contacts can open the tracking link in any browser.
 The tracking page shows:
 
 - SOS status
+- Tracking health
 - Emergency profile details
-- Live moving map marker
 - Latest latitude and longitude
+- GPS accuracy
+- Battery percentage
 - Last updated time
+- Link expiry time
+- Live moving map marker
+- Accuracy circle
 - Google Maps button
 - Call user button
 - Call emergency relative button
-- Call emergency number button
 
 The map uses:
 
-- Leaflet
-- OpenStreetMap
+- MapLibre GL JS
+- OpenStreetMap raster tiles
+- Esri satellite tiles
+- CARTO labels
+- OpenTopoMap terrain tiles
 
-No Google Maps API key is required for the live map page.
+No Google Maps API key is required for the live tracking map.
+
+### Tracking Link Expiry
+
+Tracking links expire after 24 hours for privacy.
+
+When a tracking link expires:
+
+- SOS status is changed to `expired`
+- Final/latest location is saved into `sos_events`
+- Native service receives expiry response and stops tracking
+- Public tracking API returns expired response
 
 ---
 
@@ -133,6 +202,7 @@ No Google Maps API key is required for the live map page.
 - Flutter Contacts
 - Native Android Kotlin foreground service
 - Native Android SMS Manager
+- Android WorkManager recovery
 
 ### Backend
 
@@ -141,17 +211,20 @@ No Google Maps API key is required for the live map page.
 - MySQL
 - Firebase Admin SDK
 - REST APIs
+- Artisan command for cleanup
 
 ### Tracking Page
 
 - Laravel Blade
 - JavaScript
-- Leaflet
-- OpenStreetMap
+- MapLibre GL JS
+- OpenStreetMap / raster map providers
 
-### Testing Tunnel
+### Deployment / Testing
 
-- Cloudflare Tunnel
+- Local Laravel backend for development
+- Cloudflare Tunnel for local mobile testing
+- Render or permanent backend URL for deployed testing/production
 
 ---
 
@@ -161,9 +234,14 @@ No Google Maps API key is required for the live map page.
 SOS-APP/
 ├── backend/
 │   ├── app/
+│   │   ├── Console/Commands/
+│   │   ├── Http/Controllers/Api/V1/
+│   │   └── Models/
 │   ├── database/
 │   ├── routes/
 │   ├── resources/views/
+│   ├── public/css/
+│   ├── public/js/
 │   └── .env
 │
 ├── mobile/
@@ -174,6 +252,7 @@ SOS-APP/
 │   │   └── services/
 │   │
 │   └── android/
+│       └── app/src/main/kotlin/
 │
 └── tools/
     └── cloudflared.exe
@@ -198,7 +277,7 @@ App sends SMS to trusted contacts
         ↓
 Android foreground service starts
         ↓
-Phone sends location every 15 seconds
+Phone sends location every 30 seconds
         ↓
 Laravel stores live location updates
         ↓
@@ -206,6 +285,48 @@ Emergency contact opens tracking link
         ↓
 Tracking page shows live moving map marker
 ```
+
+---
+
+## Offline SOS Flow
+
+```text
+User starts SOS without internet
+        ↓
+App gets current location
+        ↓
+App sends SMS fallback to trusted contacts
+        ↓
+Offline SOS is saved locally
+        ↓
+App checks internet every 30 seconds
+        ↓
+Internet returns
+        ↓
+Offline SOS is converted to live SOS
+        ↓
+Tracking link is created
+        ↓
+Live tracking SMS is sent to contacts
+```
+
+---
+
+## Local Storage Strategy
+
+The app uses local storage to improve speed and offline reliability.
+
+```text
+Emergency profile   → Local cache + backend sync
+Trusted contacts    → Local cache + backend sync
+Active SOS session  → Local storage for resume/recovery
+Offline SOS events  → Local storage until internet returns
+Failed locations    → Local retry queue
+SOS history         → Local cache + backend refresh
+Custom SOS message  → Local storage
+```
+
+Local data is user-specific wherever required, using the Firebase user UID.
 
 ---
 
@@ -281,8 +402,20 @@ tracking_token
 network_mode
 expires_at
 cancelled_at
+final_latitude
+final_longitude
+final_location_updated_at
 created_at
 updated_at
+```
+
+Common SOS statuses:
+
+```text
+active
+cancelled
+expired
+offline_sms
 ```
 
 ### sos_location_updates
@@ -301,36 +434,7 @@ created_at
 
 ---
 
-## Getting Started
-
-This project has two main parts:
-
-```text
-backend/  → Laravel API + MySQL backend
-mobile/   → Flutter Android mobile app
-```
-
-For V1 testing, the Laravel backend runs locally on the laptop and is exposed to the mobile app using Cloudflare Tunnel.
-
----
-
-## Prerequisites
-
-Before running the project, make sure these are installed:
-
-```text
-Flutter SDK
-Android Studio
-PHP
-Composer
-MySQL
-Firebase project
-Cloudflare Tunnel
-```
-
----
-
-## 1. Backend Setup
+## Backend Setup
 
 Go to the backend folder:
 
@@ -373,7 +477,7 @@ Run migrations:
 php artisan migrate
 ```
 
-Start Laravel backend:
+Start Laravel backend locally:
 
 ```bash
 php artisan serve --host=127.0.0.1 --port=8000
@@ -396,7 +500,7 @@ Expected response:
 
 ---
 
-## 2. Firebase Setup
+## Firebase Setup
 
 This app uses Firebase Authentication.
 
@@ -428,9 +532,9 @@ Add this in `.gitignore`:
 
 ---
 
-## 3. Cloudflare Tunnel Setup
+## Cloudflare Tunnel Setup For Local Testing
 
-For V1, the mobile app connects to the local Laravel backend through Cloudflare Tunnel.
+For local testing, the mobile app can connect to the local Laravel backend through Cloudflare Tunnel.
 
 Keep Laravel running first, then open a new terminal from the project root:
 
@@ -446,9 +550,18 @@ https://example-random-url.trycloudflare.com
 
 This URL must be added in the Flutter app config.
 
+Cloudflare quick tunnel URLs change whenever the tunnel restarts.
+
+So when a new Cloudflare URL is generated:
+
+```text
+Update app_config.dart
+Rebuild or rerun the Flutter app
+```
+
 ---
 
-## 4. Flutter App Setup
+## Flutter App Setup
 
 Go to the Flutter app folder:
 
@@ -468,12 +581,23 @@ Update backend URL in:
 mobile/lib/config/app_config.dart
 ```
 
-Example:
+Example for Cloudflare/local testing:
 
 ```dart
 class AppConfig {
   static const String backendBaseUrl =
       'https://your-cloudflare-url.trycloudflare.com';
+
+  static const String apiBaseUrl = '$backendBaseUrl/api/v1';
+}
+```
+
+Example for deployed backend:
+
+```dart
+class AppConfig {
+  static const String backendBaseUrl =
+      'https://your-backend-domain.com';
 
   static const String apiBaseUrl = '$backendBaseUrl/api/v1';
 }
@@ -503,21 +627,33 @@ Run the app:
 flutter run
 ```
 
+Run in profile mode for performance testing:
+
+```bash
+flutter run --profile
+```
+
 Build debug APK:
 
 ```bash
 flutter build apk --debug
 ```
 
+Build release APK:
+
+```bash
+flutter build apk --release
+```
+
 APK location:
 
 ```text
-mobile/build/app/outputs/flutter-apk/app-debug.apk
+mobile/build/app/outputs/flutter-apk/app-release.apk
 ```
 
 ---
 
-## 5. Running on a Real Android Phone
+## Running On A Real Android Phone
 
 Enable Developer Options on Android phone:
 
@@ -550,12 +686,12 @@ flutter run
 Or install the generated APK manually:
 
 ```text
-mobile/build/app/outputs/flutter-apk/app-debug.apk
+mobile/build/app/outputs/flutter-apk/app-release.apk
 ```
 
 ---
 
-## 6. Required Android Permissions
+## Required Android Permissions
 
 Allow these permissions on the phone when asked:
 
@@ -574,31 +710,6 @@ SMS balance or SMS pack
 Mobile network signal
 Internet connection
 ```
-
----
-
-## 7. V1 Running Requirement
-
-This V1 version requires the backend to be running locally.
-
-For the app to work fully:
-
-```text
-Laravel backend must be running
-Cloudflare tunnel must be running
-Cloudflare URL must match app_config.dart
-```
-
-Cloudflare quick tunnel URLs change whenever the tunnel restarts.
-
-So when a new Cloudflare URL is generated:
-
-```text
-Update app_config.dart
-Rebuild or rerun the Flutter app
-```
-
-For production use, the Laravel backend should be deployed to a permanent server/domain.
 
 ---
 
@@ -653,6 +764,7 @@ DELETE /api/v1/emergency-contacts/{id}
 ```text
 POST /api/v1/sos/start
 POST /api/v1/sos/{id}/cancel
+GET  /api/v1/sos/active
 GET  /api/v1/sos/history
 POST /api/v1/sos/{id}/location
 ```
@@ -666,9 +778,66 @@ GET /track/{trackingToken}
 
 ---
 
+## Cleanup Command
+
+The backend includes an Artisan command to clean old SOS location updates.
+
+```bash
+php artisan sos:cleanup-location-updates --hours=24
+```
+
+What it does:
+
+```text
+1. Finds old cancelled / expired / offline SMS SOS events
+2. Saves the latest location into sos_events as final location
+3. Deletes old rows from sos_location_updates
+```
+
+This keeps the database small while preserving the final known SOS location for history.
+
+For manual testing:
+
+```bash
+php artisan sos:cleanup-location-updates --hours=1
+```
+
+Note:
+
+```text
+If --hours is less than 1, the command should fall back to 24 hours.
+```
+
+---
+
+## Performance Notes
+
+The app uses several optimizations for smoother performance:
+
+- Local-first loading for profile, contacts, and SOS history
+- Active SOS countdown updated using lightweight state updates
+- Backend refresh runs in background where possible
+- Reduced unnecessary full-screen rebuilds
+- Background location handled natively on Android
+- Failed location updates retried instead of blocking UI
+
+For real performance testing, use:
+
+```bash
+flutter run --profile
+```
+
+or test the release APK:
+
+```bash
+flutter build apk --release
+```
+
+---
+
 ## Security Notes
 
-Implemented in V1:
+Implemented:
 
 - Firebase protected user APIs
 - User-specific trusted contacts
@@ -676,51 +845,43 @@ Implemented in V1:
 - User-specific SOS history
 - SOS location update protected using tracking token
 - Public tracking page uses a random tracking token
+- Tracking link expiry after 24 hours
 - Logout blocked during active SOS
+- Local data separated by Firebase UID where required
 
-Not included in V1:
+Not included yet:
 
-- Permanent backend deployment
 - Push notifications
 - Admin panel
 - End-to-end encryption
 - Play Store release
-- Production monitoring
+- Full production monitoring
 
 ---
 
-## Current V1 Limitation
+## Current Limitations
 
-This V1 version uses Cloudflare quick tunnel for testing.
-
-That means:
-
-```text
-Laravel backend must be running on laptop
-Cloudflare tunnel must be running
-Cloudflare URL must be updated in Flutter app config
-```
-
-When Cloudflare tunnel restarts, the URL changes.
-
-For real production use, the Laravel backend should be deployed to a permanent server/domain.
+- Android only
+- SMS depends on SIM, signal, permission, and SMS balance
+- Background tracking reliability can still depend on Android battery restrictions
+- iOS support is not included
+- This app is an emergency assistance tool, not a replacement for official emergency services
 
 ---
 
-## V2 Roadmap
+## Roadmap
 
 Planned improvements:
 
 ```text
-Deploy Laravel backend permanently
-Use permanent API URL
-Build release APK
-Improve battery optimization handling
-Improve background tracking reliability
+Improve background tracking reliability further
 Add push notifications
 Add emergency alert dashboard
-Add better UI polish
+Add admin panel
 Add Play Store readiness
+Add production monitoring
+Improve UI polish and accessibility
+Add better automated testing
 ```
 
 ---
@@ -738,7 +899,9 @@ android
 sms
 location-tracking
 openstreetmap
-leaflet
+maplibre
+foreground-service
+sharedpreferences
 ```
 
 ---
@@ -746,7 +909,7 @@ leaflet
 ## Suggested Commit Message
 
 ```text
-Complete SOS app V1 with live tracking and contact import
+Update SOS app README with offline cache and tracking improvements
 ```
 
 ---
