@@ -29,7 +29,7 @@ class CleanupSosLocationUpdates extends Command
             ->where(function ($query) use ($cutoffTime) {
                 $query->where(function ($cancelledQuery) use ($cutoffTime) {
                     $cancelledQuery
-                        ->where('status', 'cancelled')
+                        ->whereIn('status', ['cancelled', 'expired'])
                         ->whereNotNull('cancelled_at')
                         ->where('cancelled_at', '<=', $cutoffTime);
                 })

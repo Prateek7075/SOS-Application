@@ -3,30 +3,20 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-
 use App\Models\SosEvent;
 use App\Models\SosLocationUpdate;
-use App\Models\UserProfile;
 use App\Models\User;
-
+use App\Models\UserProfile;
 use Carbon\Carbon;
-
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class SosController extends Controller
 {
-
     private const TRACKING_LINK_EXPIRY_HOURS = 24;
-
-    private function isTrackingLinkExpired(SosEvent $sosEvent): bool
-    {
-        return $sosEvent->expires_at &&
-            now()->greaterThanOrEqualTo($sosEvent->expires_at);
-    }
 
     private function saveFinalLocationIfAvailable(SosEvent $sosEvent): void
     {
@@ -34,7 +24,11 @@ class SosController extends Controller
             ->latest('created_at')
             ->first();
 
-        if (!$latestLocation || $latestLocation->latitude === null || $latestLocation->longitude === null) {
+        if (
+            !$latestLocation ||
+            $latestLocation->latitude === null ||
+            $latestLocation->longitude === null
+        ) {
             return;
         }
 
@@ -45,26 +39,47 @@ class SosController extends Controller
         ]);
     }
 
+    private function markSosCancelled(SosEvent $sosEvent): SosEvent
+    {
+        $this->saveFinalLocationIfAvailable($sosEvent);
+
+        $sosEvent->update([
+            'status' => 'cancelled',
+            'cancelled_at' => $sosEvent->cancelled_at ?? now(),
+        ]);
+
+        return $sosEvent->fresh();
+    }
+
+    private function markSosExpired(SosEvent $sosEvent): SosEvent
+    {
+        $this->saveFinalLocationIfAvailable($sosEvent);
+
+        $sosEvent->update([
+            'status' => 'expired',
+            'cancelled_at' => $sosEvent->cancelled_at ?? now(),
+        ]);
+
+        Log::warning('SOS_MARKED_EXPIRED', [
+            'sos_event_id' => $sosEvent->id,
+            'expires_at' => $sosEvent->expires_at,
+        ]);
+
+        return $sosEvent->fresh();
+    }
+
     private function expireSosIfNeeded(SosEvent $sosEvent): bool
     {
-        if (!$this->isTrackingLinkExpired($sosEvent)) {
+        if (!$sosEvent->expires_at || now()->lessThan($sosEvent->expires_at)) {
             return false;
         }
 
         if ($sosEvent->status === 'active') {
-            $this->saveFinalLocationIfAvailable($sosEvent);
+            $this->markSosExpired($sosEvent);
+        }
 
-            $sosEvent->update([
-                'status' => 'expired',
-                'cancelled_at' => now(),
-            ]);
-
-            $sosEvent->refresh();
-
-            Log::warning('SOS_MARKED_EXPIRED', [
-                'sos_event_id' => $sosEvent->id,
-                'expires_at' => $sosEvent->expires_at,
-            ]);
+        if ($sosEvent->status === 'expired' && $sosEvent->cancelled_at === null) {
+            $this->markSosExpired($sosEvent);
         }
 
         return true;
@@ -83,7 +98,6 @@ class SosController extends Controller
                 }
             });
     }
-
 
     public function start(Request $request): JsonResponse
     {
@@ -188,10 +202,12 @@ class SosController extends Controller
         }
 
         if ($this->expireSosIfNeeded($sosEvent)) {
+            $freshSosEvent = $sosEvent->fresh();
+
             Log::warning('SOS_LOCATION_REJECTED', array_merge($logContext, [
                 'reason' => 'tracking_link_expired',
-                'actual_sos_status' => $sosEvent->status,
-                'expires_at' => $sosEvent->expires_at,
+                'actual_sos_status' => $freshSosEvent?->status,
+                'expires_at' => $freshSosEvent?->expires_at ?? $sosEvent->expires_at,
             ]));
 
             return response()->json([
@@ -278,17 +294,45 @@ class SosController extends Controller
             ->where('user_id', $user->id)
             ->firstOrFail();
 
+        if ($sosEvent->status === 'cancelled') {
+            if ($sosEvent->cancelled_at === null) {
+                $sosEvent = $this->markSosCancelled($sosEvent);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'SOS was already cancelled.',
+                'data' => [
+                    'sos_event' => $sosEvent,
+                ],
+            ], 200);
+        }
+
+        if ($sosEvent->status === 'expired') {
+            if ($sosEvent->cancelled_at === null) {
+                $sosEvent = $this->markSosExpired($sosEvent);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'SOS is already expired.',
+                'data' => [
+                    'sos_event' => $sosEvent,
+                ],
+            ], 200);
+        }
+
         if ($sosEvent->status !== 'active') {
             return response()->json([
                 'success' => false,
                 'message' => 'SOS is already not active',
+                'data' => [
+                    'sos_event' => $sosEvent,
+                ],
             ], 422);
         }
 
-        $sosEvent->update([
-            'status' => 'cancelled',
-            'cancelled_at' => now(),
-        ]);
+        $sosEvent = $this->markSosCancelled($sosEvent);
 
         return response()->json([
             'success' => true,
@@ -338,8 +382,6 @@ class SosController extends Controller
             $trackingState = 'waiting';
             $trackingMessage = 'SOS is active, but no location update has been received yet.';
         } else {
-            $lastUpdateAgeSeconds = null;
-
             if ($latestLocation->created_at) {
                 try {
                     $lastUpdateAgeSeconds = Carbon::parse($latestLocation->created_at)
@@ -349,13 +391,13 @@ class SosController extends Controller
                 }
             }
 
-            if ($lastUpdateAgeSeconds <= 120) {
+            if ($lastUpdateAgeSeconds !== null && $lastUpdateAgeSeconds <= 120) {
                 $trackingState = 'fresh';
                 $trackingMessage = 'Live tracking is active. Location is recent.';
-            } elseif ($lastUpdateAgeSeconds <= 300) {
+            } elseif ($lastUpdateAgeSeconds !== null && $lastUpdateAgeSeconds <= 300) {
                 $trackingState = 'delayed';
                 $trackingMessage = 'Location update is slightly delayed. Showing latest known location.';
-            } elseif ($lastUpdateAgeSeconds <= 600) {
+            } elseif ($lastUpdateAgeSeconds !== null && $lastUpdateAgeSeconds <= 600) {
                 $trackingState = 'stale';
                 $trackingMessage = 'No recent location update received. The phone may have weak internet, GPS issues, or background restrictions.';
             } else {
