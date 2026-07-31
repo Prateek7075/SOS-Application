@@ -16,7 +16,7 @@ class CleanupSosLocationUpdates extends Command
     {
         $retentionHours = (int) $this->option('hours');
 
-        if ($retentionHours < 1) {
+        if ($retentionHours < 0) {
             $retentionHours = 24;
         }
 
