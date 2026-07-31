@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/sos_history_item.dart';
 import '../services/sos_api_service.dart';
+import '../services/sos_history_local_service.dart';
 
 class SosHistoryScreen extends StatefulWidget {
   const SosHistoryScreen({super.key});
@@ -14,10 +16,12 @@ class SosHistoryScreen extends StatefulWidget {
 
 class _SosHistoryScreenState extends State<SosHistoryScreen> {
   final SosApiService _sosApiService = SosApiService();
+  final SosHistoryLocalService _sosHistoryLocalService = SosHistoryLocalService();
 
   List<SosHistoryItem> _historyItems = [];
   bool _isLoading = true;
   String? _errorMessage;
+  bool _isRefreshingFromServer = false;
 
   static const Color _bgColor = Color(0xFF0B1120);
   static const Color _cardColor = Color(0xFF111827);
@@ -34,7 +38,8 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
   @override
   void initState() {
     super.initState();
-    loadSosHistory();
+
+    unawaited(loadCachedHistoryThenRefresh());
   }
 
   String formatDateTime(DateTime dateTime) {
@@ -84,10 +89,48 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
     );
   }
 
+  Future<void> loadCachedHistoryThenRefresh() async {
+    final cachedHistory = await _sosHistoryLocalService.getHistory();
+
+    if (!mounted) {
+      return;
+    }
+
+    if (cachedHistory.isNotEmpty) {
+      setState(() {
+        _historyItems = cachedHistory;
+        _isLoading = false;
+        _errorMessage = null;
+      });
+
+      await refreshHistoryFromServer(
+        showFullLoader: false,
+      );
+
+      return;
+    }
+
+    await refreshHistoryFromServer(
+      showFullLoader: true,
+    );
+  }
+
   Future<void> loadSosHistory() async {
+    await refreshHistoryFromServer(
+      showFullLoader: _historyItems.isEmpty,
+    );
+  }
+
+  Future<void> refreshHistoryFromServer({
+    required bool showFullLoader,
+  }) async {
     if (mounted) {
       setState(() {
-        _isLoading = true;
+        if (showFullLoader) {
+          _isLoading = true;
+        }
+
+        _isRefreshingFromServer = true;
         _errorMessage = null;
       });
     }
@@ -102,6 +145,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
       setState(() {
         _historyItems = history;
         _isLoading = false;
+        _isRefreshingFromServer = false;
         _errorMessage = null;
       });
     } catch (error) {
@@ -111,7 +155,11 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
 
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Failed to load SOS history';
+        _isRefreshingFromServer = false;
+
+        if (_historyItems.isEmpty) {
+          _errorMessage = 'Failed to load SOS history';
+        }
       });
     }
   }

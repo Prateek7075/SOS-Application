@@ -6,11 +6,12 @@ import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
 import '../models/sos_event.dart';
 import '../models/sos_history_item.dart';
-
+import 'sos_history_local_service.dart';
 import '../services/offline_sos_local_service.dart';
 
 class SosApiService {
   static const String baseUrl = AppConfig.apiBaseUrl;
+  final SosHistoryLocalService _sosHistoryLocalService = SosHistoryLocalService();
 
   Future<Map<String, String>> getAuthHeaders() async {
     final firebaseUser = FirebaseAuth.instance.currentUser;
@@ -196,8 +197,12 @@ class SosApiService {
     final decodedBody = jsonDecode(response.body);
     final sosEventsJson = decodedBody['data']['sos_events'] as List;
 
+    await _sosHistoryLocalService.saveRawHistory(sosEventsJson);
+
     return sosEventsJson.map((itemJson) {
-      return SosHistoryItem.fromJson(itemJson);
+      return SosHistoryItem.fromJson(
+        Map<String, dynamic>.from(itemJson as Map),
+      );
     }).toList();
   }
 
