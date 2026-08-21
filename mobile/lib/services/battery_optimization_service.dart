@@ -22,8 +22,6 @@ class BatteryOptimizationService {
       return;
     }
 
-    await _channel.invokeMethod<bool>(
-      'openBatteryOptimizationSettings',
-    );
+    await _channel.invokeMethod<bool>('openBatteryOptimizationSettings');
   }
 }

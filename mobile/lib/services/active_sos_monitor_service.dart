@@ -10,15 +10,14 @@ class ActiveSosMonitorService {
   ActiveSosMonitorService._internal();
 
   static final ActiveSosMonitorService instance =
-  ActiveSosMonitorService._internal();
+      ActiveSosMonitorService._internal();
 
   static const int _monitorIntervalSeconds = 30;
 
-  final ActiveSosLocalService _activeSosLocalService =
-  ActiveSosLocalService();
+  final ActiveSosLocalService _activeSosLocalService = ActiveSosLocalService();
 
   final BackgroundLocationService _backgroundLocationService =
-  BackgroundLocationService();
+      BackgroundLocationService();
 
   final SosApiService _sosApiService = SosApiService();
 
@@ -39,7 +38,7 @@ class ActiveSosMonitorService {
 
     _monitorTimer = Timer.periodic(
       const Duration(seconds: _monitorIntervalSeconds),
-          (_) {
+      (_) {
         unawaited(checkNow());
       },
     );
@@ -61,8 +60,7 @@ class ActiveSosMonitorService {
     _isChecking = true;
 
     try {
-      final activeSosSession =
-      await _activeSosLocalService.getActiveSos();
+      final activeSosSession = await _activeSosLocalService.getActiveSos();
 
       if (activeSosSession == null) {
         debugPrint('Active SOS monitor stopped: no local active SOS');
@@ -84,10 +82,10 @@ class ActiveSosMonitorService {
   }
 
   Future<void> ensureNativeServiceRunning(
-      ActiveSosSession activeSosSession,
-      ) async {
-    final serviceState =
-    await _backgroundLocationService.getForegroundLocationServiceState();
+    ActiveSosSession activeSosSession,
+  ) async {
+    final serviceState = await _backgroundLocationService
+        .getForegroundLocationServiceState();
 
     final isServiceFreshForCurrentSos = serviceState.isFreshFor(
       sosEventId: activeSosSession.sosEventId,
@@ -97,7 +95,7 @@ class ActiveSosMonitorService {
     if (isServiceFreshForCurrentSos) {
       debugPrint(
         'Active SOS monitor: foreground service heartbeat is fresh. '
-            'Age=${serviceState.heartbeatAgeMilliseconds}ms',
+        'Age=${serviceState.heartbeatAgeMilliseconds}ms',
       );
 
       return;
@@ -105,9 +103,9 @@ class ActiveSosMonitorService {
 
     debugPrint(
       'Active SOS monitor: foreground service heartbeat stale/missing. '
-          'Restarting service. '
-          'HeartbeatAge=${serviceState.heartbeatAgeMilliseconds}ms '
-          'HeartbeatSos=${serviceState.activeSosEventId}',
+      'Restarting service. '
+      'HeartbeatAge=${serviceState.heartbeatAgeMilliseconds}ms '
+      'HeartbeatSos=${serviceState.activeSosEventId}',
     );
 
     final serviceStarted = await _backgroundLocationService.start(
@@ -122,9 +120,7 @@ class ActiveSosMonitorService {
     );
   }
 
-  Future<void> verifyBackendSosStatus(
-      ActiveSosSession activeSosSession,
-      ) async {
+  Future<void> verifyBackendSosStatus(ActiveSosSession activeSosSession) async {
     try {
       final trackingStatus = await _sosApiService.getTrackingStatus(
         trackingToken: activeSosSession.trackingToken,
@@ -144,9 +140,7 @@ class ActiveSosMonitorService {
 
       stop();
     } catch (error) {
-      debugPrint(
-        'Active SOS monitor backend status check failed: $error',
-      );
+      debugPrint('Active SOS monitor backend status check failed: $error');
 
       // Important:
       // Do not stop native service and do not clear local active SOS.

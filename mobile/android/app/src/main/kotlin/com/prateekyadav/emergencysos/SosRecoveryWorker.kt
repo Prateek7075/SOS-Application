@@ -1,4 +1,4 @@
-package com.example.mobile
+package com.prateekyadav.emergencysos
 
 import android.content.Context
 import android.content.Intent

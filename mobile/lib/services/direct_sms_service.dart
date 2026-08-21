@@ -7,7 +7,6 @@ import '../models/user_profile.dart';
 class DirectSmsService {
   static const MethodChannel _channel = MethodChannel('sos_sms_channel');
 
-
   String createEmergencyMessage({
     required double latitude,
     required double longitude,
@@ -18,7 +17,6 @@ class DirectSmsService {
     bool isOfflineLiveTrackingRecovery = false,
   }) {
     final hasProfile = profile != null && profile.hasUsefulData;
-
 
     final alertHeading = isOfflineLiveTrackingRecovery
         ? 'UPDATE: Internet is available again. Live tracking is now active.'
@@ -56,7 +54,7 @@ Battery: Not available
     return '''
 $alertHeading
 
-${customMessage != null && customMessage.trim().isNotEmpty ? customMessage.trim(): defaultHelpMessage}
+${customMessage != null && customMessage.trim().isNotEmpty ? customMessage.trim() : defaultHelpMessage}
 
 $profileText$trackingText${batteryText}My current location:
 https://maps.google.com/?q=$latitude,$longitude
@@ -82,13 +80,10 @@ Please contact me immediately.
     required String message,
   }) async {
     try {
-      final result = await _channel.invokeMethod<bool>(
-        'sendSms',
-        {
-          'phoneNumber': phoneNumber,
-          'message': message,
-        },
-      );
+      final result = await _channel.invokeMethod<bool>('sendSms', {
+        'phoneNumber': phoneNumber,
+        'message': message,
+      });
 
       return result == true;
     } catch (error) {
@@ -118,16 +113,14 @@ Please contact me immediately.
       profile: profile,
       trackingUrl: trackingUrl,
       batteryPercentage: batteryPercentage,
+      customMessage: customMessage,
       isOfflineLiveTrackingRecovery: isOfflineLiveTrackingRecovery,
     );
 
     int successCount = 0;
 
     for (final contact in contacts) {
-      final sent = await sendSms(
-        phoneNumber: contact.phone,
-        message: message,
-      );
+      final sent = await sendSms(phoneNumber: contact.phone, message: message);
 
       if (sent) {
         successCount++;

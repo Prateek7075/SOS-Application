@@ -1,7 +1,8 @@
 import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'auth_token_service.dart';
 
 class PendingSosLocationUpdate {
   const PendingSosLocationUpdate({
@@ -50,8 +51,8 @@ class PendingSosLocationUpdate {
       batteryPercentage: json['battery_percentage'] == null
           ? null
           : int.tryParse(json['battery_percentage'].toString()),
-      createdAt: DateTime.tryParse(json['created_at'].toString()) ??
-          DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now(),
     );
   }
 }
@@ -59,8 +60,14 @@ class PendingSosLocationUpdate {
 class FailedSosLocationLocalService {
   static const int _maxSavedUpdates = 200;
 
-  String get _storageKey {
-    final userId = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+  final AuthTokenService _authTokenService = AuthTokenService();
+
+  Future<String?> _getStorageKey() async {
+    final userId = await _authTokenService.getUserId();
+
+    if (userId == null) {
+      return null;
+    }
 
     return 'failed_sos_location_updates_$userId';
   }
@@ -69,7 +76,13 @@ class FailedSosLocationLocalService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.reload();
 
-    final rawJson = prefs.getString(_storageKey);
+    final storageKey = await _getStorageKey();
+
+    if (storageKey == null) {
+      return [];
+    }
+
+    final rawJson = prefs.getString(storageKey);
 
     if (rawJson == null || rawJson.isEmpty) {
       return [];
@@ -80,22 +93,30 @@ class FailedSosLocationLocalService {
 
       return decoded
           .map((item) {
-        return PendingSosLocationUpdate.fromJson(
-          item as Map<String, dynamic>,
-        );
-      })
+            return PendingSosLocationUpdate.fromJson(
+              item as Map<String, dynamic>,
+            );
+          })
           .where((item) {
-        return item.sosEventId > 0 && item.trackingToken.isNotEmpty;
-      })
+            return item.sosEventId > 0 && item.trackingToken.isNotEmpty;
+          })
           .toList();
     } catch (_) {
       await clearAll();
+
       return [];
     }
   }
 
   Future<void> save(PendingSosLocationUpdate update) async {
     final prefs = await SharedPreferences.getInstance();
+    final storageKey = await _getStorageKey();
+
+    if (storageKey == null) {
+      throw Exception(
+        'Cannot save failed SOS location because user is not logged in',
+      );
+    }
 
     final pendingUpdates = await getPendingUpdates();
 
@@ -106,15 +127,18 @@ class FailedSosLocationLocalService {
         : pendingUpdates;
 
     await prefs.setString(
-      _storageKey,
-      jsonEncode(
-        trimmedUpdates.map((item) => item.toJson()).toList(),
-      ),
+      storageKey,
+      jsonEncode(trimmedUpdates.map((item) => item.toJson()).toList()),
     );
   }
 
   Future<void> remove(String localId) async {
     final prefs = await SharedPreferences.getInstance();
+    final storageKey = await _getStorageKey();
+
+    if (storageKey == null) {
+      return;
+    }
 
     final pendingUpdates = await getPendingUpdates();
 
@@ -123,16 +147,17 @@ class FailedSosLocationLocalService {
     }).toList();
 
     await prefs.setString(
-      _storageKey,
-      jsonEncode(
-        updatedList.map((item) => item.toJson()).toList(),
-      ),
+      storageKey,
+      jsonEncode(updatedList.map((item) => item.toJson()).toList()),
     );
   }
 
   Future<void> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
+    final storageKey = await _getStorageKey();
 
-    await prefs.remove(_storageKey);
+    if (storageKey != null) {
+      await prefs.remove(storageKey);
+    }
   }
 }

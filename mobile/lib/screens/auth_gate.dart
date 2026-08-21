@@ -1,29 +1,25 @@
-import 'dart:async';
-
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../services/auth_api_service.dart';
-import '../services/auth_service.dart';
+import '../services/auth_token_service.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
 
 class AuthGate extends StatelessWidget {
   AuthGate({super.key});
 
-  final AuthService _authService = AuthService();
+  final AuthTokenService _authTokenService = AuthTokenService();
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: _authService.authStateChanges,
+    return FutureBuilder<bool>(
+      future: _authTokenService.hasSession(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const _AuthLoadingScreen();
         }
 
-        if (snapshot.hasData) {
-          return const _AuthenticatedHome();
+        if (snapshot.data == true) {
+          return const HomeScreen();
         }
 
         return const LoginScreen();
@@ -51,11 +47,7 @@ class _AuthLoadingScreen extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF08101E),
-              Color(0xFF0B1120),
-              Color(0xFF111827),
-            ],
+            colors: [Color(0xFF08101E), Color(0xFF0B1120), Color(0xFF111827)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -71,9 +63,7 @@ class _AuthLoadingScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: _cardColor,
                     borderRadius: BorderRadius.circular(30),
-                    border: Border.all(
-                      color: _borderColor,
-                    ),
+                    border: Border.all(color: _borderColor),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.28),
@@ -105,10 +95,7 @@ class _AuthLoadingScreen extends StatelessWidget {
                             ],
                             stops: [0.0, 0.65, 1.0],
                           ),
-                          border: Border.all(
-                            color: Colors.white24,
-                            width: 2.5,
-                          ),
+                          border: Border.all(color: Colors.white24, width: 2.5),
                         ),
                         child: const Icon(
                           Icons.emergency_share_rounded,
@@ -189,37 +176,5 @@ class _AuthLoadingScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _AuthenticatedHome extends StatefulWidget {
-  const _AuthenticatedHome();
-
-  @override
-  State<_AuthenticatedHome> createState() => _AuthenticatedHomeState();
-}
-
-class _AuthenticatedHomeState extends State<_AuthenticatedHome> {
-  final AuthApiService _authApiService = AuthApiService();
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(syncUser());
-  }
-
-  Future<void> syncUser() async {
-    try {
-      await _authApiService.syncUser();
-      debugPrint('Firebase user synchronized with Laravel');
-    } catch (error) {
-      // Home remains available so offline SOS/SMS can still work.
-      debugPrint('Laravel user sync failed: $error');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const HomeScreen();
   }
 }

@@ -1,17 +1,14 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'auth_token_service.dart';
+
 class CustomSosMessageLocalService {
-  static const String _legacyKey = 'custom_sos_message';
+  final AuthTokenService _authTokenService = AuthTokenService();
 
-  String? get _currentUserId {
-    return FirebaseAuth.instance.currentUser?.uid;
-  }
+  Future<String?> _getCurrentUserMessageKey() async {
+    final userId = await _authTokenService.getUserId();
 
-  String? get _currentUserMessageKey {
-    final userId = _currentUserId;
-
-    if (userId == null || userId.isEmpty) {
+    if (userId == null) {
       return null;
     }
 
@@ -20,25 +17,22 @@ class CustomSosMessageLocalService {
 
   Future<void> saveMessage(String message) async {
     final prefs = await SharedPreferences.getInstance();
-    final key = _currentUserMessageKey;
+    final key = await _getCurrentUserMessageKey();
 
     if (key == null) {
       throw Exception('Cannot save message because user is not logged in');
     }
 
     await prefs.setString(key, message.trim());
-    await prefs.remove(_legacyKey);
   }
 
   Future<String?> getMessage() async {
     final prefs = await SharedPreferences.getInstance();
-    final key = _currentUserMessageKey;
+    final key = await _getCurrentUserMessageKey();
 
     if (key == null) {
       return null;
     }
-
-    await prefs.remove(_legacyKey);
 
     final message = prefs.getString(key);
 
@@ -51,12 +45,10 @@ class CustomSosMessageLocalService {
 
   Future<void> clearMessage() async {
     final prefs = await SharedPreferences.getInstance();
-    final key = _currentUserMessageKey;
+    final key = await _getCurrentUserMessageKey();
 
     if (key != null) {
       await prefs.remove(key);
     }
-
-    await prefs.remove(_legacyKey);
   }
 }

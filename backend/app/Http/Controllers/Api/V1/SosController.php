@@ -25,7 +25,7 @@ class SosController extends Controller
             ->first();
 
         if (
-            !$latestLocation ||
+            ! $latestLocation ||
             $latestLocation->latitude === null ||
             $latestLocation->longitude === null
         ) {
@@ -70,7 +70,7 @@ class SosController extends Controller
 
     private function expireSosIfNeeded(SosEvent $sosEvent): bool
     {
-        if (!$sosEvent->expires_at || now()->lessThan($sosEvent->expires_at)) {
+        if (! $sosEvent->expires_at || now()->lessThan($sosEvent->expires_at)) {
             return false;
         }
 
@@ -123,7 +123,7 @@ class SosController extends Controller
                 'data' => [
                     'was_existing_active_sos' => true,
                     'sos_event' => $existingActiveSos,
-                    'tracking_url' => url('/track/' . $existingActiveSos->tracking_token),
+                    'tracking_url' => url('/track/'.$existingActiveSos->tracking_token),
                 ],
             ], 200);
         }
@@ -146,7 +146,7 @@ class SosController extends Controller
             'data' => [
                 'was_existing_active_sos' => false,
                 'sos_event' => $sosEvent,
-                'tracking_url' => url('/track/' . $trackingToken),
+                'tracking_url' => url('/track/'.$trackingToken),
             ],
         ], 201);
     }
@@ -159,11 +159,11 @@ class SosController extends Controller
             'sos_event_id' => $id,
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),
-            'tracking_token_present' => !empty($trackingToken),
+            'tracking_token_present' => ! empty($trackingToken),
             'tracking_token_last_6' => $trackingToken ? substr($trackingToken, -6) : null,
         ];
 
-        if (!$trackingToken) {
+        if (! $trackingToken) {
             Log::warning('SOS_LOCATION_REJECTED', array_merge($logContext, [
                 'reason' => 'missing_tracking_token',
             ]));
@@ -178,7 +178,7 @@ class SosController extends Controller
             ->where('id', $id)
             ->first();
 
-        if (!$sosEvent) {
+        if (! $sosEvent) {
             Log::warning('SOS_LOCATION_REJECTED', array_merge($logContext, [
                 'reason' => 'sos_event_not_found',
             ]));
@@ -189,7 +189,7 @@ class SosController extends Controller
             ], 404);
         }
 
-        if (!hash_equals($sosEvent->tracking_token, $trackingToken)) {
+        if (! hash_equals($sosEvent->tracking_token, $trackingToken)) {
             Log::warning('SOS_LOCATION_REJECTED', array_merge($logContext, [
                 'reason' => 'invalid_tracking_token',
                 'actual_sos_status' => $sosEvent->status,
@@ -378,7 +378,7 @@ class SosController extends Controller
         if ($sosEvent->status !== 'active') {
             $trackingState = 'stopped';
             $trackingMessage = 'SOS is no longer active. Showing last known location.';
-        } elseif (!$latestLocation) {
+        } elseif (! $latestLocation) {
             $trackingState = 'waiting';
             $trackingMessage = 'SOS is active, but no location update has been received yet.';
         } else {
@@ -606,7 +606,7 @@ class SosController extends Controller
             ->latest()
             ->first();
 
-        if (!$activeSos) {
+        if (! $activeSos) {
             return response()->json([
                 'success' => true,
                 'message' => 'No active SOS found.',
@@ -624,7 +624,7 @@ class SosController extends Controller
             'data' => [
                 'has_active_sos' => true,
                 'sos_event' => $activeSos,
-                'tracking_url' => url('/track/' . $activeSos->tracking_token),
+                'tracking_url' => url('/track/'.$activeSos->tracking_token),
             ],
         ], 200);
     }

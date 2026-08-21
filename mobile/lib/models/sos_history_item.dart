@@ -52,7 +52,7 @@ class SosHistoryItem {
   factory SosHistoryItem.fromJson(Map<String, dynamic> json) {
     final startingLocation = json['starting_location'] as Map<String, dynamic>?;
     final lastUpdatedLocation =
-    json['last_updated_location'] as Map<String, dynamic>?;
+        json['last_updated_location'] as Map<String, dynamic>?;
 
     final initialLatitude = parseDoubleValue(json['initial_latitude']);
     final initialLongitude = parseDoubleValue(json['initial_longitude']);
@@ -65,26 +65,16 @@ class SosHistoryItem {
       initialLatitude: initialLatitude,
       initialLongitude: initialLongitude,
 
-      startingLatitude: parseDoubleValue(
-        startingLocation?['latitude'],
-      ) ??
-          initialLatitude,
-      startingLongitude: parseDoubleValue(
-        startingLocation?['longitude'],
-      ) ??
-          initialLongitude,
+      startingLatitude:
+          parseDoubleValue(startingLocation?['latitude']) ?? initialLatitude,
+      startingLongitude:
+          parseDoubleValue(startingLocation?['longitude']) ?? initialLongitude,
 
-      lastUpdatedLatitude: parseDoubleValue(
-        lastUpdatedLocation?['latitude'],
-      ),
-      lastUpdatedLongitude: parseDoubleValue(
-        lastUpdatedLocation?['longitude'],
-      ),
-      lastUpdatedGoogleMapsUrl:
-      lastUpdatedLocation?['google_maps_url']?.toString(),
-      lastUpdatedAt: parseDateTimeValue(
-        lastUpdatedLocation?['updated_at'],
-      ),
+      lastUpdatedLatitude: parseDoubleValue(lastUpdatedLocation?['latitude']),
+      lastUpdatedLongitude: parseDoubleValue(lastUpdatedLocation?['longitude']),
+      lastUpdatedGoogleMapsUrl: lastUpdatedLocation?['google_maps_url']
+          ?.toString(),
+      lastUpdatedAt: parseDateTimeValue(lastUpdatedLocation?['updated_at']),
 
       createdAt: parseDateTimeValue(json['created_at']) ?? DateTime.now(),
       cancelledAt: parseDateTimeValue(json['cancelled_at']),

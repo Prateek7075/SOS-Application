@@ -1,36 +1,24 @@
 import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
 import '../models/user_profile.dart';
+import 'authenticated_api_service.dart';
 
 class UserProfileApiService {
   static const String baseUrl = AppConfig.apiBaseUrl;
 
-  Future<Map<String, String>> getAuthHeaders() async {
-    final firebaseUser = FirebaseAuth.instance.currentUser;
-
-    if (firebaseUser == null) {
-      throw Exception('User is not logged in');
-    }
-
-    final idToken = await firebaseUser.getIdToken();
-
-    if (idToken == null || idToken.isEmpty) {
-      throw Exception('Firebase ID token is unavailable');
-    }
-
-    return {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $idToken',
-    };
-  }
+  final AuthenticatedApiService _authenticatedApiService =
+      AuthenticatedApiService();
 
   Future<UserProfile> getProfile() async {
-    final response = await http.get(Uri.parse('$baseUrl/user-profile'), headers: await getAuthHeaders(),);
+    final response = await http.get(
+      Uri.parse('$baseUrl/user-profile'),
+      headers: await _authenticatedApiService.getAuthHeaders(),
+    );
+
+    await _authenticatedApiService.handleUnauthorized(response.statusCode);
 
     if (response.statusCode != 200) {
       throw Exception(
@@ -54,7 +42,7 @@ class UserProfileApiService {
   Future<UserProfile> updateProfile(UserProfile profile) async {
     final response = await http.put(
       Uri.parse('$baseUrl/user-profile'),
-      headers: await getAuthHeaders(),
+      headers: await _authenticatedApiService.getAuthHeaders(),
       body: jsonEncode({
         'name': profile.name,
         'phone': profile.phone,
@@ -64,6 +52,8 @@ class UserProfileApiService {
         'address': profile.address,
       }),
     );
+
+    await _authenticatedApiService.handleUnauthorized(response.statusCode);
 
     if (response.statusCode != 200) {
       throw Exception(

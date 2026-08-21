@@ -1,6 +1,5 @@
 import 'dart:async';
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -23,10 +22,7 @@ import '../services/active_sos_monitor_service.dart';
 import '../services/safety_check_service.dart';
 
 class ActiveSosScreen extends StatefulWidget {
-  const ActiveSosScreen({
-    super.key,
-    this.existingSession,
-  });
+  const ActiveSosScreen({super.key, this.existingSession});
 
   final ActiveSosSession? existingSession;
 
@@ -35,22 +31,28 @@ class ActiveSosScreen extends StatefulWidget {
 }
 
 class _ActiveSosScreenState extends State<ActiveSosScreen> {
-
   static const int _locationUpdateIntervalSeconds = 30;
 
   final LocationService _locationService = LocationService();
   final NetworkService _networkService = NetworkService();
   final SosApiService _sosApiService = SosApiService();
-  final EmergencyContactLocalService _localContactService = EmergencyContactLocalService();
-  final UserProfileLocalService _profileLocalService = UserProfileLocalService();
+  final EmergencyContactLocalService _localContactService =
+      EmergencyContactLocalService();
+  final UserProfileLocalService _profileLocalService =
+      UserProfileLocalService();
   final DirectSmsService _directSmsService = DirectSmsService();
-  final BackgroundLocationService _backgroundLocationService = BackgroundLocationService();
+  final BackgroundLocationService _backgroundLocationService =
+      BackgroundLocationService();
   final ActiveSosLocalService _activeSosLocalService = ActiveSosLocalService();
   final BatteryService _batteryService = BatteryService();
-  final OfflineSosLocalService _offlineSosLocalService = OfflineSosLocalService();
-  final CustomSosMessageLocalService _customSosMessageLocalService = CustomSosMessageLocalService();
-  final BatteryOptimizationService _batteryOptimizationService = BatteryOptimizationService();
-  final FailedSosLocationLocalService _failedSosLocationLocalService = FailedSosLocationLocalService();
+  final OfflineSosLocalService _offlineSosLocalService =
+      OfflineSosLocalService();
+  final CustomSosMessageLocalService _customSosMessageLocalService =
+      CustomSosMessageLocalService();
+  final BatteryOptimizationService _batteryOptimizationService =
+      BatteryOptimizationService();
+  final FailedSosLocationLocalService _failedSosLocationLocalService =
+      FailedSosLocationLocalService();
   final SafetyCheckService _safetyCheckService = SafetyCheckService();
 
   String _gpsStatus = 'Finding location...';
@@ -77,8 +79,9 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   Timer? _safetyCheckTimer;
 
   int _nextUpdateSeconds = _locationUpdateIntervalSeconds;
-  final ValueNotifier<int> _nextUpdateSecondsNotifier =
-      ValueNotifier<int>(_locationUpdateIntervalSeconds);
+  final ValueNotifier<int> _nextUpdateSecondsNotifier = ValueNotifier<int>(
+    _locationUpdateIntervalSeconds,
+  );
   DateTime? _nextLocationUpdateAt;
 
   bool _isUpdatingLocation = false;
@@ -98,7 +101,6 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   bool _isBatteryOptimizationAllowed = true;
   bool _batteryOptimizationDialogShown = false;
 
-
   static const Color _dangerRed = Color(0xFFEF4444);
   static const Color _dangerDark = Color(0xFFB91C1C);
   static const Color _successGreen = Color(0xFF22C55E);
@@ -111,11 +113,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
     unawaited(syncPendingOfflineSosEvents());
 
-    unawaited(
-      checkBatteryOptimizationStatus(
-        showWarningIfRestricted: true,
-      ),
-    );
+    unawaited(checkBatteryOptimizationStatus(showWarningIfRestricted: true));
 
     final existingSession = widget.existingSession;
 
@@ -177,7 +175,9 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     startActiveSosSafetyMonitor();
   }
 
-  int getRemainingSecondsUntilNextLocationUpdate(DateTime? nextLocationUpdateAt) {
+  int getRemainingSecondsUntilNextLocationUpdate(
+    DateTime? nextLocationUpdateAt,
+  ) {
     if (nextLocationUpdateAt == null) {
       return _locationUpdateIntervalSeconds;
     }
@@ -215,9 +215,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     _nextLocationUpdateAt = activeSosSession.nextLocationUpdateAt;
 
     updateNextUpdateSeconds(
-      getRemainingSecondsUntilNextLocationUpdate(
-        _nextLocationUpdateAt,
-      ),
+      getRemainingSecondsUntilNextLocationUpdate(_nextLocationUpdateAt),
     );
   }
 
@@ -237,9 +235,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     }
 
     updateNextUpdateSeconds(
-      getRemainingSecondsUntilNextLocationUpdate(
-        _nextLocationUpdateAt,
-      ),
+      getRemainingSecondsUntilNextLocationUpdate(_nextLocationUpdateAt),
     );
   }
 
@@ -260,11 +256,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         _liveTracking = 'Not started';
       });
 
-      unawaited(
-        runAutomaticSafetyCheck(
-          showSnackBarOnNewCriticalIssues: true,
-        ),
-      );
+      unawaited(runAutomaticSafetyCheck(showSnackBarOnNewCriticalIssues: true));
       return;
     }
 
@@ -285,21 +277,17 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     });
 
     if (networkStatus == 'No internet') {
-      await handleNoInternetSos(
-        position,
-        batteryPercentage,
-      );
+      await handleNoInternetSos(position, batteryPercentage);
       return;
     }
 
-    await handleInternetSos(
-      position,
-      networkStatus,
-      batteryPercentage,
-    );
+    await handleInternetSos(position, networkStatus, batteryPercentage);
   }
 
-  Future<void> handleNoInternetSos(Position position, int? batteryPercentage) async {
+  Future<void> handleNoInternetSos(
+    Position position,
+    int? batteryPercentage,
+  ) async {
     setState(() {
       _sosDecision = 'SOS active in offline mode';
       _internetAlert = 'Not sent - no internet';
@@ -327,24 +315,23 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   void startOfflineInternetCheckTimer() {
     _offlineInternetCheckTimer?.cancel();
 
-    _offlineInternetCheckTimer = Timer.periodic(
-      const Duration(seconds: 30),
-          (timer) {
-        if (!mounted) {
-          timer.cancel();
-          return;
-        }
+    _offlineInternetCheckTimer = Timer.periodic(const Duration(seconds: 30), (
+      timer,
+    ) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
 
-        unawaited(syncPendingOfflineSosEvents());
-      },
-    );
+      unawaited(syncPendingOfflineSosEvents());
+    });
   }
 
   Future<void> handleInternetSos(
-      Position position,
-      String networkStatus,
-      int? batteryPercentage,
-      ) async {
+    Position position,
+    String networkStatus,
+    int? batteryPercentage,
+  ) async {
     try {
       setState(() {
         _sosDecision = 'SOS active with internet';
@@ -370,7 +357,9 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
           _smsFallback = 'Already handled for previous SOS';
         });
 
-        final shouldCancelAndStartNew = await showExistingActiveSosChoiceDialog(existingSosId: sosEvent.id,);
+        final shouldCancelAndStartNew = await showExistingActiveSosChoiceDialog(
+          existingSosId: sosEvent.id,
+        );
 
         if (!mounted) {
           return;
@@ -384,9 +373,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
             _smsFallback = 'Waiting...';
           });
 
-          await _sosApiService.cancelSos(
-            sosEventId: sosEvent.id,
-          );
+          await _sosApiService.cancelSos(sosEventId: sosEvent.id);
 
           await _backgroundLocationService.stop();
           await _activeSosLocalService.clear();
@@ -469,9 +456,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       ActiveSosMonitorService.instance.start();
       startActiveSosSafetyMonitor();
 
-      unawaited(
-        sendLiveLocationUpdate(),
-      );
+      unawaited(sendLiveLocationUpdate());
 
       if (!sosEvent.wasExistingActiveSos) {
         unawaited(
@@ -594,9 +579,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       ActiveSosMonitorService.instance.start();
       startActiveSosSafetyMonitor();
 
-      unawaited(
-        sendLiveLocationUpdate(),
-      );
+      unawaited(sendLiveLocationUpdate());
 
       await sendLiveTrackingSmsToContacts(
         latitude: latitude,
@@ -745,8 +728,8 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
       _isSyncingFailedLocationUpdates = true;
 
-      final pendingUpdates =
-      await _failedSosLocationLocalService.getPendingUpdates();
+      final pendingUpdates = await _failedSosLocationLocalService
+          .getPendingUpdates();
 
       final updatesForCurrentSos = pendingUpdates.where((item) {
         return item.sosEventId == _sosEventId &&
@@ -770,9 +753,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
           await _failedSosLocationLocalService.remove(pendingUpdate.localId);
 
-          debugPrint(
-            'Retried failed location update ${pendingUpdate.localId}',
-          );
+          debugPrint('Retried failed location update ${pendingUpdate.localId}');
         } catch (error) {
           debugPrint(
             'Failed location retry stopped at ${pendingUpdate.localId}: $error',
@@ -863,9 +844,11 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       return 0;
     }
 
-    final recipientsText = contacts.map((contact) {
-      return '${contact.name} - ${contact.phone}';
-    }).join('\n');
+    final recipientsText = contacts
+        .map((contact) {
+          return '${contact.name} - ${contact.phone}';
+        })
+        .join('\n');
 
     setState(() {
       _smsRecipients = recipientsText.isEmpty ? '-' : recipientsText;
@@ -889,7 +872,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       profile: profile,
       trackingUrl: trackingUrl,
       batteryPercentage: batteryPercentage ?? _batteryPercentage,
-      customMessage:customMessage,
+      customMessage: customMessage,
     );
 
     if (!mounted) {
@@ -916,17 +899,14 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   void startSosStatusCheckTimer() {
     _statusCheckTimer?.cancel();
 
-    _statusCheckTimer = Timer.periodic(
-      const Duration(seconds: 30),
-          (timer) {
-        if (!mounted) {
-          timer.cancel();
-          return;
-        }
+    _statusCheckTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
 
-        unawaited(checkIfSosStillActive());
-      },
-    );
+      unawaited(checkIfSosStillActive());
+    });
   }
 
   Future<void> checkIfSosStillActive() async {
@@ -988,27 +968,16 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   void startActiveSosSafetyMonitor() {
     _safetyCheckTimer?.cancel();
 
-    unawaited(
-      runAutomaticSafetyCheck(
-        showSnackBarOnNewCriticalIssues: true,
-      ),
-    );
+    unawaited(runAutomaticSafetyCheck(showSnackBarOnNewCriticalIssues: true));
 
-    _safetyCheckTimer = Timer.periodic(
-      const Duration(seconds: 90),
-          (timer) {
-        if (!mounted) {
-          timer.cancel();
-          return;
-        }
+    _safetyCheckTimer = Timer.periodic(const Duration(seconds: 90), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
 
-        unawaited(
-          runAutomaticSafetyCheck(
-            showSnackBarOnNewCriticalIssues: true,
-          ),
-        );
-      },
-    );
+      unawaited(runAutomaticSafetyCheck(showSnackBarOnNewCriticalIssues: true));
+    });
   }
 
   Future<void> runAutomaticSafetyCheck({
@@ -1025,7 +994,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         sosEventId: _sosEventId,
         trackingToken: _trackingToken,
         includeBackgroundServiceCheck:
-        _sosEventId != null &&
+            _sosEventId != null &&
             _trackingToken != null &&
             _trackingToken!.trim().isNotEmpty,
       );
@@ -1046,10 +1015,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         _safetyCheckResult = result;
       });
 
-      if (
-      showSnackBarOnNewCriticalIssues &&
-          newCriticalIssues.isNotEmpty
-      ) {
+      if (showSnackBarOnNewCriticalIssues && newCriticalIssues.isNotEmpty) {
         final firstIssue = newCriticalIssues.first;
 
         showError('${firstIssue.title}. ${firstIssue.message}');
@@ -1068,21 +1034,16 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
     unawaited(refreshCountdownFromSavedActiveSos());
 
-    _countdownTimer = Timer.periodic(
-      const Duration(seconds: 1),
-      (timer) {
-        if (!mounted) {
-          timer.cancel();
-          return;
-        }
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
 
-        updateNextUpdateSeconds(
-          getRemainingSecondsUntilNextLocationUpdate(
-            _nextLocationUpdateAt,
-          ),
-        );
-      },
-    );
+      updateNextUpdateSeconds(
+        getRemainingSecondsUntilNextLocationUpdate(_nextLocationUpdateAt),
+      );
+    });
   }
 
   void startLiveLocationUpdates() {
@@ -1096,7 +1057,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
     _locationTimer = Timer.periodic(
       const Duration(seconds: _locationUpdateIntervalSeconds),
-          (timer) {
+      (timer) {
         if (!mounted) {
           timer.cancel();
           return;
@@ -1115,7 +1076,9 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     }
 
     if (_isUpdatingLocation) {
-      debugPrint('Live update skipped because previous update is still running');
+      debugPrint(
+        'Live update skipped because previous update is still running',
+      );
       return;
     }
 
@@ -1161,12 +1124,10 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
       final now = DateTime.now();
 
-      final nextUpdateAt = _nextLocationUpdateAt != null &&
-          _nextLocationUpdateAt!.isAfter(now)
+      final nextUpdateAt =
+          _nextLocationUpdateAt != null && _nextLocationUpdateAt!.isAfter(now)
           ? _nextLocationUpdateAt!
-          : now.add(
-        const Duration(seconds: _locationUpdateIntervalSeconds),
-      );
+          : now.add(const Duration(seconds: _locationUpdateIntervalSeconds));
 
       _nextLocationUpdateAt = nextUpdateAt;
 
@@ -1182,9 +1143,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       }
 
       updateNextUpdateSeconds(
-        getRemainingSecondsUntilNextLocationUpdate(
-          _nextLocationUpdateAt,
-        ),
+        getRemainingSecondsUntilNextLocationUpdate(_nextLocationUpdateAt),
       );
 
       setState(() {
@@ -1193,7 +1152,6 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         _gpsStatus = 'Location updated';
         _liveTracking = 'Live location updated';
       });
-
     } catch (error) {
       debugPrint('Live location update failed: $error');
 
@@ -1243,10 +1201,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
     final uri = Uri.parse(getSafeTrackingUrl());
 
-    await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    );
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   Future<void> openCurrentLocationInMaps() async {
@@ -1259,10 +1214,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
     final uri = Uri.parse(currentLocationUrl);
 
-    await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    );
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   Future<void> copyTrackingLink() async {
@@ -1271,9 +1223,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       return;
     }
 
-    await Clipboard.setData(
-      ClipboardData(text: getSafeTrackingUrl()),
-    );
+    await Clipboard.setData(ClipboardData(text: getSafeTrackingUrl()));
 
     if (!mounted) {
       return;
@@ -1299,9 +1249,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
     try {
       if (_sosEventId != null) {
-        await _sosApiService.cancelSos(
-          sosEventId: _sosEventId!,
-        );
+        await _sosApiService.cancelSos(sosEventId: _sosEventId!);
       }
 
       _locationTimer?.cancel();
@@ -1344,9 +1292,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
           surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(26),
-            side: const BorderSide(
-              color: Color(0xFF243041),
-            ),
+            side: const BorderSide(color: Color(0xFF243041)),
           ),
           titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
           contentPadding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
@@ -1359,9 +1305,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
                 decoration: BoxDecoration(
                   color: _dangerRed.withOpacity(0.14),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: _dangerRed.withOpacity(0.28),
-                  ),
+                  border: Border.all(color: _dangerRed.withOpacity(0.28)),
                 ),
                 child: const Icon(
                   Icons.warning_amber_rounded,
@@ -1404,9 +1348,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
               ),
               child: const Text(
                 'Keep Active',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
             FilledButton.icon(
@@ -1416,9 +1358,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
               icon: const Icon(Icons.close_rounded),
               label: const Text(
                 'Cancel SOS',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w900),
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: _dangerRed,
@@ -1447,13 +1387,11 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
           ),
           title: const Text(
             'Previous SOS is active',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w900),
           ),
           content: Text(
             'SOS #$existingSosId is still active.\n\n'
-                'Do you want to keep tracking the previous SOS, or cancel it and start a new SOS?',
+            'Do you want to keep tracking the previous SOS, or cancel it and start a new SOS?',
           ),
           actions: [
             TextButton(
@@ -1483,8 +1421,8 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     bool showWarningIfRestricted = false,
   }) async {
     try {
-      final isAllowed =
-      await _batteryOptimizationService.isIgnoringBatteryOptimizations();
+      final isAllowed = await _batteryOptimizationService
+          .isIgnoringBatteryOptimizations();
 
       if (!mounted) {
         return;
@@ -1534,13 +1472,11 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
           ),
           title: const Text(
             'Allow background tracking?',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w900),
           ),
           content: const Text(
             'Your phone may restrict this app in the background.\n\n'
-                'For emergency live tracking, set battery usage to Unrestricted or Allow background activity.',
+            'For emergency live tracking, set battery usage to Unrestricted or Allow background activity.',
           ),
           actions: [
             TextButton(
@@ -1574,9 +1510,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         return;
       }
 
-      unawaited(
-        checkBatteryOptimizationStatus(),
-      );
+      unawaited(checkBatteryOptimizationStatus());
     }
   }
 
@@ -1614,10 +1548,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -1637,16 +1568,12 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     return _successGreen;
   }
 
-
   Color getStatusColor(String value) {
     final cleanValue = value.toLowerCase();
 
-    if (cleanValue.contains('unrestricted') ||
-        cleanValue.contains('allowed')) {
+    if (cleanValue.contains('unrestricted') || cleanValue.contains('allowed')) {
       return _successGreen;
     }
-
-
 
     if (cleanValue.contains('failed') ||
         cleanValue.contains('denied') ||
@@ -1666,8 +1593,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       return _warningAmber;
     }
 
-    if (cleanValue.contains('no internet') ||
-        cleanValue.contains('offline')) {
+    if (cleanValue.contains('no internet') || cleanValue.contains('offline')) {
       return _warningAmber;
     }
 
@@ -1698,8 +1624,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   IconData getStatusIcon(String value) {
     final cleanValue = value.toLowerCase();
 
-    if (cleanValue.contains('unrestricted') ||
-        cleanValue.contains('allowed')) {
+    if (cleanValue.contains('unrestricted') || cleanValue.contains('allowed')) {
       return Icons.check_circle_outline_rounded;
     }
 
@@ -1744,9 +1669,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF111827),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFF243041),
-        ),
+        border: Border.all(color: const Color(0xFF243041)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.24),
@@ -1840,12 +1763,13 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     if (!result.hasIssues) {
       return _buildSectionCard(
         title: 'Automatic safety check',
-        subtitle: 'The app is checking important SOS readiness in the background.',
+        subtitle:
+            'The app is checking important SOS readiness in the background.',
         children: [
           buildInfoTile(
             title: 'SOS readiness',
             value:
-            'All important checks are currently ready (${result.readyCount}/${result.totalChecks})',
+                'All important checks are currently ready (${result.readyCount}/${result.totalChecks})',
             icon: Icons.verified_user_rounded,
             showStatus: false,
             iconColor: _successGreen,
@@ -1855,11 +1779,9 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
     }
 
     return _buildSectionCard(
-      title: result.hasCriticalIssues
-          ? 'Safety warning'
-          : 'Safety notice',
+      title: result.hasCriticalIssues ? 'Safety warning' : 'Safety notice',
       subtitle:
-      'These issues can affect SOS reliability. SOS will continue, but please fix them if possible.',
+          'These issues can affect SOS reliability. SOS will continue, but please fix them if possible.',
       children: [
         ...result.issues.map(_buildSafetyIssueTile),
         const SizedBox(height: 6),
@@ -1869,30 +1791,28 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
             onPressed: _isRunningSafetyCheck
                 ? null
                 : () {
-              unawaited(
-                runAutomaticSafetyCheck(
-                  showSnackBarOnNewCriticalIssues: true,
-                ),
-              );
-            },
+                    unawaited(
+                      runAutomaticSafetyCheck(
+                        showSnackBarOnNewCriticalIssues: true,
+                      ),
+                    );
+                  },
             icon: _isRunningSafetyCheck
                 ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
                 : const Icon(Icons.refresh_rounded),
             label: Text(
               _isRunningSafetyCheck ? 'Checking...' : 'Refresh safety check',
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.white,
-              side: const BorderSide(
-                color: Color(0xFF243041),
-              ),
+              side: const BorderSide(color: Color(0xFF243041)),
               backgroundColor: const Color(0xFF0F172A),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -1913,9 +1833,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       decoration: BoxDecoration(
         color: issueColor.withOpacity(0.10),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: issueColor.withOpacity(0.25),
-        ),
+        border: Border.all(color: issueColor.withOpacity(0.25)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1927,11 +1845,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
               color: issueColor.withOpacity(0.14),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(
-              getSafetyIssueIcon(issue),
-              color: issueColor,
-              size: 22,
-            ),
+            child: Icon(getSafetyIssueIcon(issue), color: issueColor, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1974,18 +1888,12 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       decoration: BoxDecoration(
         color: color.withOpacity(0.13),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.28),
-        ),
+        border: Border.all(color: color.withOpacity(0.28)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: color,
-          ),
+          Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
@@ -2021,9 +1929,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFF243041),
-        ),
+        border: Border.all(color: const Color(0xFF243041)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2035,11 +1941,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
               color: statusColor.withOpacity(0.14),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(
-              icon,
-              color: statusColor,
-              size: 22,
-            ),
+            child: Icon(icon, color: statusColor, size: 22),
           ),
           const SizedBox(width: 13),
           Expanded(
@@ -2070,11 +1972,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
 
           if (showStatus) ...[
             const SizedBox(width: 8),
-            Icon(
-              getStatusIcon(value),
-              color: statusColor,
-              size: 18,
-            ),
+            Icon(getStatusIcon(value), color: statusColor, size: 18),
           ],
         ],
       ),
@@ -2092,9 +1990,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFF243041),
-        ),
+        border: Border.all(color: const Color(0xFF243041)),
       ),
       child: Material(
         color: Colors.transparent,
@@ -2114,11 +2010,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
                     color: const Color(0xFF3B82F6).withOpacity(0.14),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(
-                    icon,
-                    color: const Color(0xFF3B82F6),
-                    size: 22,
-                  ),
+                  child: Icon(icon, color: const Color(0xFF3B82F6), size: 22),
                 ),
                 const SizedBox(width: 13),
                 Expanded(
@@ -2163,25 +2055,23 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   }
 
   Widget _buildHeaderCard() {
-    final networkLabel = _networkStatus == 'No internet' ? 'Offline mode' : 'Internet ready';
-    final trackingSubtitle = _trackingUrl != '-' ? 'Contacts can follow your live location.' : 'Trying to create tracking access.';
+    final networkLabel = _networkStatus == 'No internet'
+        ? 'Offline mode'
+        : 'Internet ready';
+    final trackingSubtitle = _trackingUrl != '-'
+        ? 'Contacts can follow your live location.'
+        : 'Trying to create tracking access.';
 
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF111827),
-            Color(0xFF172033),
-          ],
+          colors: [Color(0xFF0F172A), Color(0xFF111827), Color(0xFF172033)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: const Color(0xFF243041),
-        ),
+        border: Border.all(color: const Color(0xFF243041)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
@@ -2291,7 +2181,9 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _trackingUrl != '-' ? 'LIVE TRACKING ACTIVE' : 'EMERGENCY MODE ACTIVE',
+                      _trackingUrl != '-'
+                          ? 'LIVE TRACKING ACTIVE'
+                          : 'EMERGENCY MODE ACTIVE',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.94),
@@ -2302,7 +2194,10 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
                     ),
                     const SizedBox(height: 14),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.18),
                         borderRadius: BorderRadius.circular(999),
@@ -2333,9 +2228,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFF0B1220),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: const Color(0xFF243041),
-              ),
+              border: Border.all(color: const Color(0xFF243041)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2438,7 +2331,8 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
   Widget _buildAlertStatusCard() {
     return _buildSectionCard(
       title: 'Alert status',
-      subtitle: 'This section shows how the SOS is being delivered and maintained.',
+      subtitle:
+          'This section shows how the SOS is being delivered and maintained.',
       children: [
         buildInfoTile(
           title: 'Network',
@@ -2488,9 +2382,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
               label: const Text('Open Battery Settings'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFFFCA5A5),
-                side: const BorderSide(
-                  color: Color(0xFFEF4444),
-                ),
+                side: const BorderSide(color: Color(0xFFEF4444)),
                 backgroundColor: const Color(0xFF0F172A),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -2569,9 +2461,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
                     label: const Text('Copy link'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
-                      side: const BorderSide(
-                        color: Color(0xFF243041),
-                      ),
+                      side: const BorderSide(color: Color(0xFF243041)),
                       backgroundColor: const Color(0xFF0F172A),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -2604,13 +2494,13 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
         onPressed: _isCancelling ? null : cancelSos,
         icon: _isCancelling
             ? const SizedBox(
-          width: 18,
-          height: 18,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Colors.white,
-          ),
-        )
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
             : const Icon(Icons.power_settings_new_rounded),
         label: Text(
           _isCancelling ? 'Stopping Emergency...' : 'Stop Active SOS',
@@ -2640,17 +2530,12 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF111827),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFF243041),
-        ),
+        border: Border.all(color: const Color(0xFF243041)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
-          Icon(
-            Icons.shield_moon_rounded,
-            color: Color(0xFF22C55E),
-          ),
+          Icon(Icons.shield_moon_rounded, color: Color(0xFF22C55E)),
           SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -2693,16 +2578,11 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFF111827),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: const Color(0xFF243041),
-              ),
+              border: Border.all(color: const Color(0xFF243041)),
             ),
             child: IconButton(
               tooltip: 'Back',
-              icon: const Icon(
-                Icons.arrow_back_rounded,
-                color: Colors.white,
-              ),
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
               onPressed: () {
                 Navigator.of(context).maybePop();
               },
@@ -2713,11 +2593,7 @@ class _ActiveSosScreenState extends State<ActiveSosScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF08101E),
-              Color(0xFF0B1120),
-              Color(0xFF111827),
-            ],
+            colors: [Color(0xFF08101E), Color(0xFF0B1120), Color(0xFF111827)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),

@@ -29,49 +29,49 @@ class _AppTourScreenState extends State<AppTourScreen> {
       icon: Icons.sos_rounded,
       title: 'Start Emergency SOS',
       description:
-      'Use the main SOS button when you are in danger. It starts emergency mode, creates a live tracking link, and alerts your trusted contacts.',
+          'Use the main SOS button when you are in danger. It starts emergency mode, creates a live tracking link, and alerts your trusted contacts.',
       color: _dangerRed,
     ),
     _TourItem(
       icon: Icons.location_on_rounded,
       title: 'Live Tracking',
       description:
-      'During an active SOS, your latest location is updated on the tracking page so trusted contacts can follow your movement.',
+          'During an active SOS, your latest location is updated on the tracking page so trusted contacts can follow your movement.',
       color: _mapBlue,
     ),
     _TourItem(
       icon: Icons.sms_rounded,
       title: 'SMS Fallback',
       description:
-      'If internet is not available, the app can still send your current location through SMS to your trusted contacts.',
+          'If internet is not available, the app can still send your current location through SMS to your trusted contacts.',
       color: _warningAmber,
     ),
     _TourItem(
       icon: Icons.contacts_rounded,
       title: 'Trusted Contacts',
       description:
-      'Add or import trusted contacts. These are the people who will receive your SOS alert and location.',
+          'Add or import trusted contacts. These are the people who will receive your SOS alert and location.',
       color: _successGreen,
     ),
     _TourItem(
       icon: Icons.person_rounded,
       title: 'Emergency Profile',
       description:
-      'Add your name, phone number, blood group, address, and emergency relative details. These details help people assist you faster.',
+          'Add your name, phone number, blood group, address, and emergency relative details. These details help people assist you faster.',
       color: _mapBlue,
     ),
     _TourItem(
       icon: Icons.history_rounded,
       title: 'SOS History',
       description:
-      'View your previous SOS events, starting location, last updated location, status, and time details.',
+          'View your previous SOS events, starting location, last updated location, status, and time details.',
       color: _warningAmber,
     ),
     _TourItem(
       icon: Icons.widgets_rounded,
       title: 'Widget & Shortcut',
       description:
-      'Use the home screen widget or quick SOS shortcut to start emergency SOS faster. Use carefully to avoid accidental alerts.',
+          'Use the home screen widget or quick SOS shortcut to start emergency SOS faster. Use carefully to avoid accidental alerts.',
       color: _dangerRed,
     ),
   ];
@@ -108,18 +108,12 @@ class _AppTourScreenState extends State<AppTourScreen> {
       decoration: BoxDecoration(
         color: color.withOpacity(0.13),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.28),
-        ),
+        border: Border.all(color: color.withOpacity(0.28)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: color,
-          ),
+          Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
           Text(
             label,
@@ -143,11 +137,7 @@ class _AppTourScreenState extends State<AppTourScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF08101E),
-              Color(0xFF0B1120),
-              Color(0xFF111827),
-            ],
+            colors: [Color(0xFF08101E), Color(0xFF0B1120), Color(0xFF111827)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -171,14 +161,10 @@ class _AppTourScreenState extends State<AppTourScreen> {
                     ),
                     TextButton(
                       onPressed: _skipTour,
-                      style: TextButton.styleFrom(
-                        foregroundColor: _dangerRed,
-                      ),
+                      style: TextButton.styleFrom(foregroundColor: _dangerRed),
                       child: const Text(
                         'Skip',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w900),
                       ),
                     ),
                   ],
@@ -218,18 +204,12 @@ class _AppTourScreenState extends State<AppTourScreen> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF111827),
-            Color(0xFF172033),
-          ],
+          colors: [Color(0xFF0F172A), Color(0xFF111827), Color(0xFF172033)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
@@ -247,9 +227,7 @@ class _AppTourScreenState extends State<AppTourScreen> {
             decoration: BoxDecoration(
               color: item.color.withOpacity(0.14),
               borderRadius: BorderRadius.circular(36),
-              border: Border.all(
-                color: item.color.withOpacity(0.30),
-              ),
+              border: Border.all(color: item.color.withOpacity(0.30)),
               boxShadow: [
                 BoxShadow(
                   color: item.color.withOpacity(0.24),
@@ -258,11 +236,7 @@ class _AppTourScreenState extends State<AppTourScreen> {
                 ),
               ],
             ),
-            child: Icon(
-              item.icon,
-              size: 62,
-              color: item.color,
-            ),
+            child: Icon(item.icon, size: 62, color: item.color),
           ),
           const SizedBox(height: 28),
           Text(
@@ -311,31 +285,28 @@ class _AppTourScreenState extends State<AppTourScreen> {
   Widget _buildPageIndicators() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(
-        _tourItems.length,
-            (index) {
-          final isActive = index == _currentPage;
+      children: List.generate(_tourItems.length, (index) {
+        final isActive = index == _currentPage;
 
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            width: isActive ? 26 : 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: isActive ? _dangerRed : _borderColor,
-              borderRadius: BorderRadius.circular(999),
-              boxShadow: isActive
-                  ? [
-                BoxShadow(
-                  color: _dangerRed.withOpacity(0.35),
-                  blurRadius: 12,
-                ),
-              ]
-                  : null,
-            ),
-          );
-        },
-      ),
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: isActive ? 26 : 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: isActive ? _dangerRed : _borderColor,
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: _dangerRed.withOpacity(0.35),
+                      blurRadius: 12,
+                    ),
+                  ]
+                : null,
+          ),
+        );
+      }),
     );
   }
 

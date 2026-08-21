@@ -8,10 +8,7 @@ import 'emergency_contact_local_service.dart';
 import 'network_service.dart';
 import 'user_profile_local_service.dart';
 
-enum SafetyIssueSeverity {
-  critical,
-  warning,
-}
+enum SafetyIssueSeverity { critical, warning }
 
 class SafetyIssue {
   const SafetyIssue({
@@ -88,7 +85,7 @@ class SafetyCheckService {
 
     final locationPermissionReady =
         locationPermission == LocationPermission.always ||
-            locationPermission == LocationPermission.whileInUse;
+        locationPermission == LocationPermission.whileInUse;
 
     if (locationPermissionReady) {
       readyCount++;
@@ -129,8 +126,7 @@ class SafetyCheckService {
         const SafetyIssue(
           key: 'sms_permission',
           title: 'SMS permission missing',
-          message:
-              'Offline SMS fallback may fail if internet is unavailable.',
+          message: 'Offline SMS fallback may fail if internet is unavailable.',
           severity: SafetyIssueSeverity.warning,
         ),
       );
@@ -209,8 +205,8 @@ class SafetyCheckService {
     bool batteryOptimizationReady = false;
 
     try {
-      batteryOptimizationReady =
-          await _batteryOptimizationService.isIgnoringBatteryOptimizations();
+      batteryOptimizationReady = await _batteryOptimizationService
+          .isIgnoringBatteryOptimizations();
     } catch (_) {
       batteryOptimizationReady = false;
     }
@@ -233,8 +229,8 @@ class SafetyCheckService {
         sosEventId != null &&
         trackingToken != null &&
         trackingToken.trim().isNotEmpty) {
-      final serviceState =
-          await _backgroundLocationService.getForegroundLocationServiceState();
+      final serviceState = await _backgroundLocationService
+          .getForegroundLocationServiceState();
 
       final isServiceFreshForCurrentSos = serviceState.isFreshFor(
         sosEventId: sosEventId,

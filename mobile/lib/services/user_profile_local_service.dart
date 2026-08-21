@@ -1,31 +1,27 @@
 import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user_profile.dart';
+import 'auth_token_service.dart';
 
 class UserProfileLocalService {
-  static const String _legacyProfileKey = 'user_profile';
+  final AuthTokenService _authTokenService = AuthTokenService();
 
-  String? get _currentUserId {
-    return FirebaseAuth.instance.currentUser?.uid;
-  }
+  Future<String?> _getCurrentUserProfileKey() async {
+    final userId = await _authTokenService.getUserId();
 
-  String? get _currentUserProfileKey {
-    final userId = _currentUserId;
-
-    if (userId == null || userId.isEmpty) {
+    if (userId == null) {
       return null;
     }
 
     return 'user_profile_$userId';
   }
 
-  String? get _currentUserPendingSyncKey {
-    final userId = _currentUserId;
+  Future<String?> _getCurrentUserPendingSyncKey() async {
+    final userId = await _authTokenService.getUserId();
 
-    if (userId == null || userId.isEmpty) {
+    if (userId == null) {
       return null;
     }
 
@@ -34,22 +30,18 @@ class UserProfileLocalService {
 
   Future<void> saveProfile(UserProfile profile) async {
     final prefs = await SharedPreferences.getInstance();
-    final profileKey = _currentUserProfileKey;
+    final profileKey = await _getCurrentUserProfileKey();
 
     if (profileKey == null) {
       throw Exception('Cannot save profile because user is not logged in');
     }
 
-    final profileJson = jsonEncode(profile.toJson());
-
-    await prefs.setString(profileKey, profileJson);
-
-    await prefs.remove(_legacyProfileKey);
+    await prefs.setString(profileKey, jsonEncode(profile.toJson()));
   }
 
   Future<UserProfile?> getProfile() async {
     final prefs = await SharedPreferences.getInstance();
-    final profileKey = _currentUserProfileKey;
+    final profileKey = await _getCurrentUserProfileKey();
 
     if (profileKey == null) {
       return null;
@@ -57,56 +49,24 @@ class UserProfileLocalService {
 
     final profileJson = prefs.getString(profileKey);
 
-    if (profileJson != null && profileJson.isNotEmpty) {
-      final decodedProfile = jsonDecode(profileJson);
-      return UserProfile.fromJson(decodedProfile);
-    }
-
-    final legacyProfileJson = prefs.getString(_legacyProfileKey);
-
-    if (legacyProfileJson != null && legacyProfileJson.isNotEmpty) {
-      final decodedLegacyProfile = jsonDecode(legacyProfileJson);
-      final legacyProfile = UserProfile.fromJson(decodedLegacyProfile);
-
-      final firebaseName =
-          FirebaseAuth.instance.currentUser?.displayName?.trim() ?? '';
-
-      final legacyName = legacyProfile.name.trim();
-
-      if (firebaseName.isEmpty || firebaseName == legacyName) {
-        await prefs.setString(profileKey, legacyProfileJson);
-        await prefs.remove(_legacyProfileKey);
-
-        return legacyProfile;
-      }
-    }
-
-    final firebaseUser = FirebaseAuth.instance.currentUser;
-
-    final firebaseName = firebaseUser?.displayName?.trim() ?? '';
-    final firebasePhone = firebaseUser?.phoneNumber?.trim() ?? '';
-
-    if (firebaseName.isEmpty && firebasePhone.isEmpty) {
+    if (profileJson == null || profileJson.isEmpty) {
       return null;
     }
 
-    final fallbackProfile = UserProfile(
-      name: firebaseName,
-      bloodGroup: '',
-      phone: firebasePhone,
-      relativeName: '',
-      relativePhone: '',
-      address: '',
-    );
+    try {
+      final decoded = jsonDecode(profileJson);
 
-    await saveProfile(fallbackProfile);
+      return UserProfile.fromJson(decoded);
+    } catch (_) {
+      await prefs.remove(profileKey);
 
-    return fallbackProfile;
+      return null;
+    }
   }
 
   Future<void> markProfilePendingSync() async {
     final prefs = await SharedPreferences.getInstance();
-    final pendingSyncKey = _currentUserPendingSyncKey;
+    final pendingSyncKey = await _getCurrentUserPendingSyncKey();
 
     if (pendingSyncKey == null) {
       return;
@@ -117,7 +77,7 @@ class UserProfileLocalService {
 
   Future<void> clearProfilePendingSync() async {
     final prefs = await SharedPreferences.getInstance();
-    final pendingSyncKey = _currentUserPendingSyncKey;
+    final pendingSyncKey = await _getCurrentUserPendingSyncKey();
 
     if (pendingSyncKey == null) {
       return;
@@ -128,7 +88,7 @@ class UserProfileLocalService {
 
   Future<bool> hasPendingProfileSync() async {
     final prefs = await SharedPreferences.getInstance();
-    final pendingSyncKey = _currentUserPendingSyncKey;
+    final pendingSyncKey = await _getCurrentUserPendingSyncKey();
 
     if (pendingSyncKey == null) {
       return false;
@@ -139,8 +99,9 @@ class UserProfileLocalService {
 
   Future<void> clearProfile() async {
     final prefs = await SharedPreferences.getInstance();
-    final profileKey = _currentUserProfileKey;
-    final pendingSyncKey = _currentUserPendingSyncKey;
+
+    final profileKey = await _getCurrentUserProfileKey();
+    final pendingSyncKey = await _getCurrentUserPendingSyncKey();
 
     if (profileKey != null) {
       await prefs.remove(profileKey);
@@ -149,7 +110,5 @@ class UserProfileLocalService {
     if (pendingSyncKey != null) {
       await prefs.remove(pendingSyncKey);
     }
-
-    await prefs.remove(_legacyProfileKey);
   }
 }

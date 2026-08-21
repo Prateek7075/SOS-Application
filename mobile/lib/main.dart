@@ -1,17 +1,11 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-import 'firebase_options.dart';
 import 'route_observer.dart';
 import 'screens/auth_gate.dart';
 import 'screens/quick_sos_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
 
   runApp(const SosApp());
 }
@@ -45,16 +39,12 @@ class SosApp extends StatelessWidget {
         final mediaQuery = MediaQuery.of(context);
 
         return MediaQuery(
-          data: mediaQuery.copyWith(
-            textScaler: const TextScaler.linear(0.92),
-          ),
+          data: mediaQuery.copyWith(textScaler: const TextScaler.linear(0.92)),
           child: child ?? const SizedBox.shrink(),
         );
       },
 
-      routes: {
-        '/quick-sos': (context) => const QuickSosScreen(),
-      },
+      routes: {'/quick-sos': (context) => const QuickSosScreen()},
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
@@ -85,12 +75,8 @@ class SosApp extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           centerTitle: false,
-          iconTheme: IconThemeData(
-            color: Colors.white,
-          ),
-          actionsIconTheme: IconThemeData(
-            color: Colors.white,
-          ),
+          iconTheme: IconThemeData(color: Colors.white),
+          actionsIconTheme: IconThemeData(color: Colors.white),
           titleTextStyle: TextStyle(
             color: Colors.white,
             fontSize: 18,
@@ -105,9 +91,7 @@ class SosApp extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
-            side: const BorderSide(
-              color: borderColor,
-            ),
+            side: const BorderSide(color: borderColor),
           ),
         ),
 
@@ -157,9 +141,7 @@ class SosApp extends StatelessWidget {
             disabledForegroundColor: mutedText,
             backgroundColor: fieldColor,
             minimumSize: const Size(double.infinity, 52),
-            side: const BorderSide(
-              color: borderColor,
-            ),
+            side: const BorderSide(color: borderColor),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(18),
             ),
@@ -207,35 +189,23 @@ class SosApp extends StatelessWidget {
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
-            borderSide: const BorderSide(
-              color: borderColor,
-            ),
+            borderSide: const BorderSide(color: borderColor),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
-            borderSide: const BorderSide(
-              color: borderColor,
-            ),
+            borderSide: const BorderSide(color: borderColor),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
-            borderSide: const BorderSide(
-              color: mapBlue,
-              width: 1.4,
-            ),
+            borderSide: const BorderSide(color: mapBlue, width: 1.4),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
-            borderSide: const BorderSide(
-              color: dangerRed,
-            ),
+            borderSide: const BorderSide(color: dangerRed),
           ),
           focusedErrorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
-            borderSide: const BorderSide(
-              color: dangerRed,
-              width: 1.4,
-            ),
+            borderSide: const BorderSide(color: dangerRed, width: 1.4),
           ),
         ),
 
@@ -248,9 +218,7 @@ class SosApp extends StatelessWidget {
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(
-              color: borderColor,
-            ),
+            side: const BorderSide(color: borderColor),
           ),
         ),
 
@@ -259,9 +227,7 @@ class SosApp extends StatelessWidget {
           surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(26),
-            side: const BorderSide(
-              color: borderColor,
-            ),
+            side: const BorderSide(color: borderColor),
           ),
           titleTextStyle: const TextStyle(
             color: primaryText,
@@ -285,13 +251,8 @@ class SosApp extends StatelessWidget {
             return Colors.transparent;
           }),
           checkColor: const WidgetStatePropertyAll(Colors.white),
-          side: const BorderSide(
-            color: mutedText,
-            width: 1.4,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5),
-          ),
+          side: const BorderSide(color: mutedText, width: 1.4),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         ),
 
         progressIndicatorTheme: const ProgressIndicatorThemeData(
@@ -299,10 +260,7 @@ class SosApp extends StatelessWidget {
           circularTrackColor: borderColor,
         ),
 
-        dividerTheme: const DividerThemeData(
-          color: borderColor,
-          thickness: 1,
-        ),
+        dividerTheme: const DividerThemeData(color: borderColor, thickness: 1),
 
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: cardColor,
@@ -312,9 +270,7 @@ class SosApp extends StatelessWidget {
           elevation: 0,
         ),
 
-        iconTheme: const IconThemeData(
-          color: softText,
-        ),
+        iconTheme: const IconThemeData(color: softText),
 
         textSelectionTheme: const TextSelectionThemeData(
           cursorColor: mapBlue,
@@ -323,55 +279,40 @@ class SosApp extends StatelessWidget {
         ),
 
         textTheme: const TextTheme(
-            headlineLarge: TextStyle(
-              color: primaryText,
-              fontWeight: FontWeight.w900,
-            ),
-            headlineMedium: TextStyle(
-              color: primaryText,
-              fontWeight: FontWeight.w900,
-            ),
-            headlineSmall: TextStyle(
-              color: primaryText,
-              fontWeight: FontWeight.w900,
-            ),
-            titleLarge: TextStyle(
-              color: primaryText,
-              fontWeight: FontWeight.w900,
-            ),
-            titleMedium: TextStyle(
-              color: primaryText,
-              fontWeight: FontWeight.w800,
-            ),
-            titleSmall: TextStyle(
-              color: primaryText,
-              fontWeight: FontWeight.w700,
-            ),
-            bodyLarge: TextStyle(
-              color: softText,
-              fontWeight: FontWeight.w500,
-            ),
-            bodyMedium: TextStyle(
-              color: softText,
-              fontWeight: FontWeight.w500,
-            ),
-            bodySmall: TextStyle(
-              color: mutedText,
-              fontWeight: FontWeight.w500,
-            ),
-            labelLarge: TextStyle(
-              color: primaryText,
-              fontWeight: FontWeight.w800,
-            ),
-            labelMedium: TextStyle(
-              color: mutedText,
-              fontWeight: FontWeight.w700,
-            ),
-            labelSmall: TextStyle(
-              color: mutedText,
-              fontWeight: FontWeight.w700,
-            ),
+          headlineLarge: TextStyle(
+            color: primaryText,
+            fontWeight: FontWeight.w900,
           ),
+          headlineMedium: TextStyle(
+            color: primaryText,
+            fontWeight: FontWeight.w900,
+          ),
+          headlineSmall: TextStyle(
+            color: primaryText,
+            fontWeight: FontWeight.w900,
+          ),
+          titleLarge: TextStyle(
+            color: primaryText,
+            fontWeight: FontWeight.w900,
+          ),
+          titleMedium: TextStyle(
+            color: primaryText,
+            fontWeight: FontWeight.w800,
+          ),
+          titleSmall: TextStyle(
+            color: primaryText,
+            fontWeight: FontWeight.w700,
+          ),
+          bodyLarge: TextStyle(color: softText, fontWeight: FontWeight.w500),
+          bodyMedium: TextStyle(color: softText, fontWeight: FontWeight.w500),
+          bodySmall: TextStyle(color: mutedText, fontWeight: FontWeight.w500),
+          labelLarge: TextStyle(
+            color: primaryText,
+            fontWeight: FontWeight.w800,
+          ),
+          labelMedium: TextStyle(color: mutedText, fontWeight: FontWeight.w700),
+          labelSmall: TextStyle(color: mutedText, fontWeight: FontWeight.w700),
+        ),
       ),
       home: AuthGate(),
     );

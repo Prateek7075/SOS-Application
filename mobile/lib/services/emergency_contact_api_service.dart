@@ -1,39 +1,24 @@
 import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
 import '../models/emergency_contact.dart';
+import 'authenticated_api_service.dart';
 
 class EmergencyContactApiService {
   static const String baseUrl = AppConfig.apiBaseUrl;
 
-  Future<Map<String, String>> getAuthHeaders() async {
-    final firebaseUser = FirebaseAuth.instance.currentUser;
-
-    if (firebaseUser == null) {
-      throw Exception('User is not logged in');
-    }
-
-    final idToken = await firebaseUser.getIdToken();
-
-    if (idToken == null || idToken.isEmpty) {
-      throw Exception('Firebase ID token is unavailable');
-    }
-
-    return {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $idToken',
-    };
-  }
+  final AuthenticatedApiService _authenticatedApiService =
+      AuthenticatedApiService();
 
   Future<List<EmergencyContact>> getContacts() async {
     final response = await http.get(
       Uri.parse('$baseUrl/emergency-contacts'),
-      headers: await getAuthHeaders(),
+      headers: await _authenticatedApiService.getAuthHeaders(),
     );
+
+    await _authenticatedApiService.handleUnauthorized(response.statusCode);
 
     if (response.statusCode != 200) {
       throw Exception(
@@ -52,13 +37,15 @@ class EmergencyContactApiService {
   Future<EmergencyContact> addContact(EmergencyContact contact) async {
     final response = await http.post(
       Uri.parse('$baseUrl/emergency-contacts'),
-      headers: await getAuthHeaders(),
+      headers: await _authenticatedApiService.getAuthHeaders(),
       body: jsonEncode({
         'name': contact.name,
         'phone': contact.phone,
         'relationship': contact.relationship,
       }),
     );
+
+    await _authenticatedApiService.handleUnauthorized(response.statusCode);
 
     if (response.statusCode != 201) {
       throw Exception(
@@ -75,8 +62,10 @@ class EmergencyContactApiService {
   Future<void> deleteContact(int id) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/emergency-contacts/$id'),
-      headers: await getAuthHeaders(),
+      headers: await _authenticatedApiService.getAuthHeaders(),
     );
+
+    await _authenticatedApiService.handleUnauthorized(response.statusCode);
 
     if (response.statusCode != 200) {
       throw Exception(

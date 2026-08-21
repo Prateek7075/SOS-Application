@@ -16,7 +16,8 @@ class SosHistoryScreen extends StatefulWidget {
 
 class _SosHistoryScreenState extends State<SosHistoryScreen> {
   final SosApiService _sosApiService = SosApiService();
-  final SosHistoryLocalService _sosHistoryLocalService = SosHistoryLocalService();
+  final SosHistoryLocalService _sosHistoryLocalService =
+      SosHistoryLocalService();
 
   List<SosHistoryItem> _historyItems = [];
   bool _isLoading = true;
@@ -83,10 +84,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
 
     final uri = Uri.parse(url);
 
-    await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    );
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   Future<void> loadCachedHistoryThenRefresh() async {
@@ -103,27 +101,19 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
         _errorMessage = null;
       });
 
-      await refreshHistoryFromServer(
-        showFullLoader: false,
-      );
+      await refreshHistoryFromServer(showFullLoader: false);
 
       return;
     }
 
-    await refreshHistoryFromServer(
-      showFullLoader: true,
-    );
+    await refreshHistoryFromServer(showFullLoader: true);
   }
 
   Future<void> loadSosHistory() async {
-    await refreshHistoryFromServer(
-      showFullLoader: _historyItems.isEmpty,
-    );
+    await refreshHistoryFromServer(showFullLoader: _historyItems.isEmpty);
   }
 
-  Future<void> refreshHistoryFromServer({
-    required bool showFullLoader,
-  }) async {
+  Future<void> refreshHistoryFromServer({required bool showFullLoader}) async {
     if (mounted) {
       setState(() {
         if (showFullLoader) {
@@ -221,10 +211,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
       child: SizedBox(
         width: 34,
         height: 34,
-        child: CircularProgressIndicator(
-          color: _dangerRed,
-          strokeWidth: 3,
-        ),
+        child: CircularProgressIndicator(color: _dangerRed, strokeWidth: 3),
       ),
     );
   }
@@ -240,9 +227,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
             decoration: BoxDecoration(
               color: _cardColor,
               borderRadius: BorderRadius.circular(26),
-              border: Border.all(
-                color: _borderColor,
-              ),
+              border: Border.all(color: _borderColor),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.26),
@@ -260,9 +245,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
                   decoration: BoxDecoration(
                     color: _dangerRed.withOpacity(0.14),
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: _dangerRed.withOpacity(0.28),
-                    ),
+                    border: Border.all(color: _dangerRed.withOpacity(0.28)),
                   ),
                   child: const Icon(
                     Icons.error_outline_rounded,
@@ -300,9 +283,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
                     icon: const Icon(Icons.refresh_rounded),
                     label: const Text(
                       'Try Again',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                     style: FilledButton.styleFrom(
                       backgroundColor: _dangerRed,
@@ -332,9 +313,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
             decoration: BoxDecoration(
               color: _cardColor,
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: _borderColor,
-              ),
+              border: Border.all(color: _borderColor),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -345,9 +324,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
                   decoration: BoxDecoration(
                     color: _dangerRed.withOpacity(0.14),
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: _dangerRed.withOpacity(0.28),
-                    ),
+                    border: Border.all(color: _dangerRed.withOpacity(0.28)),
                   ),
                   child: const Icon(
                     Icons.history_rounded,
@@ -385,15 +362,11 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
                     icon: const Icon(Icons.refresh_rounded),
                     label: const Text(
                       'Refresh',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFCBD5E1),
-                      side: const BorderSide(
-                        color: _borderColor,
-                      ),
+                      side: const BorderSide(color: _borderColor),
                       backgroundColor: _fieldColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -472,18 +445,12 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF111827),
-            Color(0xFF172033),
-          ],
+          colors: [Color(0xFF0F172A), Color(0xFF111827), Color(0xFF172033)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
@@ -503,9 +470,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
                 decoration: BoxDecoration(
                   color: _dangerRed.withOpacity(0.16),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _dangerRed.withOpacity(0.35),
-                  ),
+                  border: Border.all(color: _dangerRed.withOpacity(0.35)),
                 ),
                 child: const Icon(
                   Icons.history_rounded,
@@ -563,18 +528,12 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
       decoration: BoxDecoration(
         color: color.withOpacity(0.13),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.28),
-        ),
+        border: Border.all(color: color.withOpacity(0.28)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 16,
-          ),
+          Icon(icon, color: color, size: 16),
           const SizedBox(width: 8),
           Text(
             label,
@@ -600,9 +559,7 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
       decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.22),
@@ -722,15 +679,13 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
       child: OutlinedButton.icon(
         onPressed: hasUrl
             ? () {
-          openLastUpdatedLocation(url);
-        }
+                openLastUpdatedLocation(url);
+              }
             : null,
         icon: const Icon(Icons.map_rounded),
         label: const Text(
           'Open Last Updated Location',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w900),
         ),
         style: OutlinedButton.styleFrom(
           foregroundColor: hasUrl ? _mapBlue : _mutedText,
@@ -755,18 +710,12 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
       decoration: BoxDecoration(
         color: statusColor.withOpacity(0.12),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: statusColor.withOpacity(0.24),
-        ),
+        border: Border.all(color: statusColor.withOpacity(0.24)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            getStatusIcon(status),
-            size: 14,
-            color: statusColor,
-          ),
+          Icon(getStatusIcon(status), size: 14, color: statusColor),
           const SizedBox(width: 5),
           Text(
             formatStatus(status),
@@ -794,18 +743,12 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
       decoration: BoxDecoration(
         color: _fieldColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            size: 19,
-            color: iconColor ?? _mutedText,
-          ),
+          Icon(icon, size: 19, color: iconColor ?? _mutedText),
           const SizedBox(width: 10),
           SizedBox(
             width: 92,
@@ -859,16 +802,11 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
             decoration: BoxDecoration(
               color: _cardColor,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: _borderColor,
-              ),
+              border: Border.all(color: _borderColor),
             ),
             child: IconButton(
               tooltip: 'Back',
-              icon: const Icon(
-                Icons.arrow_back_rounded,
-                color: Colors.white,
-              ),
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
               onPressed: () {
                 Navigator.of(context).maybePop();
               },
@@ -882,17 +820,12 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
               decoration: BoxDecoration(
                 color: _cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: _borderColor,
-                ),
+                border: Border.all(color: _borderColor),
               ),
               child: IconButton(
                 tooltip: 'Refresh',
                 onPressed: _isLoading ? null : loadSosHistory,
-                icon: const Icon(
-                  Icons.refresh_rounded,
-                  color: Colors.white,
-                ),
+                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               ),
             ),
           ),
@@ -901,18 +834,12 @@ class _SosHistoryScreenState extends State<SosHistoryScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF08101E),
-              Color(0xFF0B1120),
-              Color(0xFF111827),
-            ],
+            colors: [Color(0xFF08101E), Color(0xFF0B1120), Color(0xFF111827)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
-        child: SafeArea(
-          child: buildBody(),
-        ),
+        child: SafeArea(child: buildBody()),
       ),
     );
   }

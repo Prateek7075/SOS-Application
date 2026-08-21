@@ -1,8 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../services/auth_service.dart';
-import 'register_screen.dart';
+import '../services/auth_session_service.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,14 +12,18 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _authService = AuthService();
 
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final AuthSessionService _authSessionService = AuthSessionService();
+
+  final _phoneController = TextEditingController();
+  final _otpController = TextEditingController();
+  final _nameController = TextEditingController();
+
+  int _step = 1;
 
   bool _isLoading = false;
-  bool _obscurePassword = true;
   String? _errorMessage;
+  String? _registrationToken;
 
   static const Color _bgColor = Color(0xFF0B1120);
   static const Color _cardColor = Color(0xFF111827);
@@ -34,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
   static const Color _primaryText = Color(0xFFF8FAFC);
   static const Color _mutedText = Color(0xFF94A3B8);
 
-  Future<void> login() async {
+  Future<void> requestOtp() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -45,28 +48,19 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await _authService.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      await _authSessionService.requestOtp(_phoneController.text.trim());
 
       if (!mounted) return;
 
-      Navigator.popUntil(context, (route) => route.isFirst);
-    } on FirebaseAuthException catch (error) {
       setState(() {
-        _errorMessage = switch (error.code) {
-          'user-not-found' => 'No account found with this email.',
-          'wrong-password' => 'Incorrect password.',
-          'invalid-email' => 'Enter a valid email address.',
-          'user-disabled' => 'This account has been disabled.',
-          'invalid-credential' => 'Invalid email or password.',
-          _ => error.message ?? 'Login failed.',
-        };
+        _otpController.clear();
+        _step = 2;
       });
     } catch (error) {
+      if (!mounted) return;
+
       setState(() {
-        _errorMessage = 'Login failed: $error';
+        _errorMessage = error.toString().replaceFirst('Exception: ', '');
       });
     } finally {
       if (mounted) {
@@ -77,60 +71,168 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> verifyOtp() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await _authSessionService.verifyOtp(
+        phone: _phoneController.text.trim(),
+        otp: _otpController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      final registrationRequired = response['registration_required'] == true;
+
+      if (registrationRequired) {
+        final data = response['data'];
+
+        if (data is! Map<String, dynamic>) {
+          throw Exception('Invalid registration response.');
+        }
+
+        final token = data['registration_token'];
+
+        if (token is! String || token.isEmpty) {
+          throw Exception('Registration token is missing.');
+        }
+
+        setState(() {
+          _registrationToken = token;
+          _step = 3;
+        });
+
+        return;
+      }
+
+      _openHome();
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _errorMessage = error.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> registerUser() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final registrationToken = _registrationToken;
+
+    if (registrationToken == null || registrationToken.isEmpty) {
+      setState(() {
+        _errorMessage =
+            'Registration session expired. Please request OTP again.';
+        _step = 1;
+      });
+
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await _authSessionService.register(
+        name: _nameController.text.trim(),
+        registrationToken: registrationToken,
+      );
+
+      if (!mounted) return;
+
+      _openHome();
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _errorMessage = error.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _openHome() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      (route) => false,
+    );
+  }
+
+  void _changePhoneNumber() {
+    if (_isLoading) {
+      return;
+    }
+
+    setState(() {
+      _step = 1;
+      _otpController.clear();
+      _nameController.clear();
+      _registrationToken = null;
+      _errorMessage = null;
+    });
+  }
+
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
+    _phoneController.dispose();
+    _otpController.dispose();
+    _nameController.dispose();
+
     super.dispose();
   }
 
   InputDecoration _inputDecoration({
     required String label,
     required IconData icon,
-    Widget? suffixIcon,
   }) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(
-        icon,
-        color: _mutedText,
-      ),
-      suffixIcon: suffixIcon,
+      prefixIcon: Icon(icon, color: _mutedText),
       labelStyle: const TextStyle(
         color: _mutedText,
         fontWeight: FontWeight.w600,
       ),
       filled: true,
       fillColor: _fieldColor,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 16,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _borderColor,
-        ),
+        borderSide: const BorderSide(color: _borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _mapBlue,
-          width: 1.4,
-        ),
+        borderSide: const BorderSide(color: _mapBlue, width: 1.4),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _dangerRed,
-        ),
+        borderSide: const BorderSide(color: _dangerRed),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _dangerRed,
-          width: 1.4,
-        ),
+        borderSide: const BorderSide(color: _dangerRed, width: 1.4),
       ),
       errorStyle: const TextStyle(
         color: Color(0xFFFCA5A5),
@@ -149,18 +251,12 @@ class _LoginScreenState extends State<LoginScreen> {
       decoration: BoxDecoration(
         color: color.withOpacity(0.13),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.28),
-        ),
+        border: Border.all(color: color.withOpacity(0.28)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: color,
-          ),
+          Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
           Text(
             label,
@@ -182,11 +278,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF08101E),
-              Color(0xFF0B1120),
-              Color(0xFF111827),
-            ],
+            colors: [Color(0xFF08101E), Color(0xFF0B1120), Color(0xFF111827)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -205,9 +297,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       _buildHeader(),
                       const SizedBox(height: 24),
-                      _buildLoginCard(),
-                      const SizedBox(height: 18),
-                      _buildRegisterLink(),
+                      _buildAuthCard(),
                       const SizedBox(height: 18),
                       _buildSafetyNote(),
                     ],
@@ -226,18 +316,12 @@ class _LoginScreenState extends State<LoginScreen> {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF111827),
-            Color(0xFF172033),
-          ],
+          colors: [Color(0xFF0F172A), Color(0xFF111827), Color(0xFF172033)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
@@ -255,24 +339,13 @@ class _LoginScreenState extends State<LoginScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               boxShadow: [
-                BoxShadow(
-                  color: _dangerRed.withOpacity(0.28),
-                  blurRadius: 10,
-                  spreadRadius: 0,
-                ),
+                BoxShadow(color: _dangerRed.withOpacity(0.28), blurRadius: 10),
               ],
               gradient: const RadialGradient(
-                colors: [
-                  Color(0xFFF87171),
-                  _dangerRed,
-                  _dangerDark,
-                ],
+                colors: [Color(0xFFF87171), _dangerRed, _dangerDark],
                 stops: [0.0, 0.65, 1.0],
               ),
-              border: Border.all(
-                color: Colors.white24,
-                width: 2,
-              ),
+              border: Border.all(color: Colors.white24, width: 2),
             ),
             child: const Icon(
               Icons.emergency_share_rounded,
@@ -282,7 +355,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 22),
           const Text(
-            'Welcome back',
+            'Emergency SOS',
             style: TextStyle(
               color: _primaryText,
               fontSize: 32,
@@ -292,7 +365,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 9),
           const Text(
-            'Login to access your SOS profile, trusted contacts, and emergency alert history.',
+            'Sign in securely using your mobile number to access your SOS profile, trusted contacts, and emergency history.',
             style: TextStyle(
               color: Color(0xFFCBD5E1),
               fontSize: 15,
@@ -312,7 +385,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               _buildStatusBadge(
                 icon: Icons.sms_rounded,
-                label: 'SOS ready',
+                label: 'OTP secured',
                 color: _mapBlue,
               ),
               _buildStatusBadge(
@@ -327,15 +400,13 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildLoginCard() {
+  Widget _buildAuthCard() {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.24),
@@ -345,115 +416,218 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TextFormField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.next,
-            style: const TextStyle(
-              color: _primaryText,
-              fontWeight: FontWeight.w700,
-            ),
-            cursorColor: _mapBlue,
-            decoration: _inputDecoration(
-              label: 'Email Address',
-              icon: Icons.email_outlined,
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Email is required';
-              }
+          _buildStepTitle(),
+          const SizedBox(height: 20),
 
-              if (!value.contains('@')) {
-                return 'Enter a valid email';
-              }
+          if (_step == 1) _buildPhoneField(),
 
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _passwordController,
-            obscureText: _obscurePassword,
-            textInputAction: TextInputAction.done,
-            style: const TextStyle(
-              color: _primaryText,
-              fontWeight: FontWeight.w700,
-            ),
-            cursorColor: _mapBlue,
-            onFieldSubmitted: (_) {
-              if (!_isLoading) {
-                login();
-              }
-            },
-            decoration: _inputDecoration(
-              label: 'Password',
-              icon: Icons.lock_outline_rounded,
-              suffixIcon: IconButton(
-                onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
-                icon: Icon(
-                  _obscurePassword
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  color: _mutedText,
-                ),
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Password is required';
-              }
+          if (_step == 2) _buildOtpField(),
 
-              if (value.length < 6) {
-                return 'Password must be at least 6 characters';
-              }
+          if (_step == 3) _buildNameField(),
 
-              return null;
-            },
-          ),
           if (_errorMessage != null) ...[
             const SizedBox(height: 18),
             _buildErrorBox(),
           ],
+
           const SizedBox(height: 24),
-          _buildLoginButton(),
+
+          _buildActionButton(),
+
+          if (_step == 2) ...[
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: _isLoading ? null : _changePhoneNumber,
+              child: const Text('Change mobile number'),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildLoginButton() {
-    return Container(
+  Widget _buildStepTitle() {
+    String title;
+    String subtitle;
+
+    if (_step == 1) {
+      title = 'Enter mobile number';
+      subtitle = 'We will send a 6-digit OTP to verify your number.';
+    } else if (_step == 2) {
+      title = 'Verify OTP';
+      subtitle =
+          'Enter the 6-digit OTP sent to ${_phoneController.text.trim()}.';
+    } else {
+      title = 'Create your account';
+      subtitle = 'Your mobile number is verified. Enter your name to continue.';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: _primaryText,
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          subtitle,
+          style: const TextStyle(
+            color: _mutedText,
+            fontSize: 13.5,
+            height: 1.4,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPhoneField() {
+    return TextFormField(
+      controller: _phoneController,
+      keyboardType: TextInputType.phone,
+      textInputAction: TextInputAction.done,
+      style: const TextStyle(color: _primaryText, fontWeight: FontWeight.w700),
+      cursorColor: _mapBlue,
+      onFieldSubmitted: (_) {
+        if (!_isLoading) {
+          requestOtp();
+        }
+      },
+      decoration: _inputDecoration(
+        label: 'Mobile Number',
+        icon: Icons.phone_android_rounded,
+      ),
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return 'Mobile number is required';
+        }
+
+        final phone = value.trim().replaceAll(RegExp(r'[\s-]+'), '');
+
+        final valid = RegExp(r'^(\+91|91|0)?[6-9][0-9]{9}$').hasMatch(phone);
+
+        if (!valid) {
+          return 'Enter a valid Indian mobile number';
+        }
+
+        return null;
+      },
+    );
+  }
+
+  Widget _buildOtpField() {
+    return TextFormField(
+      controller: _otpController,
+      keyboardType: TextInputType.number,
+      textInputAction: TextInputAction.done,
+      maxLength: 6,
+      style: const TextStyle(
+        color: _primaryText,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 6,
+      ),
+      cursorColor: _mapBlue,
+      onFieldSubmitted: (_) {
+        if (!_isLoading) {
+          verifyOtp();
+        }
+      },
+      decoration: _inputDecoration(
+        label: '6-digit OTP',
+        icon: Icons.password_rounded,
+      ).copyWith(counterText: ''),
+      validator: (value) {
+        final otp = value?.trim() ?? '';
+
+        if (otp.isEmpty) {
+          return 'OTP is required';
+        }
+
+        if (!RegExp(r'^[0-9]{6}$').hasMatch(otp)) {
+          return 'Enter a valid 6-digit OTP';
+        }
+
+        return null;
+      },
+    );
+  }
+
+  Widget _buildNameField() {
+    return TextFormField(
+      controller: _nameController,
+      textCapitalization: TextCapitalization.words,
+      textInputAction: TextInputAction.done,
+      style: const TextStyle(color: _primaryText, fontWeight: FontWeight.w700),
+      cursorColor: _mapBlue,
+      onFieldSubmitted: (_) {
+        if (!_isLoading) {
+          registerUser();
+        }
+      },
+      decoration: _inputDecoration(
+        label: 'Full Name',
+        icon: Icons.person_outline_rounded,
+      ),
+      validator: (value) {
+        final name = value?.trim() ?? '';
+
+        if (name.isEmpty) {
+          return 'Name is required';
+        }
+
+        if (name.length < 2) {
+          return 'Name must be at least 2 characters';
+        }
+
+        return null;
+      },
+    );
+  }
+
+  Widget _buildActionButton() {
+    String label;
+    IconData icon;
+    VoidCallback action;
+
+    if (_step == 1) {
+      label = _isLoading ? 'Sending OTP...' : 'Send OTP';
+      icon = Icons.sms_rounded;
+      action = requestOtp;
+    } else if (_step == 2) {
+      label = _isLoading ? 'Verifying...' : 'Verify OTP';
+      icon = Icons.verified_user_rounded;
+      action = verifyOtp;
+    } else {
+      label = _isLoading ? 'Creating Account...' : 'Continue';
+      icon = Icons.person_add_alt_1_rounded;
+      action = registerUser;
+    }
+
+    return SizedBox(
       width: double.infinity,
       height: 56,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: _dangerRed.withOpacity(0.28),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
       child: FilledButton.icon(
-        onPressed: _isLoading ? null : login,
+        onPressed: _isLoading ? null : action,
         icon: _isLoading
             ? const SizedBox(
-          width: 18,
-          height: 18,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Colors.white,
-          ),
-        )
-            : const Icon(Icons.login_rounded),
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : Icon(icon),
         label: Text(
-          _isLoading ? 'Logging in...' : 'Login',
+          label,
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w900,
@@ -465,7 +639,6 @@ class _LoginScreenState extends State<LoginScreen> {
           foregroundColor: Colors.white,
           disabledBackgroundColor: _dangerRed.withOpacity(0.45),
           elevation: 0,
-          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -481,18 +654,12 @@ class _LoginScreenState extends State<LoginScreen> {
       decoration: BoxDecoration(
         color: _dangerRed.withOpacity(0.12),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _dangerRed.withOpacity(0.28),
-        ),
+        border: Border.all(color: _dangerRed.withOpacity(0.28)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.error_outline_rounded,
-            color: _dangerRed,
-            size: 22,
-          ),
+          const Icon(Icons.error_outline_rounded, color: _dangerRed, size: 22),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -510,72 +677,18 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildRegisterLink() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: _cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: _borderColor,
-        ),
-      ),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          const Text(
-            "Don't have an account?",
-            style: TextStyle(
-              color: _mutedText,
-              fontSize: 14.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          TextButton(
-            onPressed: _isLoading
-                ? null
-                : () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const RegisterScreen(),
-                ),
-              );
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: _dangerRed,
-            ),
-            child: const Text(
-              'Create Account',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSafetyNote() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _fieldColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.shield_outlined,
-            color: _successGreen,
-            size: 22,
-          ),
+          Icon(Icons.shield_outlined, color: _successGreen, size: 22),
           SizedBox(width: 10),
           Expanded(
             child: Text(

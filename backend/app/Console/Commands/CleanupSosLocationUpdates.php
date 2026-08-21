@@ -33,11 +33,11 @@ class CleanupSosLocationUpdates extends Command
                         ->whereNotNull('cancelled_at')
                         ->where('cancelled_at', '<=', $cutoffTime);
                 })
-                ->orWhere(function ($offlineQuery) use ($cutoffTime) {
-                    $offlineQuery
-                        ->where('status', 'offline_sms')
-                        ->where('created_at', '<=', $cutoffTime);
-                });
+                    ->orWhere(function ($offlineQuery) use ($cutoffTime) {
+                        $offlineQuery
+                            ->where('status', 'offline_sms')
+                            ->where('created_at', '<=', $cutoffTime);
+                    });
             })
             ->with('latestLocationUpdate')
             ->select('id')

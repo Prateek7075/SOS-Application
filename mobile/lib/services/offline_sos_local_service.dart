@@ -1,7 +1,8 @@
 import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'auth_token_service.dart';
 
 class OfflineSosEvent {
   const OfflineSosEvent({
@@ -42,7 +43,8 @@ class OfflineSosEvent {
       localId: json['local_id']?.toString() ?? '',
       latitude: _parseDouble(json['latitude']) ?? 0,
       longitude: _parseDouble(json['longitude']) ?? 0,
-      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
           DateTime.now(),
       batteryPercentage: _parseInt(json['battery_percentage']),
       networkMode: json['network_mode']?.toString() ?? 'offline_sms',
@@ -54,6 +56,7 @@ class OfflineSosEvent {
   static double? _parseDouble(dynamic value) {
     if (value == null) return null;
     if (value is num) return value.toDouble();
+
     return double.tryParse(value.toString());
   }
 
@@ -61,21 +64,18 @@ class OfflineSosEvent {
     if (value == null) return null;
     if (value is int) return value;
     if (value is num) return value.toInt();
+
     return int.tryParse(value.toString());
   }
 }
 
 class OfflineSosLocalService {
-  static const String _legacyKey = 'offline_sos_events';
+  final AuthTokenService _authTokenService = AuthTokenService();
 
-  String? get _currentUserId {
-    return FirebaseAuth.instance.currentUser?.uid;
-  }
+  Future<String?> _getCurrentUserOfflineSosKey() async {
+    final userId = await _authTokenService.getUserId();
 
-  String? get _currentUserOfflineSosKey {
-    final userId = _currentUserId;
-
-    if (userId == null || userId.isEmpty) {
+    if (userId == null) {
       return null;
     }
 
@@ -84,7 +84,7 @@ class OfflineSosLocalService {
 
   Future<void> saveOfflineSos(OfflineSosEvent event) async {
     final prefs = await SharedPreferences.getInstance();
-    final key = _currentUserOfflineSosKey;
+    final key = await _getCurrentUserOfflineSosKey();
 
     if (key == null) {
       throw Exception('Cannot save offline SOS because user is not logged in');
@@ -103,12 +103,11 @@ class OfflineSosLocalService {
     }).toList();
 
     await prefs.setStringList(key, encodedEvents);
-    await prefs.remove(_legacyKey);
   }
 
   Future<List<OfflineSosEvent>> getOfflineSosEvents() async {
     final prefs = await SharedPreferences.getInstance();
-    final key = _currentUserOfflineSosKey;
+    final key = await _getCurrentUserOfflineSosKey();
 
     if (key == null) {
       return [];
@@ -116,13 +115,12 @@ class OfflineSosLocalService {
 
     final encodedEvents = prefs.getStringList(key) ?? [];
 
-    await prefs.remove(_legacyKey);
-
     final events = <OfflineSosEvent>[];
 
     for (final encodedEvent in encodedEvents) {
       try {
         final decoded = jsonDecode(encodedEvent) as Map<String, dynamic>;
+
         final event = OfflineSosEvent.fromJson(decoded);
 
         if (event.localId.isNotEmpty &&
@@ -140,7 +138,7 @@ class OfflineSosLocalService {
 
   Future<void> removeOfflineSos(String localId) async {
     final prefs = await SharedPreferences.getInstance();
-    final key = _currentUserOfflineSosKey;
+    final key = await _getCurrentUserOfflineSosKey();
 
     if (key == null) {
       return;
@@ -161,12 +159,10 @@ class OfflineSosLocalService {
 
   Future<void> clearOfflineSosEvents() async {
     final prefs = await SharedPreferences.getInstance();
-    final key = _currentUserOfflineSosKey;
+    final key = await _getCurrentUserOfflineSosKey();
 
     if (key != null) {
       await prefs.remove(key);
     }
-
-    await prefs.remove(_legacyKey);
   }
 }
