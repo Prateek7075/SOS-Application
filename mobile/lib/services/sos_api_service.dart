@@ -1,52 +1,25 @@
 import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
 import '../models/sos_event.dart';
 import '../models/sos_history_item.dart';
+import 'authenticated_api_service.dart';
+import 'offline_sos_local_service.dart';
 import 'sos_history_local_service.dart';
-import '../services/offline_sos_local_service.dart';
 
 class SosApiService {
   static const String baseUrl = AppConfig.apiBaseUrl;
-  final SosHistoryLocalService _sosHistoryLocalService = SosHistoryLocalService();
 
-  Future<Map<String, String>> getAuthHeaders() async {
-    final firebaseUser = FirebaseAuth.instance.currentUser;
+  final AuthenticatedApiService _authenticatedApiService =
+      AuthenticatedApiService();
 
-    if (firebaseUser == null) {
-      throw Exception('User is not logged in');
-    }
-
-    final idToken = await firebaseUser.getIdToken();
-
-    if (idToken == null || idToken.isEmpty) {
-      throw Exception('Firebase ID token is unavailable');
-    }
-
-    // print('================ FIREBASE BEARER TOKEN START ================');
-    //
-    // for (var i = 0; i < idToken.length; i += 900) {
-    //   final end = (i + 900 < idToken.length) ? i + 900 : idToken.length;
-    //   print(idToken.substring(i, end));
-    // }
-    //
-    // print('================ FIREBASE BEARER TOKEN END ==================');
-
-    return {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $idToken',
-    };
-  }
+  final SosHistoryLocalService _sosHistoryLocalService =
+      SosHistoryLocalService();
 
   Map<String, String> getPublicHeaders() {
-    return {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    };
+    return {'Accept': 'application/json', 'Content-Type': 'application/json'};
   }
 
   Future<SosEvent> startSos({
@@ -56,13 +29,15 @@ class SosApiService {
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/sos/start'),
-      headers: await getAuthHeaders(),
+      headers: await _authenticatedApiService.getAuthHeaders(),
       body: jsonEncode({
         'latitude': latitude,
         'longitude': longitude,
         'network_mode': networkMode,
       }),
     );
+
+    await _authenticatedApiService.handleUnauthorized(response.statusCode);
 
     if (response.statusCode != 201 && response.statusCode != 200) {
       throw Exception(
@@ -73,12 +48,12 @@ class SosApiService {
     final decodedBody = jsonDecode(response.body) as Map<String, dynamic>;
 
     final sosEventJson =
-    decodedBody['data']['sos_event'] as Map<String, dynamic>;
+        decodedBody['data']['sos_event'] as Map<String, dynamic>;
 
     final trackingToken = sosEventJson['tracking_token'].toString();
 
     decodedBody['data']['tracking_url'] =
-    '${AppConfig.backendBaseUrl}/track/${Uri.encodeComponent(trackingToken)}';
+        '${AppConfig.backendBaseUrl}/track/${Uri.encodeComponent(trackingToken)}';
 
     return SosEvent.fromJson(decodedBody);
   }
@@ -91,13 +66,9 @@ class SosApiService {
     double? accuracy,
     int? batteryPercentage,
   }) async {
-
     final response = await http.post(
       Uri.parse('$baseUrl/sos/$sosEventId/location'),
-      headers: {
-        ...getPublicHeaders(),
-        'X-SOS-Tracking-Token': trackingToken,
-      },
+      headers: {...getPublicHeaders(), 'X-SOS-Tracking-Token': trackingToken},
       body: jsonEncode({
         'latitude': latitude,
         'longitude': longitude,
@@ -108,7 +79,8 @@ class SosApiService {
 
     if (response.statusCode != 201) {
       throw Exception(
-        'Failed to send location update: ${response.statusCode} ${response.body}',
+        'Failed to send location update: '
+        '${response.statusCode} ${response.body}',
       );
     }
   }
@@ -116,8 +88,10 @@ class SosApiService {
   Future<SosEvent?> getActiveSos() async {
     final response = await http.get(
       Uri.parse('$baseUrl/sos/active'),
-      headers: await getAuthHeaders(),
+      headers: await _authenticatedApiService.getAuthHeaders(),
     );
+
+    await _authenticatedApiService.handleUnauthorized(response.statusCode);
 
     if (response.statusCode != 200) {
       throw Exception(
@@ -144,20 +118,20 @@ class SosApiService {
         'was_existing_active_sos': true,
         'sos_event': sosEventJson,
         'tracking_url':
-        '${AppConfig.backendBaseUrl}/track/${Uri.encodeComponent(trackingToken)}',
+            '${AppConfig.backendBaseUrl}/track/${Uri.encodeComponent(trackingToken)}',
       },
     };
 
     return SosEvent.fromJson(normalizedBody);
   }
 
-  Future<void> cancelSos({
-    required int sosEventId,
-  }) async {
+  Future<void> cancelSos({required int sosEventId}) async {
     final response = await http.post(
       Uri.parse('$baseUrl/sos/$sosEventId/cancel'),
-      headers: await getAuthHeaders(),
+      headers: await _authenticatedApiService.getAuthHeaders(),
     );
+
+    await _authenticatedApiService.handleUnauthorized(response.statusCode);
 
     if (response.statusCode != 200) {
       throw Exception(
@@ -166,14 +140,14 @@ class SosApiService {
     }
   }
 
-  Future<void> syncOfflineSos({
-    required OfflineSosEvent event,
-  }) async {
+  Future<void> syncOfflineSos({required OfflineSosEvent event}) async {
     final response = await http.post(
       Uri.parse('$baseUrl/sos/offline-sync'),
-      headers: await getAuthHeaders(),
+      headers: await _authenticatedApiService.getAuthHeaders(),
       body: jsonEncode(event.toJson()),
     );
+
+    await _authenticatedApiService.handleUnauthorized(response.statusCode);
 
     if (response.statusCode != 201) {
       throw Exception(
@@ -185,8 +159,10 @@ class SosApiService {
   Future<List<SosHistoryItem>> getSosHistory() async {
     final response = await http.get(
       Uri.parse('$baseUrl/sos/history'),
-      headers: await getAuthHeaders(),
+      headers: await _authenticatedApiService.getAuthHeaders(),
     );
+
+    await _authenticatedApiService.handleUnauthorized(response.statusCode);
 
     if (response.statusCode != 200) {
       throw Exception(
@@ -206,16 +182,12 @@ class SosApiService {
     }).toList();
   }
 
-  Future<String?> getTrackingStatus({
-    required String trackingToken,
-  }) async {
+  Future<String?> getTrackingStatus({required String trackingToken}) async {
     final encodedToken = Uri.encodeComponent(trackingToken);
 
     final response = await http.get(
       Uri.parse('$baseUrl/public/track/$encodedToken'),
-      headers: {
-        'Accept': 'application/json',
-      },
+      headers: {'Accept': 'application/json'},
     );
 
     if (response.statusCode == 200) {
@@ -228,8 +200,6 @@ class SosApiService {
       return null;
     }
 
-    throw Exception(
-      'Could not verify SOS status: ${response.statusCode}',
-    );
+    throw Exception('Could not verify SOS status: ${response.statusCode}');
   }
 }

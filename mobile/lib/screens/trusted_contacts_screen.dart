@@ -17,7 +17,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
   final EmergencyContactApiService apiService = EmergencyContactApiService();
 
   final EmergencyContactLocalService localService =
-  EmergencyContactLocalService();
+      EmergencyContactLocalService();
 
   List<EmergencyContact> contacts = [];
   bool isLoading = true;
@@ -77,8 +77,9 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
       setState(() {
         contacts = cachedContacts;
         isLoading = false;
-        errorMessage =
-        cachedContacts.isEmpty ? 'Failed to load trusted contacts' : null;
+        errorMessage = cachedContacts.isEmpty
+            ? 'Failed to load trusted contacts'
+            : null;
       });
 
       if (cachedContacts.isNotEmpty) {
@@ -90,9 +91,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
   Future<void> openAddContactScreen() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AddTrustedContactScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const AddTrustedContactScreen()),
     );
 
     if (result != null && result is EmergencyContact) {
@@ -128,10 +127,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
       }
 
       Contact? selectedContact = await FlutterContacts.native.showPicker(
-        properties: {
-          ContactProperty.name,
-          ContactProperty.phone,
-        },
+        properties: {ContactProperty.name, ContactProperty.phone},
       );
 
       if (selectedContact == null) {
@@ -151,10 +147,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
           selectedContact.id!.isNotEmpty) {
         final fullContact = await FlutterContacts.get(
           selectedContact.id!,
-          properties: {
-            ContactProperty.name,
-            ContactProperty.phone,
-          },
+          properties: {ContactProperty.name, ContactProperty.phone},
         );
 
         if (fullContact != null) {
@@ -177,12 +170,11 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
 
       final displayName = selectedContact.displayName?.trim() ?? '';
 
-      final contactName =
-      displayName.isEmpty ? 'Imported Contact' : displayName;
+      final contactName = displayName.isEmpty
+          ? 'Imported Contact'
+          : displayName;
 
-      final phoneNumber = cleanPhoneNumber(
-        selectedContact.phones.first.number,
-      );
+      final phoneNumber = cleanPhoneNumber(selectedContact.phones.first.number);
 
       final alreadyExists = contacts.any((contact) {
         return normalizePhone(contact.phone) == normalizePhone(phoneNumber);
@@ -290,9 +282,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
           surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(26),
-            side: const BorderSide(
-              color: _borderColor,
-            ),
+            side: const BorderSide(color: _borderColor),
           ),
           titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
           contentPadding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
@@ -305,9 +295,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
                 decoration: BoxDecoration(
                   color: _dangerRed.withOpacity(0.14),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: _dangerRed.withOpacity(0.28),
-                  ),
+                  border: Border.all(color: _dangerRed.withOpacity(0.28)),
                 ),
                 child: const Icon(
                   Icons.delete_outline_rounded,
@@ -350,9 +338,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
               ),
               child: const Text(
                 'Cancel',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
             FilledButton.icon(
@@ -362,9 +348,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
               icon: const Icon(Icons.delete_outline_rounded),
               label: const Text(
                 'Delete',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w900),
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: _dangerRed,
@@ -437,10 +421,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
       child: SizedBox(
         width: 34,
         height: 34,
-        child: CircularProgressIndicator(
-          color: _dangerRed,
-          strokeWidth: 3,
-        ),
+        child: CircularProgressIndicator(color: _dangerRed, strokeWidth: 3),
       ),
     );
   }
@@ -456,9 +437,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
           decoration: BoxDecoration(
             color: _cardColor,
             borderRadius: BorderRadius.circular(26),
-            border: Border.all(
-              color: _borderColor,
-            ),
+            border: Border.all(color: _borderColor),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.26),
@@ -476,9 +455,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
                 decoration: BoxDecoration(
                   color: _dangerRed.withOpacity(0.14),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _dangerRed.withOpacity(0.28),
-                  ),
+                  border: Border.all(color: _dangerRed.withOpacity(0.28)),
                 ),
                 child: const Icon(
                   Icons.error_outline_rounded,
@@ -516,9 +493,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
                   icon: const Icon(Icons.refresh_rounded),
                   label: const Text(
                     'Try Again',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w900),
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: _dangerRed,
@@ -548,9 +523,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
             decoration: BoxDecoration(
               color: _cardColor,
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: _borderColor,
-              ),
+              border: Border.all(color: _borderColor),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -561,9 +534,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
                   decoration: BoxDecoration(
                     color: _dangerRed.withOpacity(0.14),
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: _dangerRed.withOpacity(0.28),
-                    ),
+                    border: Border.all(color: _dangerRed.withOpacity(0.28)),
                   ),
                   child: const Icon(
                     Icons.contacts_rounded,
@@ -649,18 +620,12 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF111827),
-            Color(0xFF172033),
-          ],
+          colors: [Color(0xFF0F172A), Color(0xFF111827), Color(0xFF172033)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
@@ -677,9 +642,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
             decoration: BoxDecoration(
               color: _dangerRed.withOpacity(0.16),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: _dangerRed.withOpacity(0.35),
-              ),
+              border: Border.all(color: _dangerRed.withOpacity(0.35)),
             ),
             child: const Icon(
               Icons.groups_rounded,
@@ -728,9 +691,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
       decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.22),
@@ -752,9 +713,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
                 decoration: BoxDecoration(
                   color: _dangerRed.withOpacity(0.14),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _dangerRed.withOpacity(0.26),
-                  ),
+                  border: Border.all(color: _dangerRed.withOpacity(0.26)),
                 ),
                 child: Center(
                   child: Text(
@@ -861,25 +820,21 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
         onPressed: isImporting ? null : importFromPhoneContacts,
         icon: isImporting
             ? const SizedBox(
-          width: 17,
-          height: 17,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: _mapBlue,
-          ),
-        )
+                width: 17,
+                height: 17,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: _mapBlue,
+                ),
+              )
             : const Icon(Icons.contact_phone_rounded),
         label: Text(
           isImporting ? 'Importing...' : 'Import from Phone Contacts',
-          style: const TextStyle(
-            fontWeight: FontWeight.w900,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w900),
         ),
         style: OutlinedButton.styleFrom(
           foregroundColor: _mapBlue,
-          side: BorderSide(
-            color: _mapBlue.withOpacity(0.45),
-          ),
+          side: BorderSide(color: _mapBlue.withOpacity(0.45)),
           backgroundColor: _fieldColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(17),
@@ -908,9 +863,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
         icon: const Icon(Icons.person_add_alt_1_rounded),
         label: const Text(
           'Add Manually',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w900),
         ),
         style: FilledButton.styleFrom(
           backgroundColor: _dangerRed,
@@ -935,9 +888,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
           decoration: BoxDecoration(
             color: const Color(0xFF162033),
             borderRadius: BorderRadius.circular(26),
-            border: Border.all(
-              color: const Color(0xFF2B3A52),
-            ),
+            border: Border.all(color: const Color(0xFF2B3A52)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.38),
@@ -958,20 +909,18 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
                   onPressed: isImporting ? null : importFromPhoneContacts,
                   icon: isImporting
                       ? const SizedBox(
-                    width: 17,
-                    height: 17,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: _mapBlue,
-                    ),
-                  )
+                          width: 17,
+                          height: 17,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: _mapBlue,
+                          ),
+                        )
                       : const Icon(Icons.contact_phone_rounded),
                   label: Text(isImporting ? 'Importing' : 'Import'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _mapBlue,
-                    side: BorderSide(
-                      color: _mapBlue.withOpacity(0.45),
-                    ),
+                    side: BorderSide(color: _mapBlue.withOpacity(0.45)),
                     backgroundColor: _fieldColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
@@ -1031,16 +980,11 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
             decoration: BoxDecoration(
               color: _cardColor,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: _borderColor,
-              ),
+              border: Border.all(color: _borderColor),
             ),
             child: IconButton(
               tooltip: 'Back',
-              icon: const Icon(
-                Icons.arrow_back_rounded,
-                color: Colors.white,
-              ),
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
               onPressed: () {
                 Navigator.of(context).maybePop();
               },
@@ -1054,26 +998,24 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
               decoration: BoxDecoration(
                 color: _cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: _borderColor,
-                ),
+                border: Border.all(color: _borderColor),
               ),
               child: IconButton(
                 onPressed: isImporting ? null : importFromPhoneContacts,
                 tooltip: 'Import from phone contacts',
                 icon: isImporting
                     ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Icon(
-                  Icons.contact_phone_rounded,
-                  color: Colors.white,
-                ),
+                        Icons.contact_phone_rounded,
+                        color: Colors.white,
+                      ),
               ),
             ),
           ),
@@ -1082,11 +1024,7 @@ class _TrustedContactsScreenState extends State<TrustedContactsScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF08101E),
-              Color(0xFF0B1120),
-              Color(0xFF111827),
-            ],
+            colors: [Color(0xFF08101E), Color(0xFF0B1120), Color(0xFF111827)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),

@@ -1,4 +1,4 @@
-package com.example.mobile
+package com.prateekyadav.emergencysos
 
 import android.Manifest
 import android.app.AlarmManager
@@ -409,7 +409,7 @@ class SosLocationForegroundService : Service() {
 
         Log.e(
             TAG,
-            "Location saved in native retry queue. SOS=$sosEventId QueueSize=${trimmedUpdates.size} Lat=${payload.latitude} Lng=${payload.longitude}"
+            "Location saved in native retry queue. SOS=$sosEventId QueueSize=${trimmedUpdates.size}"
         )
     }
 

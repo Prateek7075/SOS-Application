@@ -1,7 +1,8 @@
 import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'auth_token_service.dart';
 
 class ActiveSosSession {
   const ActiveSosSession({
@@ -54,10 +55,10 @@ class ActiveSosSession {
       trackingUrl: trackingUrl ?? this.trackingUrl,
       batteryPercentage: batteryPercentage ?? this.batteryPercentage,
       lastLocationUpdateAtMilliseconds:
-      lastLocationUpdateAtMilliseconds ??
+          lastLocationUpdateAtMilliseconds ??
           this.lastLocationUpdateAtMilliseconds,
       nextLocationUpdateAtMilliseconds:
-      nextLocationUpdateAtMilliseconds ??
+          nextLocationUpdateAtMilliseconds ??
           this.nextLocationUpdateAtMilliseconds,
     );
   }
@@ -68,10 +69,8 @@ class ActiveSosSession {
       'tracking_token': trackingToken,
       'tracking_url': trackingUrl,
       'battery_percentage': batteryPercentage,
-      'last_location_update_at_milliseconds':
-      lastLocationUpdateAtMilliseconds,
-      'next_location_update_at_milliseconds':
-      nextLocationUpdateAtMilliseconds,
+      'last_location_update_at_milliseconds': lastLocationUpdateAtMilliseconds,
+      'next_location_update_at_milliseconds': nextLocationUpdateAtMilliseconds,
     };
   }
 
@@ -108,16 +107,12 @@ class ActiveSosSession {
 }
 
 class ActiveSosLocalService {
-  static const String _legacyActiveSosKey = 'active_sos_session';
+  final AuthTokenService _authTokenService = AuthTokenService();
 
-  String? get _currentUserId {
-    return FirebaseAuth.instance.currentUser?.uid;
-  }
+  Future<String?> _getCurrentUserActiveSosKey() async {
+    final userId = await _authTokenService.getUserId();
 
-  String? get _currentUserActiveSosKey {
-    final userId = _currentUserId;
-
-    if (userId == null || userId.isEmpty) {
+    if (userId == null) {
       return null;
     }
 
@@ -133,7 +128,7 @@ class ActiveSosLocalService {
     DateTime? nextLocationUpdateAt,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    final activeSosKey = _currentUserActiveSosKey;
+    final activeSosKey = await _getCurrentUserActiveSosKey();
 
     if (activeSosKey == null) {
       throw Exception('Cannot save active SOS because user is not logged in');
@@ -147,26 +142,22 @@ class ActiveSosLocalService {
       trackingUrl: trackingUrl,
       batteryPercentage: batteryPercentage,
       lastLocationUpdateAtMilliseconds:
-      lastLocationUpdateAt?.millisecondsSinceEpoch ??
+          lastLocationUpdateAt?.millisecondsSinceEpoch ??
           existingSession?.lastLocationUpdateAtMilliseconds,
       nextLocationUpdateAtMilliseconds:
-      nextLocationUpdateAt?.millisecondsSinceEpoch ??
+          nextLocationUpdateAt?.millisecondsSinceEpoch ??
           existingSession?.nextLocationUpdateAtMilliseconds,
     );
 
-    await prefs.setString(
-      activeSosKey,
-      jsonEncode(session.toJson()),
-    );
-
-    await prefs.remove(_legacyActiveSosKey);
+    await prefs.setString(activeSosKey, jsonEncode(session.toJson()));
   }
 
   Future<ActiveSosSession?> getActiveSos() async {
     final prefs = await SharedPreferences.getInstance();
+
     await prefs.reload();
 
-    final activeSosKey = _currentUserActiveSosKey;
+    final activeSosKey = await _getCurrentUserActiveSosKey();
 
     if (activeSosKey == null) {
       return null;
@@ -174,48 +165,25 @@ class ActiveSosLocalService {
 
     final sessionJson = prefs.getString(activeSosKey);
 
-    if (sessionJson != null && sessionJson.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(sessionJson) as Map<String, dynamic>;
-        final session = ActiveSosSession.fromJson(decoded);
-
-        if (session.sosEventId <= 0 ||
-            session.trackingToken.isEmpty ||
-            session.trackingUrl.isEmpty) {
-          await clear();
-          return null;
-        }
-
-        return session;
-      } catch (_) {
-        await clear();
-        return null;
-      }
-    }
-
-    final legacySessionJson = prefs.getString(_legacyActiveSosKey);
-
-    if (legacySessionJson == null || legacySessionJson.isEmpty) {
+    if (sessionJson == null || sessionJson.isEmpty) {
       return null;
     }
 
     try {
-      final decoded = jsonDecode(legacySessionJson) as Map<String, dynamic>;
+      final decoded = jsonDecode(sessionJson) as Map<String, dynamic>;
+
       final session = ActiveSosSession.fromJson(decoded);
 
       if (session.sosEventId <= 0 ||
           session.trackingToken.isEmpty ||
           session.trackingUrl.isEmpty) {
-        await prefs.remove(_legacyActiveSosKey);
+        await clear();
         return null;
       }
 
-      await prefs.setString(activeSosKey, legacySessionJson);
-      await prefs.remove(_legacyActiveSosKey);
-
       return session;
     } catch (_) {
-      await prefs.remove(_legacyActiveSosKey);
+      await clear();
       return null;
     }
   }
@@ -225,7 +193,8 @@ class ActiveSosLocalService {
     required DateTime nextLocationUpdateAt,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    final activeSosKey = _currentUserActiveSosKey;
+
+    final activeSosKey = await _getCurrentUserActiveSosKey();
 
     if (activeSosKey == null) {
       return;
@@ -239,22 +208,20 @@ class ActiveSosLocalService {
 
     final updatedSession = session.copyWith(
       lastLocationUpdateAtMilliseconds:
-      lastLocationUpdateAt.millisecondsSinceEpoch,
+          lastLocationUpdateAt.millisecondsSinceEpoch,
       nextLocationUpdateAtMilliseconds:
-      nextLocationUpdateAt.millisecondsSinceEpoch,
+          nextLocationUpdateAt.millisecondsSinceEpoch,
     );
 
-    await prefs.setString(
-      activeSosKey,
-      jsonEncode(updatedSession.toJson()),
-    );
+    await prefs.setString(activeSosKey, jsonEncode(updatedSession.toJson()));
   }
 
   Future<void> saveNextLocationUpdateTime({
     required DateTime nextLocationUpdateAt,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    final activeSosKey = _currentUserActiveSosKey;
+
+    final activeSosKey = await _getCurrentUserActiveSosKey();
 
     if (activeSosKey == null) {
       return;
@@ -268,23 +235,19 @@ class ActiveSosLocalService {
 
     final updatedSession = session.copyWith(
       nextLocationUpdateAtMilliseconds:
-      nextLocationUpdateAt.millisecondsSinceEpoch,
+          nextLocationUpdateAt.millisecondsSinceEpoch,
     );
 
-    await prefs.setString(
-      activeSosKey,
-      jsonEncode(updatedSession.toJson()),
-    );
+    await prefs.setString(activeSosKey, jsonEncode(updatedSession.toJson()));
   }
 
   Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
-    final activeSosKey = _currentUserActiveSosKey;
+
+    final activeSosKey = await _getCurrentUserActiveSosKey();
 
     if (activeSosKey != null) {
       await prefs.remove(activeSosKey);
     }
-
-    await prefs.remove(_legacyActiveSosKey);
   }
 }

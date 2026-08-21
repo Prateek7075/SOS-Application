@@ -30,8 +30,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBindingObserver {
-
+class _HomeScreenState extends State<HomeScreen>
+    with RouteAware, WidgetsBindingObserver {
   String sosStatus = 'SOS not started';
 
   String name = 'Not added';
@@ -41,13 +41,15 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
   String relativePhone = 'Not added';
   String address = 'Not added';
 
-  final UserProfileLocalService _profileLocalService = UserProfileLocalService();
+  final UserProfileLocalService _profileLocalService =
+      UserProfileLocalService();
 
   final UserProfileApiService _profileApiService = UserProfileApiService();
 
   final ActiveSosLocalService _activeSosLocalService = ActiveSosLocalService();
 
-  final BackgroundLocationService _backgroundLocationService = BackgroundLocationService();
+  final BackgroundLocationService _backgroundLocationService =
+      BackgroundLocationService();
 
   final SosApiService _sosApiService = SosApiService();
 
@@ -84,8 +86,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
 
   static const bool _showHomeShowcaseEveryTimeForTesting = false;
 
-  static const String _homeShowcaseCompletedKey =
-      'home_showcase_completed_v1';
+  static const String _homeShowcaseCompletedKey = 'home_showcase_completed_v1';
 
   bool _homeShowcaseStarted = false;
 
@@ -95,8 +96,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
   final GlobalKey _contactsShowcaseKey = GlobalKey();
   final GlobalKey _profileShowcaseKey = GlobalKey();
   final GlobalKey _historyShowcaseKey = GlobalKey();
-
-
 
   @override
   void initState() {
@@ -117,13 +116,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
           type: TooltipDefaultActionType.previous,
           backgroundColor: _fieldColor,
           borderRadius: BorderRadius.circular(999),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 8,
-          ),
-          border: Border.all(
-            color: _borderColor,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          border: Border.all(color: _borderColor),
           textStyle: const TextStyle(
             color: Color(0xFFCBD5E1),
             fontWeight: FontWeight.w900,
@@ -133,10 +127,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
           type: TooltipDefaultActionType.next,
           backgroundColor: _dangerRed,
           borderRadius: BorderRadius.circular(999),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           textStyle: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w900,
@@ -146,10 +137,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
           type: TooltipDefaultActionType.skip,
           backgroundColor: Colors.transparent,
           borderRadius: BorderRadius.circular(999),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 8,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           textStyle: const TextStyle(
             color: Color(0xFFFCA5A5),
             fontWeight: FontWeight.w900,
@@ -163,16 +151,13 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(
-        Future<void>.delayed(
-          const Duration(milliseconds: 900),
-          () async {
-            if (!mounted) {
-              return;
-            }
+        Future<void>.delayed(const Duration(milliseconds: 900), () async {
+          if (!mounted) {
+            return;
+          }
 
-            await startHomeIntroFlow();
-          },
-        ),
+          await startHomeIntroFlow();
+        }),
       );
     });
   }
@@ -286,7 +271,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
     return true;
   }
 
-
   Future<void> showShortcutFeatureInfoPopupIfNeeded() async {
     if (!mounted || _shortcutInfoDialogShownInThisSession) {
       return;
@@ -324,9 +308,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
               surfaceTintColor: Colors.transparent,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(26),
-                side: const BorderSide(
-                  color: _borderColor,
-                ),
+                side: const BorderSide(color: _borderColor),
               ),
               titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
               contentPadding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
@@ -339,9 +321,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                     decoration: BoxDecoration(
                       color: _dangerRed.withOpacity(0.14),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: _dangerRed.withOpacity(0.28),
-                      ),
+                      border: Border.all(color: _dangerRed.withOpacity(0.28)),
                     ),
                     child: const Icon(
                       Icons.flash_on_rounded,
@@ -390,19 +370,22 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
 
                     _buildShortcutInfoPoint(
                       icon: Icons.widgets_rounded,
-                      text: 'Add the SOS widget or shortcut icon to your home screen.',
+                      text:
+                          'Add the SOS widget or shortcut icon to your home screen.',
                       color: _mapBlue,
                     ),
                     const SizedBox(height: 10),
                     _buildShortcutInfoPoint(
                       icon: Icons.touch_app_rounded,
-                      text: 'Tap the widget or shortcut to open Quick SOS faster.',
+                      text:
+                          'Tap the widget or shortcut to open Quick SOS faster.',
                       color: _successGreen,
                     ),
                     const SizedBox(height: 10),
                     _buildShortcutInfoPoint(
                       icon: Icons.warning_amber_rounded,
-                      text: 'Use it carefully to avoid accidental emergency alerts.',
+                      text:
+                          'Use it carefully to avoid accidental emergency alerts.',
                       color: _warningAmber,
                     ),
 
@@ -413,9 +396,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                       decoration: BoxDecoration(
                         color: _dangerRed.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: _dangerRed.withOpacity(0.24),
-                        ),
+                        border: Border.all(color: _dangerRed.withOpacity(0.24)),
                       ),
                       child: const Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,10 +435,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                             return Colors.transparent;
                           }),
                           checkColor: WidgetStateProperty.all(Colors.white),
-                          side: const BorderSide(
-                            color: _mutedText,
-                            width: 1.4,
-                          ),
+                          side: const BorderSide(color: _mutedText, width: 1.4),
                         ),
                       ),
                       child: CheckboxListTile(
@@ -495,9 +473,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                   ),
                   child: const Text(
                     'Close',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
                 FilledButton.icon(
@@ -516,9 +492,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                   icon: const Icon(Icons.check_rounded),
                   label: const Text(
                     'Got it',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w900),
                   ),
                 ),
               ],
@@ -533,8 +507,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
     }
   }
 
-
-
   @override
   void didPopNext() {
     // Called when user comes back to Home from Active SOS / Quick SOS.
@@ -547,7 +519,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
       unawaited(loadActiveSos());
     }
   }
-
 
   Future<void> loadSavedProfile() async {
     final savedProfile = await _profileLocalService.getProfile();
@@ -621,9 +592,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
   Future<void> startSos() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ActiveSosScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const ActiveSosScreen()),
     );
 
     await loadActiveSos();
@@ -639,9 +608,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ActiveSosScreen(
-          existingSession: session,
-        ),
+        builder: (context) => ActiveSosScreen(existingSession: session),
       ),
     );
 
@@ -673,9 +640,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
     });
 
     try {
-      await _sosApiService.cancelSos(
-        sosEventId: session.sosEventId,
-      );
+      await _sosApiService.cancelSos(sosEventId: session.sosEventId);
 
       ActiveSosMonitorService.instance.stop();
 
@@ -725,95 +690,93 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
     _isLoadingActiveSosNow = true;
 
     try {
-        final localSession = await _activeSosLocalService.getActiveSos();
+      final localSession = await _activeSosLocalService.getActiveSos();
+
+      if (!mounted) {
+        return;
+      }
+
+      // Fast UI update from local storage first.
+      setState(() {
+        _activeSosSession = localSession;
+        _isCheckingSos = false;
+        sosStatus = localSession == null
+            ? 'Checking active SOS...'
+            : 'SOS is currently active';
+      });
+
+      if (localSession != null) {
+        ActiveSosMonitorService.instance.start();
+      } else {
+        ActiveSosMonitorService.instance.stop();
+      }
+
+      try {
+        final backendActiveSos = await _sosApiService.getActiveSos();
 
         if (!mounted) {
           return;
         }
 
-        // Fast UI update from local storage first.
+        if (backendActiveSos == null) {
+          ActiveSosMonitorService.instance.stop();
+
+          await _backgroundLocationService.stop();
+          await _activeSosLocalService.clear();
+
+          if (!mounted) {
+            return;
+          }
+
+          setState(() {
+            _activeSosSession = null;
+            _isCheckingSos = false;
+            sosStatus = 'SOS not started';
+          });
+
+          return;
+        }
+
+        await _activeSosLocalService.save(
+          sosEventId: backendActiveSos.id,
+          trackingToken: backendActiveSos.trackingToken,
+          trackingUrl: backendActiveSos.trackingUrl,
+          batteryPercentage: localSession?.batteryPercentage,
+        );
+
+        final updatedSession = await _activeSosLocalService.getActiveSos();
+
+        if (!mounted) {
+          return;
+        }
+
         setState(() {
-          _activeSosSession = localSession;
+          _activeSosSession = updatedSession;
+          _isCheckingSos = false;
+          sosStatus = 'SOS is currently active';
+        });
+
+        ActiveSosMonitorService.instance.start();
+      } catch (error) {
+        debugPrint('Could not load active SOS from backend: $error');
+
+        if (!mounted) {
+          return;
+        }
+
+        // If backend check fails, keep local session if available.
+        // Do not clear it because the user may have slow/no internet.
+        setState(() {
           _isCheckingSos = false;
           sosStatus = localSession == null
-              ? 'Checking active SOS...'
+              ? 'SOS not started'
               : 'SOS is currently active';
         });
 
         if (localSession != null) {
           ActiveSosMonitorService.instance.start();
-        } else {
-          ActiveSosMonitorService.instance.stop();
         }
-
-        try {
-          final backendActiveSos = await _sosApiService.getActiveSos();
-
-          if (!mounted) {
-            return;
-          }
-
-          if (backendActiveSos == null) {
-            ActiveSosMonitorService.instance.stop();
-
-            await _backgroundLocationService.stop();
-            await _activeSosLocalService.clear();
-
-            if (!mounted) {
-              return;
-            }
-
-            setState(() {
-              _activeSosSession = null;
-              _isCheckingSos = false;
-              sosStatus = 'SOS not started';
-            });
-
-            return;
-          }
-
-          await _activeSosLocalService.save(
-            sosEventId: backendActiveSos.id,
-            trackingToken: backendActiveSos.trackingToken,
-            trackingUrl: backendActiveSos.trackingUrl,
-            batteryPercentage: localSession?.batteryPercentage,
-          );
-
-          final updatedSession = await _activeSosLocalService.getActiveSos();
-
-          if (!mounted) {
-            return;
-          }
-
-          setState(() {
-            _activeSosSession = updatedSession;
-            _isCheckingSos = false;
-            sosStatus = 'SOS is currently active';
-          });
-
-          ActiveSosMonitorService.instance.start();
-
-        } catch (error) {
-          debugPrint('Could not load active SOS from backend: $error');
-
-          if (!mounted) {
-            return;
-          }
-
-          // If backend check fails, keep local session if available.
-          // Do not clear it because the user may have slow/no internet.
-          setState(() {
-            _isCheckingSos = false;
-            sosStatus = localSession == null
-                ? 'SOS not started'
-                : 'SOS is currently active';
-          });
-
-          if (localSession != null) {
-            ActiveSosMonitorService.instance.start();
-          }
-
-        }
+      }
     } finally {
       _isLoadingActiveSosNow = false;
     }
@@ -901,11 +864,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF08101E),
-              Color(0xFF0B1120),
-              Color(0xFF111827),
-            ],
+            colors: [Color(0xFF08101E), Color(0xFF0B1120), Color(0xFF111827)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -964,9 +923,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
       decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
       ),
       child: Icon(
         isSosActive ? Icons.warning_amber_rounded : Icons.shield_rounded,
@@ -985,18 +942,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
       decoration: BoxDecoration(
         color: color.withOpacity(0.13),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.28),
-        ),
+        border: Border.all(color: color.withOpacity(0.28)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: color,
-          ),
+          Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
           Text(
             label,
@@ -1045,10 +996,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
         height: 1.45,
         fontWeight: FontWeight.w600,
       ),
-      targetShapeBorder: targetShapeBorder ??
-          RoundedRectangleBorder(
-            borderRadius: borderRadius,
-          ),
+      targetShapeBorder:
+          targetShapeBorder ??
+          RoundedRectangleBorder(borderRadius: borderRadius),
       targetBorderRadius: targetShapeBorder == null ? borderRadius : null,
       targetPadding: targetPadding,
       child: child,
@@ -1060,18 +1010,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF111827),
-            Color(0xFF172033),
-          ],
+          colors: [Color(0xFF0F172A), Color(0xFF111827), Color(0xFF172033)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
@@ -1090,8 +1034,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                 width: 62,
                 height: 62,
                 decoration: BoxDecoration(
-                  color: (isSosActive ? _dangerRed : _successGreen)
-                      .withOpacity(0.16),
+                  color: (isSosActive ? _dangerRed : _successGreen).withOpacity(
+                    0.16,
+                  ),
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: (isSosActive ? _dangerRed : _successGreen)
@@ -1175,9 +1120,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
       decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: statusColor.withOpacity(0.30),
-        ),
+        border: Border.all(color: statusColor.withOpacity(0.30)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.24),
@@ -1194,9 +1137,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
             decoration: BoxDecoration(
               color: statusColor.withOpacity(0.14),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: statusColor.withOpacity(0.26),
-              ),
+              border: Border.all(color: statusColor.withOpacity(0.26)),
             ),
             child: Icon(
               isSosActive
@@ -1249,9 +1190,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
       decoration: BoxDecoration(
         color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: color.withOpacity(0.24),
-        ),
+        border: Border.all(color: color.withOpacity(0.24)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1259,10 +1198,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
           Container(
             width: 7,
             height: 7,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 6),
           Text(
@@ -1279,10 +1215,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
     );
   }
 
-  Widget _buildSosButton({
-    required bool isSosActive,
-    required double sosSize,
-  }) {
+  Widget _buildSosButton({required bool isSosActive, required double sosSize}) {
     final bool disabled = _isCheckingSos || _isCancellingSos;
 
     return Center(
@@ -1317,22 +1250,11 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
             ],
             gradient: RadialGradient(
               colors: isSosActive
-                  ? [
-                      const Color(0xFFF87171),
-                      _dangerRed,
-                      _dangerDark,
-                    ]
-                  : [
-                      const Color(0xFFFF8A8A),
-                      _dangerRed,
-                      _dangerDark,
-                    ],
+                  ? [const Color(0xFFF87171), _dangerRed, _dangerDark]
+                  : [const Color(0xFFFF8A8A), _dangerRed, _dangerDark],
               stops: const [0.0, 0.65, 1.0],
             ),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.22),
-              width: 3,
-            ),
+            border: Border.all(color: Colors.white.withOpacity(0.22), width: 3),
           ),
           child: Container(
             margin: const EdgeInsets.all(16),
@@ -1350,10 +1272,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                   _isCheckingSos
                       ? 'CHECKING...'
                       : _isCancellingSos
-                          ? 'STOPPING...'
-                          : isSosActive
-                              ? 'SOS ACTIVE\nTAP TO VIEW'
-                              : 'HOLD\nSOS',
+                      ? 'STOPPING...'
+                      : isSosActive
+                      ? 'SOS ACTIVE\nTAP TO VIEW'
+                      : 'HOLD\nSOS',
                   key: ValueKey(
                     '$_isCheckingSos-$_isCancellingSos-$isSosActive',
                   ),
@@ -1417,18 +1339,14 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
   Future<void> _openTrustedContacts() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const TrustedContactsScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const TrustedContactsScreen()),
     );
   }
 
   Future<void> _openProfile() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ProfileScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const ProfileScreen()),
     );
 
     if (result != null && result is UserProfile) {
@@ -1441,18 +1359,14 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
   Future<void> _openSosHistory() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const SosHistoryScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const SosHistoryScreen()),
     );
   }
 
   Future<void> _openSosMessage() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const CustomSosMessageScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const CustomSosMessageScreen()),
     );
   }
 
@@ -1486,9 +1400,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
           decoration: BoxDecoration(
             color: const Color(0xFF162033), // slightly different from home bg
             borderRadius: BorderRadius.circular(26),
-            border: Border.all(
-              color: const Color(0xFF2B3A52),
-            ),
+            border: Border.all(color: const Color(0xFF2B3A52)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.38),
@@ -1584,15 +1496,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.13),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: color.withOpacity(0.25),
-                  ),
+                  border: Border.all(color: color.withOpacity(0.25)),
                 ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 22,
-                ),
+                child: Icon(icon, color: color, size: 22),
               ),
               const SizedBox(height: 6),
               Text(
@@ -1622,11 +1528,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
       );
     }
 
-    return Expanded(
-      child: item,
-    );
+    return Expanded(child: item);
   }
-
 
   Widget _buildShortcutInfoPoint({
     required IconData icon,
@@ -1638,9 +1541,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
       decoration: BoxDecoration(
         color: _fieldColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1651,15 +1552,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
             decoration: BoxDecoration(
               color: color.withOpacity(0.14),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: color.withOpacity(0.26),
-              ),
+              border: Border.all(color: color.withOpacity(0.26)),
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 19,
-            ),
+            child: Icon(icon, color: color, size: 19),
           ),
           const SizedBox(width: 11),
           Expanded(
@@ -1695,9 +1590,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: _borderColor,
-            ),
+            border: Border.all(color: _borderColor),
           ),
           child: Row(
             children: [
@@ -1707,14 +1600,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware, WidgetsBinding
                 decoration: BoxDecoration(
                   color: iconColor.withOpacity(0.14),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: iconColor.withOpacity(0.26),
-                  ),
+                  border: Border.all(color: iconColor.withOpacity(0.26)),
                 ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                ),
+                child: Icon(icon, color: iconColor),
               ),
               const SizedBox(width: 14),
               Expanded(

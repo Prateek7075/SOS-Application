@@ -1,21 +1,17 @@
 import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/emergency_contact.dart';
+import 'auth_token_service.dart';
 
 class EmergencyContactLocalService {
-  static const String _legacyContactsKey = 'trusted_contacts';
+  final AuthTokenService _authTokenService = AuthTokenService();
 
-  String? get _currentUserId {
-    return FirebaseAuth.instance.currentUser?.uid;
-  }
+  Future<String?> _getCurrentUserContactsKey() async {
+    final userId = await _authTokenService.getUserId();
 
-  String? get _currentUserContactsKey {
-    final userId = _currentUserId;
-
-    if (userId == null || userId.isEmpty) {
+    if (userId == null) {
       return null;
     }
 
@@ -24,7 +20,7 @@ class EmergencyContactLocalService {
 
   Future<void> saveContacts(List<EmergencyContact> contacts) async {
     final prefs = await SharedPreferences.getInstance();
-    final contactsKey = _currentUserContactsKey;
+    final contactsKey = await _getCurrentUserContactsKey();
 
     if (contactsKey == null) {
       throw Exception('Cannot save contacts because user is not logged in');
@@ -35,14 +31,11 @@ class EmergencyContactLocalService {
     }).toList();
 
     await prefs.setStringList(contactsKey, contactsJsonList);
-
-    // Remove old common cache so another account does not read it.
-    await prefs.remove(_legacyContactsKey);
   }
 
   Future<List<EmergencyContact>> getContacts() async {
     final prefs = await SharedPreferences.getInstance();
-    final contactsKey = _currentUserContactsKey;
+    final contactsKey = await _getCurrentUserContactsKey();
 
     if (contactsKey == null) {
       return [];
@@ -50,24 +43,19 @@ class EmergencyContactLocalService {
 
     final contactsJsonList = prefs.getStringList(contactsKey) ?? [];
 
-    // Remove old common cache. We do not migrate contacts because
-    // old cached contacts may belong to another logged-in user.
-    await prefs.remove(_legacyContactsKey);
-
     return contactsJsonList.map((contactJson) {
       final decodedContact = jsonDecode(contactJson);
+
       return EmergencyContact.fromJson(decodedContact);
     }).toList();
   }
 
   Future<void> clearContacts() async {
     final prefs = await SharedPreferences.getInstance();
-    final contactsKey = _currentUserContactsKey;
+    final contactsKey = await _getCurrentUserContactsKey();
 
     if (contactsKey != null) {
       await prefs.remove(contactsKey);
     }
-
-    await prefs.remove(_legacyContactsKey);
   }
 }

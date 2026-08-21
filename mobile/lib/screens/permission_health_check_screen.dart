@@ -12,17 +12,20 @@ class PermissionHealthCheckScreen extends StatefulWidget {
   const PermissionHealthCheckScreen({super.key});
 
   @override
-  State<PermissionHealthCheckScreen> createState() => _PermissionHealthCheckScreenState();
+  State<PermissionHealthCheckScreen> createState() =>
+      _PermissionHealthCheckScreenState();
 }
 
 class _PermissionHealthCheckScreenState
     extends State<PermissionHealthCheckScreen> {
+  final EmergencyContactLocalService _contactLocalService =
+      EmergencyContactLocalService();
 
-  final EmergencyContactLocalService _contactLocalService = EmergencyContactLocalService();
+  final UserProfileLocalService _profileLocalService =
+      UserProfileLocalService();
 
-  final UserProfileLocalService _profileLocalService = UserProfileLocalService();
-
-  final BatteryOptimizationService _batteryOptimizationService = BatteryOptimizationService();
+  final BatteryOptimizationService _batteryOptimizationService =
+      BatteryOptimizationService();
 
   final NetworkService _networkService = NetworkService();
 
@@ -85,8 +88,8 @@ class _PermissionHealthCheckScreenState
     String batteryOptimizationStatus = 'Could not check';
 
     try {
-      batteryOptimizationReady =
-      await _batteryOptimizationService.isIgnoringBatteryOptimizations();
+      batteryOptimizationReady = await _batteryOptimizationService
+          .isIgnoringBatteryOptimizations();
 
       batteryOptimizationStatus = batteryOptimizationReady
           ? 'Unrestricted / allowed'
@@ -103,7 +106,7 @@ class _PermissionHealthCheckScreenState
     setState(() {
       _locationPermissionReady =
           locationPermission == LocationPermission.always ||
-              locationPermission == LocationPermission.whileInUse;
+          locationPermission == LocationPermission.whileInUse;
 
       _gpsEnabled = gpsEnabled;
 
@@ -244,16 +247,11 @@ class _PermissionHealthCheckScreenState
             decoration: BoxDecoration(
               color: _cardColor,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: _borderColor,
-              ),
+              border: Border.all(color: _borderColor),
             ),
             child: IconButton(
               tooltip: 'Back',
-              icon: const Icon(
-                Icons.arrow_back_rounded,
-                color: Colors.white,
-              ),
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
               onPressed: () {
                 Navigator.of(context).maybePop();
               },
@@ -267,17 +265,12 @@ class _PermissionHealthCheckScreenState
               decoration: BoxDecoration(
                 color: _cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: _borderColor,
-                ),
+                border: Border.all(color: _borderColor),
               ),
               child: IconButton(
                 tooltip: 'Refresh',
                 onPressed: _isLoading ? null : runHealthCheck,
-                icon: const Icon(
-                  Icons.refresh_rounded,
-                  color: Colors.white,
-                ),
+                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               ),
             ),
           ),
@@ -286,11 +279,7 @@ class _PermissionHealthCheckScreenState
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF08101E),
-              Color(0xFF0B1120),
-              Color(0xFF111827),
-            ],
+            colors: [Color(0xFF08101E), Color(0xFF0B1120), Color(0xFF111827)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -299,37 +288,37 @@ class _PermissionHealthCheckScreenState
           child: _isLoading
               ? _buildLoadingView()
               : RefreshIndicator(
-            color: _dangerRed,
-            backgroundColor: _cardColor,
-            onRefresh: runHealthCheck,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: ClampingScrollPhysics(),
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
-              children: [
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 560),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildOverallCard(),
-                        const SizedBox(height: 20),
-                        _buildHealthChecksCard(),
-                        const SizedBox(height: 18),
-                        _buildInternetCard(),
-                        const SizedBox(height: 18),
-                        _buildBatteryOptimizationCard(),
-                        const SizedBox(height: 20),
-                        _buildRefreshButton(),
-                      ],
+                  color: _dangerRed,
+                  backgroundColor: _cardColor,
+                  onRefresh: runHealthCheck,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: ClampingScrollPhysics(),
                     ),
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+                    children: [
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 560),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _buildOverallCard(),
+                              const SizedBox(height: 20),
+                              _buildHealthChecksCard(),
+                              const SizedBox(height: 18),
+                              _buildInternetCard(),
+                              const SizedBox(height: 18),
+                              _buildBatteryOptimizationCard(),
+                              const SizedBox(height: 20),
+                              _buildRefreshButton(),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
         ),
       ),
     );
@@ -340,10 +329,7 @@ class _PermissionHealthCheckScreenState
       child: SizedBox(
         width: 34,
         height: 34,
-        child: CircularProgressIndicator(
-          color: _dangerRed,
-          strokeWidth: 3,
-        ),
+        child: CircularProgressIndicator(color: _dangerRed, strokeWidth: 3),
       ),
     );
   }
@@ -358,18 +344,12 @@ class _PermissionHealthCheckScreenState
       decoration: BoxDecoration(
         color: color.withOpacity(0.13),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.28),
-        ),
+        border: Border.all(color: color.withOpacity(0.28)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: color,
-          ),
+          Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
           Text(
             label,
@@ -391,18 +371,12 @@ class _PermissionHealthCheckScreenState
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF111827),
-            Color(0xFF172033),
-          ],
+          colors: [Color(0xFF0F172A), Color(0xFF111827), Color(0xFF172033)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: overallColor.withOpacity(0.35),
-        ),
+        border: Border.all(color: overallColor.withOpacity(0.35)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
@@ -423,9 +397,7 @@ class _PermissionHealthCheckScreenState
                 decoration: BoxDecoration(
                   color: overallColor.withOpacity(0.16),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: overallColor.withOpacity(0.35),
-                  ),
+                  border: Border.all(color: overallColor.withOpacity(0.35)),
                 ),
                 child: Icon(
                   isSosReady()
@@ -515,9 +487,7 @@ class _PermissionHealthCheckScreenState
       decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.24),
@@ -556,7 +526,9 @@ class _PermissionHealthCheckScreenState
                 : 'Location permission is required for SOS location',
             isReady: _locationPermissionReady,
             actionLabel: _locationPermissionReady ? null : 'Allow',
-            onAction: _locationPermissionReady ? null : requestLocationPermission,
+            onAction: _locationPermissionReady
+                ? null
+                : requestLocationPermission,
           ),
           _buildCheckTile(
             icon: Icons.gps_fixed_rounded,
@@ -586,8 +558,9 @@ class _PermissionHealthCheckScreenState
                 : 'Needed only when importing contacts from phone',
             isReady: _contactsPermissionReady,
             actionLabel: _contactsPermissionReady ? null : 'Allow',
-            onAction:
-            _contactsPermissionReady ? null : requestContactsPermission,
+            onAction: _contactsPermissionReady
+                ? null
+                : requestContactsPermission,
             isOptional: true,
           ),
           _buildCheckTile(
@@ -614,8 +587,9 @@ class _PermissionHealthCheckScreenState
                 : _batteryOptimizationStatus,
             isReady: _batteryOptimizationReady,
             actionLabel: _batteryOptimizationReady ? null : 'Settings',
-            onAction:
-            _batteryOptimizationReady ? null : openBatteryOptimizationSettingsPage,
+            onAction: _batteryOptimizationReady
+                ? null
+                : openBatteryOptimizationSettingsPage,
           ),
         ],
       ),
@@ -649,9 +623,7 @@ class _PermissionHealthCheckScreenState
       decoration: BoxDecoration(
         color: _fieldColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: statusColor.withOpacity(0.18),
-        ),
+        border: Border.all(color: statusColor.withOpacity(0.18)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -662,15 +634,9 @@ class _PermissionHealthCheckScreenState
             decoration: BoxDecoration(
               color: statusColor.withOpacity(0.14),
               borderRadius: BorderRadius.circular(15),
-              border: Border.all(
-                color: statusColor.withOpacity(0.24),
-              ),
+              border: Border.all(color: statusColor.withOpacity(0.24)),
             ),
-            child: Icon(
-              icon,
-              color: statusColor,
-              size: 23,
-            ),
+            child: Icon(icon, color: statusColor, size: 23),
           ),
           const SizedBox(width: 13),
           Expanded(
@@ -703,9 +669,7 @@ class _PermissionHealthCheckScreenState
                       onPressed: onAction,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: statusColor,
-                        side: BorderSide(
-                          color: statusColor.withOpacity(0.35),
-                        ),
+                        side: BorderSide(color: statusColor.withOpacity(0.35)),
                         backgroundColor: statusColor.withOpacity(0.08),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(13),
@@ -713,9 +677,7 @@ class _PermissionHealthCheckScreenState
                       ),
                       child: Text(
                         actionLabel,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
                     ),
                   ),
@@ -725,16 +687,11 @@ class _PermissionHealthCheckScreenState
           ),
           const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 9,
-              vertical: 6,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
             decoration: BoxDecoration(
               color: statusColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(
-                color: statusColor.withOpacity(0.22),
-              ),
+              border: Border.all(color: statusColor.withOpacity(0.22)),
             ),
             child: Text(
               statusText,
@@ -759,9 +716,7 @@ class _PermissionHealthCheckScreenState
       decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
       ),
       child: Row(
         children: [
@@ -771,9 +726,7 @@ class _PermissionHealthCheckScreenState
             decoration: BoxDecoration(
               color: statusColor.withOpacity(0.14),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: statusColor.withOpacity(0.24),
-              ),
+              border: Border.all(color: statusColor.withOpacity(0.24)),
             ),
             child: Icon(
               noInternet
@@ -821,18 +774,12 @@ class _PermissionHealthCheckScreenState
       decoration: BoxDecoration(
         color: _fieldColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: _warningAmber.withOpacity(0.22),
-        ),
+        border: Border.all(color: _warningAmber.withOpacity(0.22)),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.battery_alert_outlined,
-            color: _warningAmber,
-            size: 24,
-          ),
+          Icon(Icons.battery_alert_outlined, color: _warningAmber, size: 24),
           SizedBox(width: 12),
           Expanded(
             child: Text(

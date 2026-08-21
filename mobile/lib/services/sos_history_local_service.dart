@@ -1,25 +1,27 @@
 import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/sos_history_item.dart';
+import 'auth_token_service.dart';
 
 class SosHistoryLocalService {
   static const String _keyPrefix = 'sos_history_';
 
-  String? get _userKey {
-    final user = FirebaseAuth.instance.currentUser;
+  final AuthTokenService _authTokenService = AuthTokenService();
 
-    if (user == null) {
+  Future<String?> _getUserKey() async {
+    final userId = await _authTokenService.getUserId();
+
+    if (userId == null) {
       return null;
     }
 
-    return '$_keyPrefix${user.uid}';
+    return '$_keyPrefix$userId';
   }
 
   Future<List<SosHistoryItem>> getHistory() async {
-    final key = _userKey;
+    final key = await _getUserKey();
 
     if (key == null) {
       return [];
@@ -40,9 +42,7 @@ class SosHistoryLocalService {
       }
 
       return decoded.map((item) {
-        return SosHistoryItem.fromJson(
-          Map<String, dynamic>.from(item as Map),
-        );
+        return SosHistoryItem.fromJson(Map<String, dynamic>.from(item as Map));
       }).toList();
     } catch (_) {
       return [];
@@ -50,7 +50,7 @@ class SosHistoryLocalService {
   }
 
   Future<void> saveRawHistory(List<dynamic> history) async {
-    final key = _userKey;
+    final key = await _getUserKey();
 
     if (key == null) {
       return;
@@ -58,14 +58,11 @@ class SosHistoryLocalService {
 
     final prefs = await SharedPreferences.getInstance();
 
-    await prefs.setString(
-      key,
-      jsonEncode(history),
-    );
+    await prefs.setString(key, jsonEncode(history));
   }
 
   Future<void> clear() async {
-    final key = _userKey;
+    final key = await _getUserKey();
 
     if (key == null) {
       return;

@@ -41,25 +41,22 @@ class _QuickSosScreenState extends State<QuickSosScreen> {
   void startCountdown() {
     _timer?.cancel();
 
-    _timer = Timer.periodic(
-      const Duration(seconds: 1),
-          (timer) {
-        if (!mounted) {
-          timer.cancel();
-          return;
-        }
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
 
-        if (_secondsLeft <= 1) {
-          timer.cancel();
-          startSosNow();
-          return;
-        }
+      if (_secondsLeft <= 1) {
+        timer.cancel();
+        startSosNow();
+        return;
+      }
 
-        setState(() {
-          _secondsLeft--;
-        });
-      },
-    );
+      setState(() {
+        _secondsLeft--;
+      });
+    });
   }
 
   Future<void> startSosNow() async {
@@ -72,10 +69,8 @@ class _QuickSosScreenState extends State<QuickSosScreen> {
 
     await Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ActiveSosScreen(),
-      ),
-          (route) => route.isFirst,
+      MaterialPageRoute(builder: (context) => const ActiveSosScreen()),
+      (route) => route.isFirst,
     );
   }
 
@@ -109,16 +104,11 @@ class _QuickSosScreenState extends State<QuickSosScreen> {
             decoration: BoxDecoration(
               color: _cardColor,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: _borderColor,
-              ),
+              border: Border.all(color: _borderColor),
             ),
             child: IconButton(
               tooltip: 'Back',
-              icon: const Icon(
-                Icons.arrow_back_rounded,
-                color: Colors.white,
-              ),
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
               onPressed: cancelQuickSos,
             ),
           ),
@@ -127,11 +117,7 @@ class _QuickSosScreenState extends State<QuickSosScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF08101E),
-              Color(0xFF0B1120),
-              Color(0xFF111827),
-            ],
+            colors: [Color(0xFF08101E), Color(0xFF0B1120), Color(0xFF111827)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -192,18 +178,12 @@ class _QuickSosScreenState extends State<QuickSosScreen> {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF111827),
-            Color(0xFF172033),
-          ],
+          colors: [Color(0xFF0F172A), Color(0xFF111827), Color(0xFF172033)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
@@ -227,23 +207,12 @@ class _QuickSosScreenState extends State<QuickSosScreen> {
                 ),
               ],
               gradient: const RadialGradient(
-                colors: [
-                  Color(0xFFF87171),
-                  _dangerRed,
-                  _dangerDark,
-                ],
+                colors: [Color(0xFFF87171), _dangerRed, _dangerDark],
                 stops: [0.0, 0.65, 1.0],
               ),
-              border: Border.all(
-                color: Colors.white24,
-                width: 2.5,
-              ),
+              border: Border.all(color: Colors.white24, width: 2.5),
             ),
-            child: const Icon(
-              Icons.sos_rounded,
-              color: Colors.white,
-              size: 66,
-            ),
+            child: const Icon(Icons.sos_rounded, color: Colors.white, size: 66),
           ),
           const SizedBox(height: 22),
           const Text(
@@ -279,10 +248,7 @@ class _QuickSosScreenState extends State<QuickSosScreen> {
       decoration: BoxDecoration(
         color: _cardColor,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: _dangerRed.withOpacity(0.35),
-          width: 3,
-        ),
+        border: Border.all(color: _dangerRed.withOpacity(0.35), width: 3),
         boxShadow: [
           BoxShadow(
             color: _dangerRed.withOpacity(0.22),
@@ -354,15 +320,11 @@ class _QuickSosScreenState extends State<QuickSosScreen> {
         icon: const Icon(Icons.close_rounded),
         label: const Text(
           'Cancel Quick SOS',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w900),
         ),
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFFCBD5E1),
-          side: const BorderSide(
-            color: _borderColor,
-          ),
+          side: const BorderSide(color: _borderColor),
           backgroundColor: _fieldColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
@@ -378,18 +340,12 @@ class _QuickSosScreenState extends State<QuickSosScreen> {
       decoration: BoxDecoration(
         color: _fieldColor,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: _warningAmber.withOpacity(0.22),
-        ),
+        border: Border.all(color: _warningAmber.withOpacity(0.22)),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.info_outline_rounded,
-            color: _warningAmber,
-            size: 22,
-          ),
+          Icon(Icons.info_outline_rounded, color: _warningAmber, size: 22),
           SizedBox(width: 11),
           Expanded(
             child: Text(

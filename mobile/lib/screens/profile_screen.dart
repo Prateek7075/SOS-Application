@@ -1,19 +1,16 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/user_profile.dart';
 import '../services/active_sos_local_service.dart';
-import '../services/auth_service.dart';
+import '../services/auth_session_service.dart';
+import 'login_screen.dart';
 import '../services/background_location_service.dart';
 import '../services/sos_api_service.dart';
 import '../services/user_profile_api_service.dart';
 import '../services/user_profile_local_service.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({
-    super.key,
-    this.initialProfile,
-  });
+  const ProfileScreen({super.key, this.initialProfile});
 
   final UserProfile? initialProfile;
 
@@ -23,28 +20,27 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final UserProfileLocalService _profileLocalService =
-  UserProfileLocalService();
+      UserProfileLocalService();
 
   final UserProfileApiService _profileApiService = UserProfileApiService();
 
   final ActiveSosLocalService _activeSosLocalService = ActiveSosLocalService();
 
   final BackgroundLocationService _backgroundLocationService =
-  BackgroundLocationService();
+      BackgroundLocationService();
 
   final SosApiService _sosApiService = SosApiService();
 
-  final AuthService _authService = AuthService();
+  final AuthSessionService _authSessionService = AuthSessionService();
 
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _bloodGroupController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _relativeNameController =
-  TextEditingController();
+  final TextEditingController _relativeNameController = TextEditingController();
   final TextEditingController _relativePhoneController =
-  TextEditingController();
+      TextEditingController();
   final TextEditingController _addressController = TextEditingController();
 
   bool _isSaving = false;
@@ -216,9 +212,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             surfaceTintColor: Colors.transparent,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(26),
-              side: const BorderSide(
-                color: _borderColor,
-              ),
+              side: const BorderSide(color: _borderColor),
             ),
             titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
             contentPadding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
@@ -231,9 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: _dangerRed.withOpacity(0.14),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: _dangerRed.withOpacity(0.28),
-                    ),
+                    border: Border.all(color: _dangerRed.withOpacity(0.28)),
                   ),
                   child: const Icon(
                     Icons.logout_rounded,
@@ -276,9 +268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: const Text(
                   'Cancel',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
               FilledButton.icon(
@@ -288,9 +278,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: const Icon(Icons.logout_rounded),
                 label: const Text(
                   'Logout',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w900),
                 ),
                 style: FilledButton.styleFrom(
                   backgroundColor: _dangerRed,
@@ -317,13 +305,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      await _authService.logout();
+      await _authSessionService.logout();
 
       if (!mounted) {
         return;
       }
 
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
     } catch (error) {
       if (!mounted) {
         return;
@@ -360,18 +351,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       await _profileLocalService.saveProfile(localProfile);
-
-      final firebaseUser = FirebaseAuth.instance.currentUser;
-
-      if (firebaseUser != null && localProfile.name.isNotEmpty) {
-        try {
-          await firebaseUser.updateDisplayName(localProfile.name);
-          await firebaseUser.reload();
-        } catch (error) {
-          debugPrint('Firebase display name update failed: $error');
-        }
-      }
-
       try {
         final serverProfile = await _profileApiService.updateProfile(
           localProfile,
@@ -461,45 +440,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(
-        icon,
-        color: _mutedText,
-      ),
+      prefixIcon: Icon(icon, color: _mutedText),
       labelStyle: const TextStyle(
         color: _mutedText,
         fontWeight: FontWeight.w600,
       ),
       filled: true,
       fillColor: _fieldColor,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 16,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _borderColor,
-        ),
+        borderSide: const BorderSide(color: _borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _mapBlue,
-          width: 1.4,
-        ),
+        borderSide: const BorderSide(color: _mapBlue, width: 1.4),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _dangerRed,
-        ),
+        borderSide: const BorderSide(color: _dangerRed),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _dangerRed,
-          width: 1.4,
-        ),
+        borderSide: const BorderSide(color: _dangerRed, width: 1.4),
       ),
       errorStyle: const TextStyle(
         color: Color(0xFFFCA5A5),
@@ -533,10 +496,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         height: 1.35,
       ),
       cursorColor: _mapBlue,
-      decoration: _inputDecoration(
-        label: label,
-        icon: icon,
-      ),
+      decoration: _inputDecoration(label: label, icon: icon),
     );
   }
 
@@ -565,16 +525,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             decoration: BoxDecoration(
               color: _cardColor,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: _borderColor,
-              ),
+              border: Border.all(color: _borderColor),
             ),
             child: IconButton(
               tooltip: 'Back',
-              icon: const Icon(
-                Icons.arrow_back_rounded,
-                color: Colors.white,
-              ),
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
               onPressed: () {
                 Navigator.of(context).maybePop();
               },
@@ -588,26 +543,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 color: _cardColor,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: _borderColor,
-                ),
+                border: Border.all(color: _borderColor),
               ),
               child: IconButton(
                 onPressed: _isLoggingOut ? null : logout,
                 tooltip: 'Logout',
                 icon: _isLoggingOut
                     ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-                    : const Icon(
-                  Icons.logout_rounded,
-                  color: Colors.white,
-                ),
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.logout_rounded, color: Colors.white),
               ),
             ),
           ),
@@ -616,11 +566,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF08101E),
-              Color(0xFF0B1120),
-              Color(0xFF111827),
-            ],
+            colors: [Color(0xFF08101E), Color(0xFF0B1120), Color(0xFF111827)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -668,18 +614,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF111827),
-            Color(0xFF172033),
-          ],
+          colors: [Color(0xFF0F172A), Color(0xFF111827), Color(0xFF172033)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
@@ -696,9 +636,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             decoration: BoxDecoration(
               color: _dangerRed.withOpacity(0.16),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: _dangerRed.withOpacity(0.35),
-              ),
+              border: Border.all(color: _dangerRed.withOpacity(0.35)),
             ),
             child: const Icon(
               Icons.health_and_safety_rounded,
@@ -743,19 +681,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: _fieldColor,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
       ),
       child: const Row(
         children: [
           SizedBox(
             width: 22,
             height: 22,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.4,
-              color: _mapBlue,
-            ),
+            child: CircularProgressIndicator(strokeWidth: 2.4, color: _mapBlue),
           ),
           SizedBox(width: 12),
           Expanded(
@@ -779,9 +712,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.24),
@@ -878,13 +809,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         onPressed: _isSaving ? null : saveProfile,
         icon: _isSaving
             ? const SizedBox(
-          width: 18,
-          height: 18,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Colors.white,
-          ),
-        )
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
             : const Icon(Icons.save_rounded),
         label: Text(
           _isSaving ? 'Saving Profile...' : 'Save Profile',
@@ -916,25 +847,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
         onPressed: _isLoggingOut ? null : logout,
         icon: _isLoggingOut
             ? const SizedBox(
-          width: 17,
-          height: 17,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Color(0xFFFCA5A5),
-          ),
-        )
+                width: 17,
+                height: 17,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFFFCA5A5),
+                ),
+              )
             : const Icon(Icons.logout_rounded),
         label: Text(
           _isLoggingOut ? 'Logging out...' : 'Logout',
-          style: const TextStyle(
-            fontWeight: FontWeight.w900,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w900),
         ),
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFFFCA5A5),
-          side: const BorderSide(
-            color: _borderColor,
-          ),
+          side: const BorderSide(color: _borderColor),
           backgroundColor: _fieldColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(17),
@@ -950,18 +877,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: _fieldColor,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: _dangerRed.withOpacity(0.22),
-        ),
+        border: Border.all(color: _dangerRed.withOpacity(0.22)),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.info_outline_rounded,
-            color: _dangerRed,
-            size: 22,
-          ),
+          Icon(Icons.info_outline_rounded, color: _dangerRed, size: 22),
           SizedBox(width: 12),
           Expanded(
             child: Text(

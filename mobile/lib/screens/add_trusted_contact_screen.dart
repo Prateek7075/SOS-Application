@@ -97,10 +97,7 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      prefixIcon: Icon(
-        icon,
-        color: _mutedText,
-      ),
+      prefixIcon: Icon(icon, color: _mutedText),
       labelStyle: const TextStyle(
         color: _mutedText,
         fontWeight: FontWeight.w600,
@@ -111,35 +108,22 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
       ),
       filled: true,
       fillColor: _fieldColor,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 16,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _borderColor,
-        ),
+        borderSide: const BorderSide(color: _borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _mapBlue,
-          width: 1.4,
-        ),
+        borderSide: const BorderSide(color: _mapBlue, width: 1.4),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _dangerRed,
-        ),
+        borderSide: const BorderSide(color: _dangerRed),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _dangerRed,
-          width: 1.4,
-        ),
+        borderSide: const BorderSide(color: _dangerRed, width: 1.4),
       ),
       errorStyle: const TextStyle(
         color: Color(0xFFFCA5A5),
@@ -158,18 +142,12 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
       decoration: BoxDecoration(
         color: color.withOpacity(0.13),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.28),
-        ),
+        border: Border.all(color: color.withOpacity(0.28)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: color,
-          ),
+          Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
           Text(
             label,
@@ -189,18 +167,12 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF111827),
-            Color(0xFF172033),
-          ],
+          colors: [Color(0xFF0F172A), Color(0xFF111827), Color(0xFF172033)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
@@ -221,9 +193,7 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
                 decoration: BoxDecoration(
                   color: _dangerRed.withOpacity(0.16),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _dangerRed.withOpacity(0.35),
-                  ),
+                  border: Border.all(color: _dangerRed.withOpacity(0.35)),
                 ),
                 child: const Icon(
                   Icons.person_add_alt_1_rounded,
@@ -292,9 +262,7 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
       decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.24),
@@ -338,10 +306,7 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
               icon: Icons.person_outline_rounded,
             ),
             validator: (value) {
-              return requiredValidator(
-                value,
-                'Please enter contact name',
-              );
+              return requiredValidator(value, 'Please enter contact name');
             },
           ),
           const SizedBox(height: 14),
@@ -399,10 +364,7 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
       ),
       child: FilledButton.icon(
         onPressed: saveContact,
-        icon: const Icon(
-          Icons.verified_user_rounded,
-          size: 22,
-        ),
+        icon: const Icon(Icons.verified_user_rounded, size: 22),
         label: const Text(
           'Save Trusted Contact',
           style: TextStyle(
@@ -430,18 +392,12 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
       decoration: BoxDecoration(
         color: _fieldColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.info_outline_rounded,
-            color: _warningAmber,
-            size: 22,
-          ),
+          Icon(Icons.info_outline_rounded, color: _warningAmber, size: 22),
           SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -484,16 +440,11 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFF111827),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: const Color(0xFF243041),
-              ),
+              border: Border.all(color: const Color(0xFF243041)),
             ),
             child: IconButton(
               tooltip: 'Back',
-              icon: const Icon(
-                Icons.arrow_back_rounded,
-                color: Colors.white,
-              ),
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
               onPressed: () {
                 Navigator.of(context).maybePop();
               },
@@ -504,11 +455,7 @@ class _AddTrustedContactScreenState extends State<AddTrustedContactScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF08101E),
-              Color(0xFF0B1120),
-              Color(0xFF111827),
-            ],
+            colors: [Color(0xFF08101E), Color(0xFF0B1120), Color(0xFF111827)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),

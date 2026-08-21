@@ -11,7 +11,7 @@ class CustomSosMessageScreen extends StatefulWidget {
 
 class _CustomSosMessageScreenState extends State<CustomSosMessageScreen> {
   final CustomSosMessageLocalService _messageLocalService =
-  CustomSosMessageLocalService();
+      CustomSosMessageLocalService();
 
   final TextEditingController _messageController = TextEditingController();
 
@@ -141,9 +141,7 @@ Please contact me immediately.
           surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(26),
-            side: const BorderSide(
-              color: _borderColor,
-            ),
+            side: const BorderSide(color: _borderColor),
           ),
           titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
           contentPadding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
@@ -156,9 +154,7 @@ Please contact me immediately.
                 decoration: BoxDecoration(
                   color: _dangerRed.withOpacity(0.14),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: _dangerRed.withOpacity(0.28),
-                  ),
+                  border: Border.all(color: _dangerRed.withOpacity(0.28)),
                 ),
                 child: const Icon(
                   Icons.restart_alt_rounded,
@@ -201,9 +197,7 @@ Please contact me immediately.
               ),
               child: const Text(
                 'Cancel',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
             FilledButton(
@@ -219,9 +213,7 @@ Please contact me immediately.
               ),
               child: const Text(
                 'Reset',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w900),
               ),
             ),
           ],
@@ -297,10 +289,7 @@ Please contact me immediately.
       alignLabelWithHint: true,
       prefixIcon: const Padding(
         padding: EdgeInsets.only(bottom: 82),
-        child: Icon(
-          Icons.message_outlined,
-          color: _mutedText,
-        ),
+        child: Icon(Icons.message_outlined, color: _mutedText),
       ),
       hintStyle: TextStyle(
         color: _mutedText.withOpacity(0.7),
@@ -314,29 +303,19 @@ Please contact me immediately.
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _borderColor,
-        ),
+        borderSide: const BorderSide(color: _borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _mapBlue,
-          width: 1.4,
-        ),
+        borderSide: const BorderSide(color: _mapBlue, width: 1.4),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _dangerRed,
-        ),
+        borderSide: const BorderSide(color: _dangerRed),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: _dangerRed,
-          width: 1.4,
-        ),
+        borderSide: const BorderSide(color: _dangerRed, width: 1.4),
       ),
     );
   }
@@ -351,18 +330,12 @@ Please contact me immediately.
       decoration: BoxDecoration(
         color: color.withOpacity(0.13),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.28),
-        ),
+        border: Border.all(color: color.withOpacity(0.28)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: color,
-          ),
+          Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
           Text(
             label,
@@ -382,18 +355,12 @@ Please contact me immediately.
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF0F172A),
-            Color(0xFF111827),
-            Color(0xFF172033),
-          ],
+          colors: [Color(0xFF0F172A), Color(0xFF111827), Color(0xFF172033)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.28),
@@ -413,9 +380,7 @@ Please contact me immediately.
                 decoration: BoxDecoration(
                   color: _dangerRed.withOpacity(0.16),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _dangerRed.withOpacity(0.35),
-                  ),
+                  border: Border.all(color: _dangerRed.withOpacity(0.35)),
                 ),
                 child: const Icon(
                   Icons.edit_note_rounded,
@@ -486,9 +451,7 @@ Please contact me immediately.
       decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.24),
@@ -558,19 +521,14 @@ Please contact me immediately.
       decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Row(
             children: [
-              Icon(
-                Icons.preview_rounded,
-                color: _dangerRed,
-              ),
+              Icon(Icons.preview_rounded, color: _dangerRed),
               SizedBox(width: 9),
               Text(
                 'Preview SMS',
@@ -588,9 +546,7 @@ Please contact me immediately.
             decoration: BoxDecoration(
               color: _fieldColor,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: _borderColor,
-              ),
+              border: Border.all(color: _borderColor),
             ),
             child: Text(
               getPreviewMessage(),
@@ -627,13 +583,13 @@ Please contact me immediately.
             onPressed: _isSaving ? null : saveMessage,
             icon: _isSaving
                 ? const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
                 : const Icon(Icons.verified_rounded),
             label: Text(
               _isSaving ? 'Saving Message...' : 'Save SOS Message',
@@ -663,15 +619,11 @@ Please contact me immediately.
             icon: const Icon(Icons.restart_alt_rounded),
             label: const Text(
               'Reset to Default',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-              ),
+              style: TextStyle(fontWeight: FontWeight.w900),
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFFFCA5A5),
-              side: const BorderSide(
-                color: _borderColor,
-              ),
+              side: const BorderSide(color: _borderColor),
               backgroundColor: _fieldColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(17),
@@ -689,18 +641,12 @@ Please contact me immediately.
       decoration: BoxDecoration(
         color: _fieldColor,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: _borderColor,
-        ),
+        border: Border.all(color: _borderColor),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.info_outline_rounded,
-            color: _warningAmber,
-            size: 22,
-          ),
+          Icon(Icons.info_outline_rounded, color: _warningAmber, size: 22),
           SizedBox(width: 11),
           Expanded(
             child: Text(
@@ -723,10 +669,7 @@ Please contact me immediately.
       child: SizedBox(
         width: 34,
         height: 34,
-        child: CircularProgressIndicator(
-          color: _dangerRed,
-          strokeWidth: 3,
-        ),
+        child: CircularProgressIndicator(color: _dangerRed, strokeWidth: 3),
       ),
     );
   }
@@ -756,16 +699,11 @@ Please contact me immediately.
             decoration: BoxDecoration(
               color: _cardColor,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: _borderColor,
-              ),
+              border: Border.all(color: _borderColor),
             ),
             child: IconButton(
               tooltip: 'Back',
-              icon: const Icon(
-                Icons.arrow_back_rounded,
-                color: Colors.white,
-              ),
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
               onPressed: () {
                 Navigator.of(context).maybePop();
               },
@@ -776,11 +714,7 @@ Please contact me immediately.
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF08101E),
-              Color(0xFF0B1120),
-              Color(0xFF111827),
-            ],
+            colors: [Color(0xFF08101E), Color(0xFF0B1120), Color(0xFF111827)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -789,30 +723,30 @@ Please contact me immediately.
           child: _isLoading
               ? _buildLoadingView()
               : ListView(
-            physics: const ClampingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
-            children: [
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 560),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildHeaderCard(),
-                      const SizedBox(height: 22),
-                      _buildEditorCard(),
-                      const SizedBox(height: 18),
-                      _buildPreviewCard(),
-                      const SizedBox(height: 18),
-                      _buildSafetyNote(),
-                      const SizedBox(height: 22),
-                      _buildButtons(),
-                    ],
-                  ),
+                  physics: const ClampingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+                  children: [
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 560),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildHeaderCard(),
+                            const SizedBox(height: 22),
+                            _buildEditorCard(),
+                            const SizedBox(height: 18),
+                            _buildPreviewCard(),
+                            const SizedBox(height: 18),
+                            _buildSafetyNote(),
+                            const SizedBox(height: 22),
+                            _buildButtons(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
         ),
       ),
     );

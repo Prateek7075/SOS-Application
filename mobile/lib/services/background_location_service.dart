@@ -19,10 +19,7 @@ class ForegroundLocationServiceState {
   final String activeTrackingToken;
   final bool isHeartbeatFresh;
 
-  bool isFreshFor({
-    required int sosEventId,
-    required String trackingToken,
-  }) {
+  bool isFreshFor({required int sosEventId, required String trackingToken}) {
     return isHeartbeatFresh &&
         activeSosEventId == sosEventId &&
         activeTrackingToken == trackingToken;
@@ -38,18 +35,14 @@ class ForegroundLocationServiceState {
     );
   }
 
-  factory ForegroundLocationServiceState.fromMap(
-      Map<dynamic, dynamic>? map,
-      ) {
+  factory ForegroundLocationServiceState.fromMap(Map<dynamic, dynamic>? map) {
     if (map == null) {
       return ForegroundLocationServiceState.empty();
     }
 
     return ForegroundLocationServiceState(
       lastHeartbeatAt: _parseInt(map['lastHeartbeatAt']) ?? 0,
-      heartbeatAgeMilliseconds: _parseInt(
-        map['heartbeatAgeMilliseconds'],
-      ),
+      heartbeatAgeMilliseconds: _parseInt(map['heartbeatAgeMilliseconds']),
       activeSosEventId: _parseInt(map['activeSosEventId']) ?? -1,
       activeTrackingToken: map['activeTrackingToken']?.toString() ?? '',
       isHeartbeatFresh: map['isHeartbeatFresh'] == true,
@@ -93,14 +86,12 @@ class BackgroundLocationService {
     try {
       await requestNotificationPermission();
 
-      final result = await _channel.invokeMethod<bool>(
-        'startForegroundLocationService',
-        {
-          'sosEventId': sosEventId,
-          'trackingToken': trackingToken,
-          'apiBaseUrl': AppConfig.apiBaseUrl,
-        },
-      );
+      final result = await _channel
+          .invokeMethod<bool>('startForegroundLocationService', {
+            'sosEventId': sosEventId,
+            'trackingToken': trackingToken,
+            'apiBaseUrl': AppConfig.apiBaseUrl,
+          });
 
       return result == true;
     } catch (error) {
